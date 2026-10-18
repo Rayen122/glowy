@@ -1,26 +1,319 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * Glowy design tokens — voir design-system/MASTER.md
+ * Marque : prune (couleur du cahier des charges) sur ivoire chaud.
+ * Thème clair uniquement (anti-pattern beauté : dark mode).
+ */
+
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Jakarta pour le latin et les chiffres ; IBM Plex Sans Arabic prend le relais pour les glyphes arabes */
+  --font-sans: var(--font-jakarta), var(--font-plex-arabic), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-jakarta), var(--font-plex-arabic), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-jakarta), var(--font-plex-arabic), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* Marque */
+  --color-plum-50: #fbf3f8;
+  --color-plum-100: #f6e8f1;
+  --color-plum-200: #ebcbe0;
+  --color-plum-300: #d9a3c6;
+  --color-plum-400: #c077a8;
+  --color-plum-500: #a3508b;
+  --color-plum-600: #8e3b7e;
+  --color-plum-700: #6b2a5c;
+  --color-plum-800: #521f47;
+  --color-plum-900: #3a1532;
+  --color-ivory: #fbf7f4;
+  --color-sand: #f4ede8;
+  --color-blush: #f6e9ef;
+  --color-ink: #1e1520;
+  --color-star: #b7790c;
+
+  /* États (toujours avec icône + libellé) */
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger-soft: var(--danger-soft);
+
+  /* Fidélité */
+  --color-bronze: #9a6236;
+  --color-silver: #656b79;
+  --color-gold: #8c6414;
+  --color-gold-soft: #f7eed9;
+  --color-platinum: #3f4a5c;
+
+  /* Séries (palette catégorielle validée CVD — ordre fixe) */
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
+  --color-series-4: var(--series-4);
+  --color-series-5: var(--series-5);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  --shadow-soft: 0 1px 2px rgb(30 21 32 / 0.04), 0 8px 24px -12px rgb(30 21 32 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(30 21 32 / 0.04), 0 18px 40px -18px rgb(82 31 71 / 0.28);
+
+  --animate-float: float 6s ease-in-out infinite;
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+:root {
+  --radius: 0.75rem;
+
+  --background: #fbf7f4;
+  --foreground: #1e1520;
+  --card: #ffffff;
+  --card-foreground: #1e1520;
+  --popover: #ffffff;
+  --popover-foreground: #1e1520;
+
+  --primary: #6b2a5c;
+  --primary-foreground: #ffffff;
+  --secondary: #f6e9ef;
+  --secondary-foreground: #521f47;
+  --muted: #f4ede8;
+  --muted-foreground: #675a64;
+  --accent: #f6e9ef;
+  --accent-foreground: #521f47;
+  --destructive: #b93a34;
+  --border: #eadfda;
+  --input: #e2d5d0;
+  --ring: #a3508b;
+
+  --success: #17784f;
+  --success-soft: #e5f3ec;
+  --warning: #8f5507;
+  --warning-soft: #fbf0dc;
+  --danger-soft: #fbe9e7;
+
+  /* Validé : node validate_palette.js --mode light --surface #ffffff → ALL PASS */
+  --series-1: #8e3b7e;
+  --series-2: #008f82;
+  --series-3: #b7790c;
+  --series-4: #3569d1;
+  --series-5: #dd5f45;
+
+  --chart-1: #8e3b7e;
+  --chart-2: #008f82;
+  --chart-3: #b7790c;
+  --chart-4: #3569d1;
+  --chart-5: #dd5f45;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1e1520;
+  --sidebar-primary: #6b2a5c;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f6e9ef;
+  --sidebar-accent-foreground: #521f47;
+  --sidebar-border: #eadfda;
+  --sidebar-ring: #a3508b;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans scroll-smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Barre d'action fixe en bas (fiche salon, réservation) : la page lui laisse sa place, pied de page compris */
+  @media (width < 64rem) {
+    body:has([data-bottom-bar]) {
+      padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    }
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    /* iPhone en paysage (viewport-fit=cover) : le contenu évite l'encoche */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  ::selection {
+    background: #ebcbe0;
+    color: #3a1532;
+  }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  /* Titres : Plus Jakarta Sans gras, interlettrage serré ; l'accent est porté par la couleur */
+  .display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+  }
+  .display em {
+    font-style: normal;
+    font-weight: inherit;
+  }
+  .eyebrow {
+    @apply text-xs font-semibold tracking-[0.18em] uppercase text-plum-600;
+  }
+  .container-page {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+  /* Créneau bloqué dans l'agenda : hachures 45° (canal texture) */
+  .hatch {
+    background-image: repeating-linear-gradient(
+      135deg,
+      transparent 0 6px,
+      rgb(30 21 32 / 0.06) 6px 7px
+    );
+  }
+  .arch {
+    border-radius: 999px 999px 1.5rem 1.5rem;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Arabe : l'interlettrage casse les liaisons entre lettres, pas de capitales,
+   interlignes plus généreux (hampes et points diacritiques plus hauts que le latin) */
+html[lang="ar"] * {
+  letter-spacing: normal !important;
+}
+html[lang="ar"] :is(h1, h2, h3, .display) {
+  line-height: 1.3;
+}
+html[lang="ar"] .eyebrow {
+  text-transform: none;
+  font-size: 0.8125rem;
+}
+html[lang="ar"] [data-rotator] {
+  height: 1.45em;
+}
+
+/* États initiaux des animations GSAP : masqués avant hydratation pour éviter tout flash.
+   GSAP les révèle (autoAlpha) ; sans animation système, rien n'est masqué. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-animate="fade-up"]:not([data-animated]),
+  [data-animate="split"]:not([data-animated]),
+  [data-animate="pop"]:not([data-animated]),
+  [data-animate="clip"]:not([data-animated]),
+  [data-animate="stagger"]:not([data-animated]) > *,
+  [data-hero],
+  [data-auth-card]:not([data-animated]) {
+    visibility: hidden;
+  }
+}
+/* SplitText calcule les lignes : pas d'équilibrage automatique sur ces titres */
+[data-animate="split"],
+[data-hero="title"] {
+  text-wrap: wrap;
+}
+
+@keyframes scan {
+  0% { top: -6rem; }
+  100% { top: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Leaflet : pins prix */
+.leaflet-container {
+  font-family: var(--font-jakarta), var(--font-plex-arabic), system-ui, sans-serif;
+  background: #f4ede8;
+}
+.bh-tiles {
+  filter: saturate(0.35) sepia(0.12) brightness(1.04) contrast(0.95);
+}
+.bh-pin {
+  background: transparent;
+  border: 0;
+}
+.bh-pin span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1e1520;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgb(30 21 32 / 0.08), 0 6px 16px -6px rgb(30 21 32 / 0.3);
+  border: 1px solid #eadfda;
+  transition: background-color 150ms, color 150ms;
+}
+.bh-pin.is-active span {
+  background: #6b2a5c;
+  color: #ffffff;
+  border-color: #6b2a5c;
+  z-index: 1000;
 }

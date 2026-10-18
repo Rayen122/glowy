@@ -1,0 +1,122 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { ScanFace, Store, UserRound } from "lucide-react";
+import { homeForRole } from "@/auth.config";
+import { Logo } from "@/components/brand/logo";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { useI18n } from "@/i18n/client";
+import type { CategoryId } from "@/lib/data";
+import { cn } from "@/lib/utils";
+
+const NAV: CategoryId[] = ["coiffure", "barbier", "ongles", "spa", "visage"];
+
+/** Utilisateur connecté transmis par le layout serveur (null = visiteur) */
+export type HeaderUser = { firstName: string; role: string } | null;
+
+export function SiteHeader({ user }: { user: HeaderUser }) {
+  const { t } = useI18n();
+  const pathname = usePathname();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const chip = "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium whitespace-nowrap transition-colors duration-200";
+
+  return (
+    <>
+      <header
+        className={cn(
+          "sticky top-0 z-40 w-full pt-[env(safe-area-inset-top)] transition-[background-color,box-shadow] duration-200",
+          scrolled ? "bg-background/85 shadow-[0_1px_0_var(--border)] backdrop-blur-md" : "bg-background"
+        )}
+      >
+        <div className="container-page flex h-16 items-center gap-3 sm:gap-6 lg:h-[72px]">
+          <Link href="/" aria-label={t.header.home} className="shrink-0 rounded-lg focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
+            <Logo />
+          </Link>
+
+          <nav aria-label={t.header.categories} className="hidden items-center gap-0.5 whitespace-nowrap xl:flex">
+            {NAV.map((id) => (
+              <Link
+                key={id}
+                href={`/salons?categorie=${id}`}
+                className="rounded-full px-3 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground"
+              >
+                {t.categories[id]}
+              </Link>
+            ))}
+            <Link
+              href="/analyse-beaute"
+              className={cn(
+                "ms-1 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors duration-200",
+                pathname === "/analyse-beaute" ? "bg-blush text-plum-700" : "text-plum-700 hover:bg-blush"
+              )}
+            >
+              <ScanFace className="size-4" aria-hidden />
+              {t.header.aiAnalysis}
+            </Link>
+          </nav>
+
+          <div className="ms-auto flex items-center gap-1 sm:gap-1.5">
+            <LanguageSwitcher />
+
+            <Link
+              href="/pro"
+              className="hidden items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium whitespace-nowrap text-foreground transition-colors duration-200 hover:bg-muted xl:inline-flex"
+            >
+              <Store className="size-4" aria-hidden />
+              {t.header.pro}
+            </Link>
+            {user ? (
+              <Link
+                href={homeForRole(user.role)}
+                className="inline-flex h-10 items-center gap-2 rounded-full border border-border bg-card ps-1 pe-3.5 text-sm font-medium whitespace-nowrap transition-colors duration-200 hover:bg-muted"
+              >
+                <span className="flex size-8 items-center justify-center rounded-full bg-blush text-xs font-semibold text-plum-700">{user.firstName.charAt(0)}</span>
+                {user.firstName}
+              </Link>
+            ) : (
+              <Link
+                href="/connexion"
+                className="inline-flex h-9 items-center gap-2 rounded-full bg-ink px-3 text-[13px] font-medium whitespace-nowrap text-white transition-colors duration-200 hover:bg-plum-800 sm:h-10 sm:px-4 sm:text-sm"
+              >
+                <UserRound className="size-4 max-sm:hidden" aria-hidden />
+                {t.header.signIn}
+              </Link>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Écrans plus étroits : les mêmes liens que la barre du PC, sur une rangée qui défile horizontalement */}
+      <nav aria-label={t.header.mobileMenu} className="border-b border-border bg-background xl:hidden">
+        <div className="container-page no-scrollbar flex gap-1.5 overflow-x-auto py-2">
+          {NAV.map((id) => (
+            <Link key={id} href={`/salons?categorie=${id}`} className={cn(chip, "border border-border bg-card text-foreground hover:bg-muted")}>
+              {t.categories[id]}
+            </Link>
+          ))}
+          <Link
+            href="/analyse-beaute"
+            className={cn(chip, pathname === "/analyse-beaute" ? "bg-plum-700 text-white" : "bg-blush text-plum-700 hover:bg-plum-100")}
+          >
+            <ScanFace className="size-4" aria-hidden />
+            {t.header.aiAnalysis}
+          </Link>
+          <Link href="/pro" className={cn(chip, "border border-border bg-card text-foreground hover:bg-muted")}>
+            <Store className="size-4" aria-hidden />
+            {t.header.pro}
+          </Link>
+        </div>
+      </nav>
+    </>
+  );
+}
