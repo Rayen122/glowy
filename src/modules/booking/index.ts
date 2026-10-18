@@ -15,7 +15,7 @@ export const createBookingModule = (overrides: { clock?: Clock } = {}) =>
 export const { resolveServices, getAvailability, availabilityForSalon, createBooking, cancelBooking, rescheduleBooking, setBookingStatus } = createBookingModule();
 
 export { listClientBookings, salonAgenda, type ClientBooking } from "./infrastructure/queries";
-export { createTimeOff } from "./infrastructure/mongo-booking-repository";
+export { createTimeOff, deleteTimeOff } from "./infrastructure/mongo-booking-repository";
 export { availabilityQuery, bookingActionInput, createBookingInput, type CreateBookingInput } from "./application/schemas";
 export { ACTIVE_STATUSES, depositFor, isOffPeak } from "./domain/policy";
 export type { BookingRecord } from "./application/ports";
