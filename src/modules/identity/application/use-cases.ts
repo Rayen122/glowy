@@ -61,13 +61,14 @@ export function makeIdentity({ accounts, hasher, events, clock }: IdentityDeps) 
         city: input.city,
         address: input.address,
         phone: input.phone,
-        plan: input.plan,
+        // Le plan payant n'est activé qu'après acceptation du paiement par le Super Admin (module abonnements)
+        plan: "gratuit",
         lat,
         lng,
         documentUrl: input.documentName ?? null,
       },
     });
-    await events.publish("salon.registered", { salonId: salon.id, ownerId: user.id });
+    await events.publish("salon.registered", { salonId: salon.id, ownerId: user.id, plan: input.plan });
     return { user, salon };
   }
 

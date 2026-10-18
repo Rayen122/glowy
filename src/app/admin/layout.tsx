@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { ChartColumn, CreditCard, Gift, LayoutGrid, ScrollText, Settings, ShieldAlert, Store, Users } from "lucide-react";
 import { AppShell, type NavGroup } from "@/components/app-shell/app-shell";
 import { getI18n } from "@/i18n/server";
+import { requirePageUser } from "@/infrastructure/session";
+import { adminCounts } from "@/modules/subscription";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -9,7 +11,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { t } = await getI18n();
+  await requirePageUser("ADMIN");
+  const [{ t }, counts] = await Promise.all([getI18n(), adminCounts()]);
+  const badge = (n: number) => (n > 0 ? String(n) : undefined);
   const a = t.admin;
   const m = t.modules.admin;
 
@@ -20,15 +24,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     {
       label: a.nav.platform,
       items: [
-        { href: "/admin/salons", label: m.salons.title, icon: <Store />, badge: "4" },
+        { href: "/admin/salons", label: m.salons.title, icon: <Store />, badge: badge(counts.pendingSalons) },
         { href: "/admin/utilisateurs", label: m.utilisateurs.title, icon: <Users /> },
-        { href: "/admin/moderation", label: m.moderation.title, icon: <ShieldAlert />, badge: "3" },
+        { href: "/admin/moderation", label: m.moderation.title, icon: <ShieldAlert />, badge: badge(counts.openReports) },
       ],
     },
     {
       label: a.nav.business,
       items: [
-        { href: "/admin/abonnements", label: m.abonnements.title, icon: <CreditCard /> },
+        { href: "/admin/abonnements", label: m.abonnements.title, icon: <CreditCard />, badge: badge(counts.pendingPayments) },
         { href: "/admin/fidelite", label: m.fidelite.title, icon: <Gift /> },
         { href: "/admin/rapports", label: m.rapports.title, icon: <ChartColumn /> },
       ],

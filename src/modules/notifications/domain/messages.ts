@@ -28,6 +28,24 @@ export const salonPending = (salon: { name: string; city: string }): Message => 
 export const salonStatusChanged = (salonName: string, status: string): Message | null =>
   SALON_STATUS_TEXT[status] ? { type: "salon.status", title: salonName, body: SALON_STATUS_TEXT[status], link: "/dashboard" } : null;
 
+const PLAN_LABEL: Record<string, string> = { pro: "Pro", premium: "Premium" };
+
+/** Aux Super Admins : un paiement d'abonnement attend leur décision */
+export const planPaymentRequested = (salonName: string, plan: string, amount: number): Message => ({
+  type: "plan.requested",
+  title: "Paiement à valider",
+  body: `${salonName} : plan ${PLAN_LABEL[plan] ?? plan}, ${amount} DT.`,
+  link: "/admin/abonnements",
+});
+
+/** Au gérant : décision du Super Admin sur son paiement */
+export const planPaymentDecided = (plan: string, accepted: boolean, reason: string | null): Message => ({
+  type: "plan.decided",
+  title: accepted ? "Paiement accepté" : "Paiement refusé",
+  body: accepted ? `Votre plan ${PLAN_LABEL[plan] ?? plan} est actif pour 30 jours.` : `Votre paiement du plan ${PLAN_LABEL[plan] ?? plan} n'a pas été accepté${reason ? ` : ${reason}` : "."}`,
+  link: "/dashboard/abonnement",
+});
+
 export const bookingConfirmed = (salonName: string, date: string, time: string): Message => ({
   type: "booking.confirmed",
   title: "Rendez-vous confirmé",

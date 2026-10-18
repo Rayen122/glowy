@@ -1,5 +1,6 @@
 import { shortName } from "@/core/domain/text";
-import { AuditLog, Booking, idOf, Review, ReviewReport, Salon, User, type SalonDoc } from "@/infrastructure/db";
+import { planRevenue } from "@/modules/subscription";
+import { AuditLog, Booking, idOf, PlanPayment, Review, ReviewReport, Salon, User, type SalonDoc } from "@/infrastructure/db";
 import { CATEGORY_LABEL, groupFlagged } from "../domain/policy";
 
 /** Lectures du Super Admin : vue globale (ADM-01) et files de travail (ADM-02, AVI-06) */
@@ -10,17 +11,21 @@ async function pendingSalons() {
   const salons = await Salon.find({ status: "PENDING" }).sort({ createdAt: 1 }).lean<SalonDoc[]>();
   const owners = await User.find({ _id: { $in: salons.map((s) => s.owner) } }, { firstName: 1, lastName: 1 }).lean();
   const ownerById = new Map(owners.map((o) => [idOf(o), o]));
-  return salons.map((s) => ({ ...s, id: idOf(s), owner: ownerById.get(s.owner.toString()) ?? { firstName: "", lastName: "" } }));
+  // Le plan payant choisi à l'inscription n'est pas encore actif : on l'affiche depuis la demande de paiement en attente
+  const requests = await PlanPayment.find({ salon: { $in: salons.map((s) => s._id) }, status: "PENDING" }, { salon: 1, plan: 1 }).lean();
+  const requestedPlan = new Map(requests.map((r) => [r.salon.toString(), r.plan]));
+  return salons.map((s) => ({ ...s, id: idOf(s), plan: requestedPlan.get(idOf(s)) ?? s.plan, owner: ownerById.get(s.owner.toString()) ?? { firstName: "", lastName: "" } }));
 }
 
 /** ADM-01 : chiffres clés de la plateforme (30 derniers jours pour les réservations) */
 export async function adminOverview(now = new Date()) {
   const since = new Date(now.getTime() - 30 * 86_400_000);
-  const [salons, clients, bookings30d, revenue, pending, openReports, plans, audit] = await Promise.all([
+  const [salons, clients, bookings30d, revenue, subscriptionRevenue, pending, openReports, plans, audit] = await Promise.all([
     Salon.countDocuments({ status: "ACTIVE" }),
     User.countDocuments({ role: "CLIENT" }),
     Booking.countDocuments({ createdAt: { $gte: since } }),
     Booking.aggregate<{ total: number }>([{ $match: { "payment.status": "PAID", "payment.createdAt": { $gte: since } } }, { $group: { _id: null, total: { $sum: "$payment.amount" } } }]),
+    planRevenue(since),
     pendingSalons(),
     ReviewReport.countDocuments({ status: "OPEN" }),
     Salon.aggregate<{ _id: string; count: number }>([{ $match: { status: "ACTIVE" } }, { $group: { _id: "$plan", count: { $sum: 1 } } }]),
@@ -32,7 +37,7 @@ export async function adminOverview(now = new Date()) {
     salons,
     clients,
     bookings30d,
-    revenue30d: revenue[0]?.total ?? 0,
+    revenue30d: (revenue[0]?.total ?? 0) + subscriptionRevenue,
     pendingSalons: pending.map((s) => ({ id: s.id, name: s.name, city: s.city, owner: s.owner })),
     openReports,
     plans: plans.map((p) => ({ plan: p._id, count: p.count })),

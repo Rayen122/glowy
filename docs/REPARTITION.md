@@ -139,8 +139,8 @@ Création : `src/modules/reviews/application/analysis.ts` + résumé mis en cach
 
 ## P5 — Espace client, paiement, abonnements, fidélité + IA analyse photo
 
-**Dossiers possédés** : `src/modules/account/`, `src/modules/loyalty/`, `src/modules/notifications/`, `src/app/(site)/compte/`, `src/app/(site)/pro/`, `src/app/(site)/analyse-beaute/`, `src/app/api/me/`, `components/account/`, `components/loyalty/`, `components/ai/beauty-analysis.tsx`, `components/pwa/`, `src/i18n/`, `public/sw.js`, `src/app/manifest.ts`, `admin/abonnements`.
-**Tests à garder verts** : `tests/loyalty-reviews.test.ts`.
+**Dossiers possédés** : `src/modules/account/`, `src/modules/loyalty/`, `src/modules/notifications/`, `src/modules/subscription/`, `src/app/(site)/compte/`, `src/app/(site)/pro/`, `src/app/(site)/analyse-beaute/`, `src/app/api/me/`, `components/account/`, `components/loyalty/`, `components/ai/beauty-analysis.tsx`, `components/pwa/`, `src/i18n/`, `public/sw.js`, `src/app/manifest.ts`, `admin/abonnements`, `dashboard/abonnement`.
+**Tests à garder verts** : `tests/loyalty-reviews.test.ts`, `tests/subscription.test.ts`.
 
 | Réf. | Exigence | Prio | État |
 |---|---|---|---|
@@ -151,7 +151,7 @@ Création : `src/modules/reviews/application/analysis.ts` + résumé mis en cach
 | CLI-05 | Acompte et paiement en ligne (mode test) | Imp | 🟡 (paiement test enregistré, interface de paiement à finir) |
 | CLI-06 | Interface FR / AR (RTL) / EN | Imp | ✅ |
 | CLI-07 | Notifications dans l'application | Imp | 🟡 (API faite, cloche d'interface et abonnement push à brancher) |
-| ADM-05 | Plans Gratuit / Pro / Premium et commissions | Imp | ⬜ (pages `pro` et `admin/abonnements`) |
+| ADM-05 | Plans Gratuit / Pro / Premium et commissions | Imp | 🟡 (paiement du plan déclaré par le gérant et accepté ou refusé par le Super Admin, plan actif 30 jours : fait, module `src/modules/subscription` ; commissions sur réservations payées en ligne, expiration automatique et page `/pro` à faire) |
 | FID-01 | Points Glowy globaux : solde et historique | I | ✅ |
 | FID-02 | Gain de points selon le barème, bonus « nouveau salon », paliers | I | ✅ |
 | FID-03 | Niveaux Bronze / Argent / Or / Platine, barre de progression | Imp | ✅ |
