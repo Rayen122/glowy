@@ -45,7 +45,7 @@ export function PlanRequestForm({ currentPlan }: { currentPlan: string }) {
     <form onSubmit={submit} className="space-y-5" noValidate>
       <fieldset>
         <legend className="text-sm font-medium">{s.planLabel}</legend>
-        <div className="mt-2 grid gap-3 sm:grid-cols-2">
+        <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
           {PLANS.filter((p) => (PAID_PLANS as readonly string[]).includes(p.id)).map((p) => {
             const selected = plan === p.id;
             return (
@@ -77,7 +77,7 @@ export function PlanRequestForm({ currentPlan }: { currentPlan: string }) {
 
       <p className="rounded-2xl bg-sand/70 p-3.5 text-sm text-muted-foreground">{f(s.payHint, { amount: nf(PLAN_PRICES[plan]) })}</p>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <label className="block text-sm font-medium">
           {s.channelLabel}
           <select value={channel} onChange={(e) => setChannel(e.target.value as PlanPaymentChannel)} className={cn(FIELD, "mt-1.5")}>

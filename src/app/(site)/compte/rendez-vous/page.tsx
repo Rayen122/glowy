@@ -105,7 +105,7 @@ export default async function RendezVousPage() {
         {bk.title}
       </h1>
       <Tabs defaultValue="avenir" className="mt-6">
-        <TabsList className="no-scrollbar h-11 max-w-full justify-start overflow-x-auto rounded-full p-1">
+        <TabsList className="no-scrollbar group-data-horizontal/tabs:h-auto [&>button]:min-h-11 max-w-full justify-start overflow-x-auto rounded-full p-1">
           <TabsTrigger value="avenir" className="rounded-full px-4">
             {bk.upcoming}
           </TabsTrigger>

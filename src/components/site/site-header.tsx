@@ -29,7 +29,7 @@ export function SiteHeader({ user }: { user: HeaderUser }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const chip = "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium whitespace-nowrap transition-colors duration-200";
+  const chip = "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium whitespace-nowrap transition-colors duration-200";
 
   return (
     <>
@@ -39,8 +39,8 @@ export function SiteHeader({ user }: { user: HeaderUser }) {
           scrolled ? "bg-background/85 shadow-[0_1px_0_var(--border)] backdrop-blur-md" : "bg-background"
         )}
       >
-        <div className="container-page flex h-16 items-center gap-3 sm:gap-6 lg:h-[72px]">
-          <Link href="/" aria-label={t.header.home} className="shrink-0 rounded-lg focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
+        <div className="container-page flex h-16 items-center gap-2 sm:gap-6 lg:h-[72px]">
+          <Link href="/" aria-label={t.header.home} className="inline-flex min-h-11 shrink-0 items-center rounded-lg focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
             <Logo />
           </Link>
 
@@ -66,8 +66,8 @@ export function SiteHeader({ user }: { user: HeaderUser }) {
             </Link>
           </nav>
 
-          <div className="ms-auto flex items-center gap-1 sm:gap-1.5">
-            <LanguageSwitcher />
+          <div className="ms-auto flex min-w-0 items-center gap-0.5 sm:gap-1.5">
+            <LanguageSwitcher className="px-2 sm:px-3" />
 
             <Link
               href="/pro"
@@ -76,19 +76,21 @@ export function SiteHeader({ user }: { user: HeaderUser }) {
               <Store className="size-4" aria-hidden />
               {t.header.pro}
             </Link>
-            {user && <NotificationBell className="size-9 sm:size-10" />}
+            {user && <NotificationBell />}
             {user ? (
               <Link
                 href={homeForRole(user.role)}
-                className="inline-flex h-10 items-center gap-2 rounded-full border border-border bg-card ps-1 pe-3.5 text-sm font-medium whitespace-nowrap transition-colors duration-200 hover:bg-muted"
+                aria-label={user.firstName}
+                className="inline-flex h-10 min-w-0 items-center gap-2 rounded-full border border-border bg-card ps-1 pe-1 text-sm font-medium whitespace-nowrap transition-colors duration-200 hover:bg-muted min-[360px]:pe-3.5"
               >
-                <span className="flex size-8 items-center justify-center rounded-full bg-blush text-xs font-semibold text-plum-700">{user.firstName.charAt(0)}</span>
-                {user.firstName}
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-blush text-xs font-semibold text-plum-700">{user.firstName.charAt(0)}</span>
+                {/* Sous 360 px : avatar seul, pour que la barre tienne sur les très petits écrans */}
+                <span className="hidden max-w-28 truncate min-[360px]:inline">{user.firstName}</span>
               </Link>
             ) : (
               <Link
                 href="/connexion"
-                className="inline-flex h-9 items-center gap-2 rounded-full bg-ink px-3 text-[13px] font-medium whitespace-nowrap text-white transition-colors duration-200 hover:bg-plum-800 sm:h-10 sm:px-4 sm:text-sm"
+                className="inline-flex h-11 items-center gap-2 rounded-full bg-ink px-3.5 text-[13px] font-medium whitespace-nowrap text-white transition-colors duration-200 hover:bg-plum-800 sm:px-4 sm:text-sm"
               >
                 <UserRound className="size-4 max-sm:hidden" aria-hidden />
                 {t.header.signIn}

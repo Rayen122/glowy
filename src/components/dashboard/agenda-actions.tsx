@@ -131,7 +131,7 @@ export function UnblockButton({ id, label }: { id: string; label: string }) {
       onClick={remove}
       disabled={pending}
       aria-label={f(a.unblock, { label })}
-      className="pointer-events-auto absolute end-1 top-1 inline-flex size-6 items-center justify-center rounded-full text-muted-foreground hover:bg-card hover:text-destructive"
+      className="pointer-events-auto absolute end-1 top-1 inline-flex size-7 items-center justify-center rounded-full text-muted-foreground after:absolute after:-inset-2 after:content-[''] hover:bg-card hover:text-destructive"
     >
       <X className="size-3.5" aria-hidden />
     </button>

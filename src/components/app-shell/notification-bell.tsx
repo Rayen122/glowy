@@ -56,7 +56,7 @@ export function NotificationBell({ className }: { className?: string }) {
     >
       <PopoverTrigger
         aria-label={label}
-        className={cn("relative inline-flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground", className)}
+        className={cn("relative inline-flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground", className)}
       >
         <Bell className="size-5" aria-hidden />
         {inbox.unread > 0 && (
