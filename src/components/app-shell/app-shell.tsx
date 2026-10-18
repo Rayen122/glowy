@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Bell, CircleHelp, Search } from "lucide-react";
+import { CircleHelp, Search } from "lucide-react";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { Logo } from "@/components/brand/logo";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getI18n } from "@/i18n/server";
 import { MobileNav } from "./mobile-nav";
+import { NotificationBell } from "./notification-bell";
 import { NavLink } from "./nav-link";
 
 export type NavItem = { href: string; label: string; icon: React.ReactNode; exact?: boolean; badge?: string };
@@ -117,14 +118,7 @@ export async function AppShell({
           </label>
           <div className="ms-auto flex items-center gap-1 sm:gap-2">
             <LanguageSwitcher />
-            <button
-              type="button"
-              className="relative inline-flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
-              aria-label={s.notifications}
-            >
-              <Bell className="size-5" aria-hidden />
-              <span className="absolute end-2.5 top-2.5 size-2 rounded-full bg-destructive ring-2 ring-background" />
-            </button>
+            <NotificationBell />
             {action}
           </div>
           </div>

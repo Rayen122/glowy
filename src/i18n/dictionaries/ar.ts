@@ -846,7 +846,10 @@ export const ar: Dictionary = {
     openNav: "فتح التنقل",
     search: "بحث",
     searchPlaceholder: "ابحث عن حريف، موعد، صالون…",
-    notifications: "الإشعارات، 3 غير مقروءة",
+    notifications: "الإشعارات",
+    notificationsUnread: "الإشعارات، {n} غير مقروءة",
+    notificationsEmpty: "لا توجد إشعارات حتى الآن.",
+    markAllRead: "تحديد الكل كمقروء",
   },
 
   dashboard: {

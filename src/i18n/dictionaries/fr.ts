@@ -853,7 +853,10 @@ export const fr = {
     openNav: "Ouvrir la navigation",
     search: "Rechercher",
     searchPlaceholder: "Rechercher un client, un rendez-vous, un salon…",
-    notifications: "Notifications, 3 non lues",
+    notifications: "Notifications",
+    notificationsUnread: "Notifications, {n} non lues",
+    notificationsEmpty: "Aucune notification pour le moment.",
+    markAllRead: "Tout marquer comme lu",
   },
 
   dashboard: {
