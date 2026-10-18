@@ -7,6 +7,7 @@ import {
   ChartColumn,
   ChevronsUpDown,
   CreditCard,
+  Hourglass,
   LayoutGrid,
   MessageSquareText,
   Percent,
@@ -92,6 +93,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </Link>
       }
     >
+      {salon.status === "PENDING" && (
+        <p role="status" className="mb-5 flex items-start gap-2.5 rounded-2xl bg-sand p-3.5 text-sm font-medium text-plum-800 ring-1 ring-border">
+          <Hourglass className="mt-0.5 size-4 shrink-0" aria-hidden />
+          {d.pendingBanner}
+        </p>
+      )}
       {children}
     </AppShell>
   );
