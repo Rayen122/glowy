@@ -47,7 +47,7 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 }
 
 const inputBase =
-  "peer h-14 w-full rounded-2xl border border-input bg-white ps-11 pt-5 pb-1.5 text-base text-foreground sm:text-[15px] transition-[border-color,box-shadow] duration-200 outline-none focus:border-plum-400 focus:ring-4 focus:ring-plum-200/60 aria-invalid:border-destructive aria-invalid:ring-4 aria-invalid:ring-destructive/10";
+  "peer h-14 w-full rounded-2xl border border-input bg-white ps-11 pt-5 pb-1.5 text-base text-foreground lg:text-[15px] transition-[border-color,box-shadow] duration-200 outline-none focus:border-plum-400 focus:ring-4 focus:ring-plum-200/60 aria-invalid:border-destructive aria-invalid:ring-4 aria-invalid:ring-destructive/10";
 const floatLabel =
   "pointer-events-none absolute start-11 top-3.5 -translate-y-1/2 text-xs font-medium text-muted-foreground transition-all duration-200 peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal sm:peer-placeholder-shown:text-[15px] peer-focus:top-3.5 peer-focus:text-xs peer-focus:font-medium peer-focus:text-plum-700";
 const iconSlot =
@@ -319,7 +319,7 @@ export function LoginForm({ callbackUrl, demoEnabled }: { callbackUrl?: string; 
           <label className="flex cursor-pointer items-center gap-2 text-muted-foreground">
             <input type="checkbox" name="remember" className="size-4 rounded accent-[#6b2a5c]" /> {a.remember}
           </label>
-          <Link href="/connexion?reinitialiser=1" className="font-semibold whitespace-nowrap text-plum-700 hover:underline">
+          <Link href="/connexion?reinitialiser=1" className="inline-flex min-h-11 items-center font-semibold whitespace-nowrap text-plum-700 hover:underline">
             {a.forgot}
           </Link>
         </div>
@@ -348,7 +348,7 @@ export function LoginForm({ callbackUrl, demoEnabled }: { callbackUrl?: string; 
                 type="button"
                 disabled={demoPending !== null}
                 onClick={() => void loginAsDemo(role)}
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold ring-1 ring-border transition-colors hover:bg-plum-50 hover:ring-plum-300 disabled:opacity-60"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold ring-1 ring-border transition-colors hover:bg-plum-50 hover:ring-plum-300 disabled:opacity-60"
               >
                 {demoPending === role && <LoaderCircle className="size-3.5 animate-spin" aria-hidden />}
                 {a.roles[({ CLIENT: "client", MANAGER: "manager", EMPLOYEE: "employee", ADMIN: "admin" } as const)[role]]}
@@ -496,7 +496,7 @@ export function SignupForm({ initialType = "client" }: { initialType?: "client" 
         <div ref={fieldsRef} className="space-y-4">
           {type === "client" ? (
             <>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <FloatField id="firstName" label={a.firstName} autoComplete="given-name" icon={<UserRound />} error={errors.firstName} />
                 <FloatField id="lastName" label={a.lastName} autoComplete="family-name" icon={<UserRound />} error={errors.lastName} />
               </div>
@@ -508,7 +508,7 @@ export function SignupForm({ initialType = "client" }: { initialType?: "client" 
           ) : (
             <>
               <FloatField id="salonName" label={a.salonName} icon={<Store />} error={errors.salonName} />
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div data-auth-item className="group relative">
                   <span className={iconSlot} aria-hidden>
                     <Building2 />
@@ -527,7 +527,7 @@ export function SignupForm({ initialType = "client" }: { initialType?: "client" 
                 <FloatField id="city" label={a.city} autoComplete="address-level2" icon={<MapPin />} error={errors.city} />
               </div>
               <FloatField id="address" label={a.address} autoComplete="street-address" icon={<MapPin />} error={errors.address} />
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <FloatField id="email" label={a.managerEmail} type="email" autoComplete="email" dir="ltr" icon={<Mail />} error={errors.email} />
                 <FloatField id="phone" label={a.phone} type="tel" autoComplete="tel" dir="ltr" icon={<Phone />} error={errors.phone} />
               </div>

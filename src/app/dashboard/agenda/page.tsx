@@ -74,7 +74,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
                 aria-pressed={i === 0}
                 disabled={i !== 0}
                 title={i !== 0 ? a.soon : undefined}
-                className={cn("h-9 rounded-full px-4 text-sm font-medium", i === 0 ? "bg-card shadow-sm" : "cursor-not-allowed text-muted-foreground/60")}
+                className={cn("h-11 rounded-full px-4 text-sm font-medium lg:h-9", i === 0 ? "bg-card shadow-sm" : "cursor-not-allowed text-muted-foreground/60")}
               >
                 {a.views[v]}
               </button>
@@ -85,7 +85,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
       </header>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <Link href={`?date=${addDays(date, -1)}`} className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-card hover:bg-muted" aria-label={a.prevDay}>
             <ChevronLeft className="size-4 rtl:rotate-180" aria-hidden />
           </Link>

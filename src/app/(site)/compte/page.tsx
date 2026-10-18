@@ -49,11 +49,11 @@ export default async function ComptePage() {
         </h1>
       </header>
 
-      <div data-animate="stagger" data-stagger="0.12" className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+      <div data-animate="stagger" data-stagger="0.12" className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         {/* Prochain rendez-vous */}
         <section aria-labelledby="next-title" className="overflow-hidden rounded-3xl bg-card ring-1 ring-border">
           {next ? (
-            <div className="grid sm:grid-cols-[200px_minmax(0,1fr)]">
+            <div className="grid grid-cols-1 sm:grid-cols-[200px_minmax(0,1fr)]">
               <div className="relative aspect-[16/9] bg-muted sm:aspect-auto">
                 {next.salon.coverUrl && <Image src={next.salon.coverUrl} alt="" fill sizes="(min-width: 640px) 200px, 100vw" className="object-cover" />}
               </div>
@@ -142,7 +142,7 @@ export default async function ComptePage() {
         <h2 id="todo-title" className="text-lg font-semibold">
           {o.earnTitle}
         </h2>
-        <ul data-animate="stagger" className="mt-4 grid gap-3 md:grid-cols-3">
+        <ul data-animate="stagger" className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
           {todos.map((item) => {
             const Icon = item.icon;
             return (
@@ -227,7 +227,7 @@ export default async function ComptePage() {
           <h2 id="reco-title" className="text-lg font-semibold">
             {f(o.recoTitle, { pts: f(t.common.plusPoints, { n: 30 }) })}
           </h2>
-          <Link href="/salons" className="shrink-0 text-sm font-semibold text-plum-700 hover:underline">
+          <Link href="/salons" className="inline-flex min-h-11 shrink-0 items-center text-sm font-semibold text-plum-700 hover:underline">
             {o.seeAll}
           </Link>
         </div>

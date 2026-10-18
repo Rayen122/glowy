@@ -127,7 +127,7 @@ export function BeautyAnalysis() {
   );
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
       {/* Colonne gauche : photo */}
       <div className="min-w-0 space-y-5">
         <div className="inline-flex rounded-full bg-muted p-1" role="tablist" aria-label={a.modeAria}>

@@ -34,7 +34,7 @@ export default async function ProPage() {
 
   return (
     <>
-      <section className="container-page grid items-center gap-12 pt-10 pb-16 lg:grid-cols-2 lg:pt-16 lg:pb-24">
+      <section className="container-page grid grid-cols-1 items-center gap-12 pt-10 pb-16 lg:grid-cols-2 lg:pt-16 lg:pb-24">
         <div>
           <p data-animate="fade-up" className="eyebrow">
             Glowy Pro
@@ -81,7 +81,7 @@ export default async function ProPage() {
       <section className="bg-sand/70 py-16 lg:py-24" aria-labelledby="features-title">
         <div className="container-page">
           <SectionHeading eyebrow={p.featuresEyebrow} title={<span id="features-title">{p.featuresTitle}</span>} />
-          <ul data-animate="stagger" data-stagger="0.07" className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <ul data-animate="stagger" data-stagger="0.07" className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {p.features.map((feature, i) => {
               const Icon = FEATURE_ICONS[i];
               return (
@@ -100,7 +100,7 @@ export default async function ProPage() {
 
       <section id="tarifs" className="container-page scroll-mt-24 py-16 lg:py-24" aria-labelledby="tarifs-title">
         <SectionHeading align="center" eyebrow={p.pricingEyebrow} title={<span id="tarifs-title">{p.pricingTitle}</span>} description={p.pricingDescription} />
-        <div data-animate="stagger" data-stagger="0.12" className="mx-auto mt-12 grid max-w-5xl gap-6 md:grid-cols-3 md:gap-4">
+        <div data-animate="stagger" data-stagger="0.12" className="mx-auto mt-12 grid grid-cols-1 max-w-5xl gap-6 md:grid-cols-3 md:gap-4">
           {PLANS.map((plan) => (
             <div
               key={plan.id}
@@ -138,7 +138,7 @@ export default async function ProPage() {
       </section>
 
       <section className="container-page pb-16 lg:pb-24" aria-labelledby="etapes-title">
-        <div className="grid gap-12 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
           <div>
             <SectionHeading eyebrow={p.stepsEyebrow} title={<span id="etapes-title">{p.stepsTitle}</span>} />
             <ol data-animate="stagger" data-stagger="0.12" className="mt-8 space-y-5">
