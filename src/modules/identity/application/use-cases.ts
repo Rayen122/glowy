@@ -1,0 +1,107 @@
+import type { Role } from "@/core/domain/actor";
+import type { Clock } from "@/core/domain/clock";
+import { conflict } from "@/core/domain/errors";
+import type { EventPublisher } from "@/core/domain/events";
+import { slugify } from "@/core/domain/text";
+import { afterFailedLogin, coordsFor, isLocked, referralCandidate } from "../domain/account";
+import type { AccountRepository, PasswordHasher, UserAccount } from "./ports";
+import type { RegisterInput } from "./schemas";
+
+export type IdentityDeps = { accounts: AccountRepository; hasher: PasswordHasher; events: EventPublisher; clock: Clock };
+
+export type AuthResult = { ok: true; user: UserAccount } | { ok: false; reason: "invalid" | "locked" | "blocked" };
+
+/** Comptes (P1) : inscription (AUTH-01, AUTH-02) et vérification des identifiants (AUTH-03) */
+export function makeIdentity({ accounts, hasher, events, clock }: IdentityDeps) {
+  async function uniqueReferralCode(base: string) {
+    for (;;) {
+      const code = referralCandidate(base);
+      if (!(await accounts.referralCodeTaken(code))) return code;
+    }
+  }
+
+  async function uniqueSalonSlug(base: string) {
+    const root = slugify(base) || "salon";
+    for (let i = 0; ; i++) {
+      const slug = i ? `${root}-${i + 1}` : root;
+      if (!(await accounts.salonSlugTaken(slug))) return slug;
+    }
+  }
+
+  /**
+   * Inscription. Cliente : compte actif immédiatement. Salon : compte gérant + salon en attente
+   * de validation par le Super Admin (AUTH-02) ; il n'apparaît pas dans la recherche avant.
+   */
+  async function register(input: RegisterInput) {
+    if (await accounts.emailTaken(input.email)) throw conflict("EMAIL_TAKEN", "Un compte existe déjà avec cette adresse e-mail.");
+    const passwordHash = await hasher.hash(input.password);
+
+    if (input.type === "client") {
+      const referredById = input.referralCode ? await accounts.userIdByReferralCode(input.referralCode.toUpperCase()) : null;
+      const user = await accounts.createClient({
+        email: input.email,
+        passwordHash,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        locale: input.locale,
+        referralCode: await uniqueReferralCode(input.firstName),
+        referredById,
+      });
+      await events.publish("user.registered", { userId: user.id });
+      return { user, salon: null };
+    }
+
+    const [lat, lng] = coordsFor(input.city);
+    const { user, salon } = await accounts.createSalonOwner({
+      owner: { email: input.email, passwordHash, name: input.salonName, phone: input.phone, locale: input.locale, referralCode: await uniqueReferralCode(input.salonName) },
+      salon: {
+        slug: await uniqueSalonSlug(`${input.salonName} ${input.city}`),
+        name: input.salonName,
+        category: input.category,
+        city: input.city,
+        address: input.address,
+        phone: input.phone,
+        plan: input.plan,
+        lat,
+        lng,
+        documentUrl: input.documentName ?? null,
+      },
+    });
+    await events.publish("salon.registered", { salonId: salon.id, ownerId: user.id });
+    return { user, salon };
+  }
+
+  /** Connexion e-mail + mot de passe, avec blocage temporaire après 5 échecs */
+  async function authenticate(email: string, password: string): Promise<AuthResult> {
+    const user = await accounts.findByEmail(email);
+    if (!user?.passwordHash) {
+      await hasher.burn(password);
+      return { ok: false, reason: "invalid" };
+    }
+    if (user.status === "BLOCKED") return { ok: false, reason: "blocked" };
+    const now = clock.now();
+    if (isLocked(user, now)) return { ok: false, reason: "locked" };
+
+    if (!(await hasher.verify(password, user.passwordHash))) {
+      const next = afterFailedLogin(user, now);
+      await accounts.saveLoginState(user.id, next);
+      return { ok: false, reason: next.locked ? "locked" : "invalid" };
+    }
+    if (user.failedLogins || user.lockedUntil) await accounts.saveLoginState(user.id, { failedLogins: 0, lockedUntil: null });
+    return { ok: true, user };
+  }
+
+  /** Connexion démo (un clic par rôle) : compte créé par le seed, jamais un compte bloqué */
+  async function demoAccount(role: Role, email: string) {
+    const user = await accounts.findByRole(role, email);
+    return user && user.status === "ACTIVE" ? user : null;
+  }
+
+  /** Utilisateur de la session, relu en base à chaque requête : un compte bloqué perd l'accès aussitôt (AUTH-04) */
+  async function sessionUser(id: string) {
+    const user = await accounts.findById(id);
+    return user && user.status === "ACTIVE" ? user : null;
+  }
+
+  return { register, authenticate, demoAccount, sessionUser };
+}
