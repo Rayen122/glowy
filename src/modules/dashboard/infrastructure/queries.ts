@@ -14,9 +14,9 @@ const UI_STATUS = { COMPLETED: "termine", IN_PROGRESS: "en_cours", CONFIRMED: "c
 /** Salon du membre du personnel connecté (mis en cache le temps d'une requête) */
 export const staffSalon = cache(async (actor: Actor) => {
   const salonId = await staffSalonId(actor);
-  const salon = await Salon.findById(objectId(salonId), { slug: 1, name: 1, city: 1, coverUrl: 1, plan: 1 }).lean();
+  const salon = await Salon.findById(objectId(salonId), { slug: 1, name: 1, city: 1, coverUrl: 1, plan: 1, status: 1 }).lean();
   if (!salon) throw notFound("Salon introuvable.");
-  return { id: idOf(salon), slug: salon.slug, name: salon.name, city: salon.city, coverUrl: salon.coverUrl ?? null, plan: salon.plan };
+  return { id: idOf(salon), slug: salon.slug, name: salon.name, city: salon.city, coverUrl: salon.coverUrl ?? null, plan: salon.plan, status: salon.status };
 });
 
 export async function salonDay(salonId: string, date = tunisToday()) {
