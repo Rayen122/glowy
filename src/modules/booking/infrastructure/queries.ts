@@ -1,5 +1,5 @@
 import { shortName } from "@/core/domain/text";
-import { tunisDayRange, utcToTunis } from "@/core/domain/time";
+import { tunisDayRange, utcToTunis, weekdayOf } from "@/core/domain/time";
 import { Booking, Employee, idOf, objectId, Review, Salon, TimeOff, User } from "@/infrastructure/db";
 import { toBookingRecord } from "./mongo-booking-repository";
 
@@ -48,7 +48,9 @@ export type ClientBooking = Awaited<ReturnType<typeof listClientBookings>>[numbe
 export async function salonAgenda(salonId: string, date: string) {
   const salon = objectId(salonId);
   const { start, end } = tunisDayRange(date);
-  const employees = await Employee.find({ salon, active: true }).sort({ createdAt: 1 }).lean();
+  const weekday = weekdayOf(date);
+  const [salonDoc, employees] = await Promise.all([Salon.findById(salon, { openingHours: 1 }).lean(), Employee.find({ salon, active: true }).sort({ createdAt: 1 }).lean()]);
+  const hours = salonDoc?.openingHours.find((o) => o.weekday === weekday);
   const [bookings, timeOff] = await Promise.all([
     Booking.find({ salon, startsAt: { $lt: end }, endsAt: { $gt: start }, status: { $ne: "CANCELLED" } }).sort({ startsAt: 1 }).lean(),
     TimeOff.find({ employee: { $in: employees.map((e) => e._id) }, startsAt: { $lt: end }, endsAt: { $gt: start } }).lean(),
@@ -58,7 +60,22 @@ export async function salonAgenda(salonId: string, date: string) {
 
   return {
     date,
-    employees: employees.map((e) => ({ id: idOf(e), key: e.key, name: e.name, title: e.title, color: e.color, avatarUrl: e.avatarUrl ?? null, rating: e.rating })),
+    /** Horaires d'ouverture du salon ce jour-là (null : fermé) */
+    opening: hours?.opensAt && hours.closesAt ? { opensAt: hours.opensAt, closesAt: hours.closesAt } : null,
+    employees: employees.map((e) => {
+      const own = e.workingHours.find((w) => w.weekday === weekday);
+      return {
+        id: idOf(e),
+        key: e.key,
+        name: e.name,
+        title: e.title,
+        color: e.color,
+        avatarUrl: e.avatarUrl ?? null,
+        rating: e.rating,
+        /** Horaires propres à l'employé ce jour-là (null : ceux du salon) */
+        workingHours: own?.startsAt && own.endsAt ? { startsAt: own.startsAt, endsAt: own.endsAt } : null,
+      };
+    }),
     bookings: bookings.map((b) => {
       const client = clientById.get(b.client.toString());
       return {
@@ -72,6 +89,6 @@ export async function salonAgenda(salonId: string, date: string) {
         price: b.totalPrice,
       };
     }),
-    blocks: timeOff.map((t) => ({ employeeId: t.employee.toString(), time: utcToTunis(t.startsAt).time, end: utcToTunis(t.endsAt).time, label: t.label })),
+    blocks: timeOff.map((t) => ({ id: idOf(t), employeeId: t.employee.toString(), time: utcToTunis(t.startsAt).time, end: utcToTunis(t.endsAt).time, label: t.label })),
   };
 }
