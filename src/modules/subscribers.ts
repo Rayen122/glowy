@@ -5,6 +5,8 @@
 import { eventBus } from "@/infrastructure/event-bus";
 import { registerSubscribers as loyaltySubscribers } from "./loyalty";
 import { registerSubscribers as notificationSubscribers } from "./notifications";
+import { registerSubscribers as subscriptionSubscribers } from "./subscription";
 
 notificationSubscribers(eventBus);
 loyaltySubscribers(eventBus);
+subscriptionSubscribers(eventBus);

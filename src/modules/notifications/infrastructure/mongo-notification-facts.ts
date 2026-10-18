@@ -1,5 +1,5 @@
 import { shortName } from "@/core/domain/text";
-import { Booking, objectId, Review, Salon, User, type UserDoc } from "@/infrastructure/db";
+import { Booking, objectId, PlanPayment, Review, Salon, User, type UserDoc } from "@/infrastructure/db";
 import type { NotificationFacts } from "../application/ports";
 
 export const mongoNotificationFacts: NotificationFacts = {
@@ -23,6 +23,12 @@ export const mongoNotificationFacts: NotificationFacts = {
       salonOwnerId: String(b.salon.owner),
       startsAt: b.startsAt,
     };
+  },
+  async planPayment(paymentId) {
+    const p = await PlanPayment.findById(objectId(paymentId)).orFail().lean();
+    const salon = await Salon.findById(p.salon, { name: 1, owner: 1 }).orFail().lean();
+    const owner = await User.findById(salon.owner, { email: 1 }).orFail().lean();
+    return { salonName: salon.name, plan: p.plan, amount: p.amount, accepted: p.status === "ACCEPTED", reason: p.reason ?? null, ownerId: salon.owner.toString(), ownerEmail: owner.email };
   },
   async review(reviewId) {
     const r = await Review.findById(objectId(reviewId)).populate<{ salon: { owner: unknown } }>("salon", "owner").orFail().lean();

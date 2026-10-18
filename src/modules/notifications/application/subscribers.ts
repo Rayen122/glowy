@@ -23,6 +23,18 @@ export function registerNotificationSubscribers(bus: EventSubscriber, { notify, 
     await mailer.send(salon.ownerEmail, `Glowy — ${salon.name}`, message.body);
   });
 
+  bus.on("plan.paymentRequested", async ({ paymentId }) => {
+    const [payment, admins] = await Promise.all([facts.planPayment(paymentId), facts.activeAdminIds()]);
+    for (const adminId of admins) await notify(adminId, messages.planPaymentRequested(payment.salonName, payment.plan, payment.amount));
+  });
+
+  bus.on("plan.paymentDecided", async ({ paymentId }) => {
+    const payment = await facts.planPayment(paymentId);
+    const message = messages.planPaymentDecided(payment.plan, payment.accepted, payment.reason);
+    await notify(payment.ownerId, message);
+    await mailer.send(payment.ownerEmail, `Glowy — ${message.title}`, message.body);
+  });
+
   bus.on("booking.created", async ({ bookingId }) => {
     const booking = await facts.booking(bookingId);
     const { date, time } = utcToTunis(booking.startsAt);

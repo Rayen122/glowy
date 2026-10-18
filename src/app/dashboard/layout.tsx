@@ -6,6 +6,7 @@ import {
   CalendarDays,
   ChartColumn,
   ChevronsUpDown,
+  CreditCard,
   LayoutGrid,
   MessageSquareText,
   Percent,
@@ -54,7 +55,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
     },
     {
       label: d.nav.settings,
-      items: [{ href: "/dashboard/parametres", label: d.nav.settingsPage, icon: <Settings /> }],
+      items: [
+        { href: "/dashboard/parametres", label: d.nav.settingsPage, icon: <Settings /> },
+        ...(user.role === "MANAGER" ? [{ href: "/dashboard/abonnement", label: d.nav.subscription, icon: <CreditCard /> }] : []),
+      ],
     },
   ];
 

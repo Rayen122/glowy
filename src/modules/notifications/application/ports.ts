@@ -48,4 +48,5 @@ export interface NotificationFacts {
     startsAt: Date;
   }>;
   review(reviewId: string): Promise<{ rating: number; text: string; salonOwnerId: string }>;
+  planPayment(paymentId: string): Promise<{ salonName: string; plan: string; amount: number; accepted: boolean; reason: string | null; ownerId: string; ownerEmail: string }>;
 }
