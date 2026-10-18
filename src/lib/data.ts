@@ -1,3 +1,5 @@
+import { PLAN_PRICES } from "@/core/domain/enums";
+
 /**
  * Données de démonstration (seed). À remplacer par Prisma au fil des modules.
  * Les montants sont en dinars tunisiens (DT). Les dates sont au format ISO (AAAA-MM-JJ) et
@@ -814,7 +816,7 @@ export const PLANS: { id: PlanId; name: string; price: number; audience: string;
   {
     id: "pro",
     name: "Pro",
-    price: 79,
+    price: PLAN_PRICES.pro,
     audience: "Salon actif",
     highlighted: true,
     features: [
@@ -829,7 +831,7 @@ export const PLANS: { id: PlanId; name: string; price: number; audience: string;
   {
     id: "premium",
     name: "Premium",
-    price: 149,
+    price: PLAN_PRICES.premium,
     audience: "Grand centre",
     features: [
       "Employés illimités",

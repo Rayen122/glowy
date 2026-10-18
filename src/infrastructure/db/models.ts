@@ -8,6 +8,8 @@ import {
   PAYMENT_STATUSES,
   PHOTO_KINDS,
   PLANS,
+  PLAN_PAYMENT_CHANNELS,
+  PLAN_PAYMENT_STATUSES,
   POINT_REASONS,
   REPORT_SOURCES,
   REPORT_STATUSES,
@@ -97,6 +99,8 @@ const salonSchema = new Schema(
     status: { type: String, enum: SALON_STATUSES, default: "PENDING" },
     verified: { type: Boolean, default: false },
     plan: { type: String, enum: PLANS, default: "gratuit" },
+    /** Fin de la période payée du plan Pro / Premium (null pour le plan gratuit) */
+    planUntil: optional(Date),
     documentUrl: optional(String),
     depositAmount: { type: Number, default: 20 },
     cancellationHours: { type: Number, default: 24 },
@@ -195,6 +199,30 @@ const bookingSchema = new Schema(
 bookingSchema.index({ employee: 1, startsAt: 1 });
 bookingSchema.index({ client: 1, startsAt: -1 });
 bookingSchema.index({ salon: 1, startsAt: 1 });
+
+// ── Abonnements des salons (ADM-05) ─────────────────────────
+/** Demande de paiement d'un plan : encaissée hors ligne, acceptée ou refusée par le Super Admin */
+const planPaymentSchema = new Schema(
+  {
+    salon: { type: ObjectId, ref: "Salon", required: true },
+    requestedBy: { type: ObjectId, ref: "User", required: true },
+    plan: { type: String, enum: PLANS, required: true },
+    amount: { type: Number, required: true },
+    channel: { type: String, enum: PLAN_PAYMENT_CHANNELS, default: "VIREMENT" },
+    /** Numéro de virement / reçu D17 fourni par le gérant (preuve de paiement) */
+    reference: optional(String),
+    note: optional(String),
+    status: { type: String, enum: PLAN_PAYMENT_STATUSES, default: "PENDING" },
+    decidedBy: { type: ObjectId, ref: "User", default: null },
+    decidedAt: optional(Date),
+    reason: optional(String),
+    /** Fin de la période payée, fixée à l'acceptation */
+    paidUntil: optional(Date),
+  },
+  { timestamps: true }
+);
+planPaymentSchema.index({ status: 1, createdAt: 1 });
+planPaymentSchema.index({ salon: 1, createdAt: -1 });
 
 // ── Notifications (CLI-07) ──────────────────────────────────
 const notificationSchema = new Schema(
@@ -335,6 +363,7 @@ export const Employee = defineModel("Employee", employeeSchema);
 export const TimeOff = defineModel("TimeOff", timeOffSchema);
 export const SlotLock = defineModel("SlotLock", slotLockSchema);
 export const Booking = defineModel("Booking", bookingSchema);
+export const PlanPayment = defineModel("PlanPayment", planPaymentSchema);
 export const Notification = defineModel("Notification", notificationSchema);
 export const PushSubscription = defineModel("PushSubscription", pushSubscriptionSchema);
 export const PointRule = defineModel("PointRule", pointRuleSchema);
@@ -354,11 +383,12 @@ export type EmployeeDoc = Lean<typeof employeeSchema>;
 export type BookingDoc = Omit<Lean<typeof bookingSchema>, "items"> & {
   items: { serviceKey?: string | null; name?: string | null; price?: number | null; durationMin?: number | null }[];
 };
+export type PlanPaymentDoc = Lean<typeof planPaymentSchema>;
 export type ReviewDoc = Lean<typeof reviewSchema>;
 export type PointTransactionDoc = Omit<Lean<typeof pointTransactionSchema>, "updatedAt">;
 
 /** Toutes les collections, pour vider la base (seed, tests) */
-export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, Notification, PushSubscription, PointRule, PointTransaction, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog];
+export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, PointRule, PointTransaction, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog];
 
 /** Vide toutes les collections et recrée les index, dont les index uniques (seed, tests) */
 export async function resetAll() {

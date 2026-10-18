@@ -14,6 +14,17 @@ export type Category = (typeof CATEGORIES)[number];
 export const PLANS = ["gratuit", "pro", "premium"] as const;
 export type PlanId = (typeof PLANS)[number];
 
+/** Prix mensuels des plans d'abonnement, en DT (cahier §9) */
+export const PLAN_PRICES: Record<PlanId, number> = { gratuit: 0, pro: 79, premium: 149 };
+export const PAID_PLANS = ["pro", "premium"] as const;
+export type PaidPlan = (typeof PAID_PLANS)[number];
+
+/** Paiement d'un abonnement : encaissé hors ligne, validé par le Super Admin avant activation du plan */
+export const PLAN_PAYMENT_STATUSES = ["PENDING", "ACCEPTED", "REFUSED"] as const;
+export type PlanPaymentStatus = (typeof PLAN_PAYMENT_STATUSES)[number];
+export const PLAN_PAYMENT_CHANNELS = ["VIREMENT", "D17", "ESPECES"] as const;
+export type PlanPaymentChannel = (typeof PLAN_PAYMENT_CHANNELS)[number];
+
 export const SALON_STATUSES = ["PENDING", "ACTIVE", "SUSPENDED", "REJECTED"] as const;
 export type SalonStatus = (typeof SALON_STATUSES)[number];
 

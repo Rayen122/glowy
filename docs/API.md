@@ -86,6 +86,19 @@ Actions de `PATCH /api/bookings/:id` :
 | PATCH | `/api/admin/salons/:id` | admin | `{ action: approve · reject · suspend · reactivate, reason? }` — `approve` attribue le badge « Salon vérifié » |
 | PATCH | `/api/admin/users/:id` | admin | `{ action: block · unblock }` — un compte bloqué perd l'accès immédiatement |
 
+## Abonnements (P5 · P1, ADM-05)
+
+Le gérant règle son plan Pro (79 DT) ou Premium (149 DT) hors ligne (virement, D17, espèces) et déclare le paiement avec sa référence. Le plan reste gratuit tant que le Super Admin n'a pas accepté : à l'acceptation il est actif **30 jours** (renouvellement possible 7 jours avant l'échéance, la période se prolonge). Un refus est motivé.
+
+| Méthode | Route | Rôle | Description |
+| --- | --- | --- | --- |
+| `GET` | `/api/subscriptions` | Gérant | Plan en cours, échéance, jours restants, demande en attente, historique |
+| `POST` | `/api/subscriptions` | Gérant | `{ plan: pro \| premium, channel: VIREMENT \| D17 \| ESPECES, reference, note? }` → 201 ; `409 PENDING_EXISTS` (une demande à la fois), `409 ALREADY_ACTIVE` |
+| `GET` | `/api/admin/payments` | Super Admin | Paiements à valider, 15 dernières décisions, revenus 30 j, revenu mensuel récurrent, plans actifs |
+| `PATCH` | `/api/admin/payments/:id` | Super Admin | `{ action: accept }` ou `{ action: refuse, reason }` ; `409 ALREADY_DECIDED` si déjà traité |
+
+Un salon qui choisit un plan payant à l'inscription démarre en plan gratuit avec une demande de paiement en attente.
+
 ## Supervision
 
 | Méthode | Route | Description |
@@ -94,13 +107,15 @@ Actions de `PATCH /api/bookings/:id` :
 
 ## Événements internes
 
-Émis par les modules (`src/server/events.ts`), traités dans `src/server/subscribers.ts` :
+Émis par les modules (`src/core/domain/events.ts`), traités dans `src/modules/subscribers.ts` :
 
 | Événement | Émis par | Réactions |
 | --- | --- | --- |
 | `user.registered` | inscription | Notification de bienvenue |
-| `salon.registered` | inscription salon | Notification aux Super Admins |
+| `salon.registered` | inscription salon | Notification aux Super Admins ; demande de paiement si plan payant |
 | `salon.statusChanged` | Super Admin | Notification + e-mail au gérant |
+| `plan.paymentRequested` | gérant / inscription d'un salon | Notification aux Super Admins |
+| `plan.paymentDecided` | Super Admin | Notification + e-mail au gérant |
 | `booking.created` | réservation | Notifications cliente et salon, e-mail et SMS (simulés) |
 | `booking.cancelled` | annulation | Pénalité si tardive, notification |
 | `booking.completed` | salon | Points : +10, +30 nouveau salon, paliers 3/5/10 salons, heure creuse, paiement en ligne, réservation 48 h à l'avance, parrainage |
