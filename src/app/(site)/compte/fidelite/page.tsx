@@ -44,7 +44,7 @@ export default async function FidelitePage() {
       </header>
 
       {/* Solde */}
-      <section data-animate="stagger" data-stagger="0.12" className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]" aria-label={l.balanceAria}>
+      <section data-animate="stagger" data-stagger="0.12" className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]" aria-label={l.balanceAria}>
         <div className="relative overflow-hidden rounded-3xl bg-[linear-gradient(135deg,#3a1532_0%,#6b2a5c_60%,#8e3b7e_100%)] p-6 text-white sm:p-7">
           <div className="pointer-events-none absolute -end-20 -top-20 size-64 rounded-full border border-white/10" aria-hidden />
           <p className="text-sm text-white/75">{l.available}</p>
@@ -84,7 +84,7 @@ export default async function FidelitePage() {
         <h2 id="rewards-title" className="text-lg font-semibold">
           {l.rewardsTitle}
         </h2>
-        <ul data-animate="stagger" data-stagger="0.07" className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <ul data-animate="stagger" data-stagger="0.07" className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {rewards.map((r) => (
             <li key={r.id} className="flex flex-col rounded-3xl bg-card p-5 ring-1 ring-border">
               <span className="flex size-10 items-center justify-center rounded-2xl bg-gold-soft text-gold">
@@ -102,7 +102,7 @@ export default async function FidelitePage() {
         </ul>
       </section>
 
-      <div data-animate="stagger" data-stagger="0.12" className="grid gap-4 xl:grid-cols-2">
+      <div data-animate="stagger" data-stagger="0.12" className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         {/* Gagner */}
         <section aria-labelledby="earn-title" className="rounded-3xl bg-card p-6 ring-1 ring-border">
           <h2 id="earn-title" className="font-semibold">

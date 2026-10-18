@@ -140,7 +140,7 @@ function Hero({ i18n }: { i18n: I18n }) {
           className="pointer-events-none absolute -end-40 -top-40 size-[640px] rounded-full bg-[radial-gradient(closest-side,#f6e8f1,transparent)]"
           aria-hidden
         />
-        <div className="container-page relative grid items-center gap-10 pt-8 pb-8 sm:gap-12 sm:pb-10 lg:grid-cols-[1.05fr_0.95fr] lg:pt-14 lg:pb-6">
+        <div className="container-page relative grid grid-cols-1 items-center gap-10 pt-8 pb-8 sm:gap-12 sm:pb-10 lg:grid-cols-[1.05fr_0.95fr] lg:pt-14 lg:pb-6">
           <div className="max-w-2xl">
             <p data-hero="badge" className="inline-flex items-center gap-2 rounded-full bg-card px-3 py-1.5 text-sm text-muted-foreground ring-1 ring-border">
               <BadgeCheck className="size-4 shrink-0 text-plum-600" aria-hidden />
@@ -277,7 +277,7 @@ function AiSection({ i18n }: { i18n: I18n }) {
           description={a.description}
         />
 
-        <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3 lg:grid-rows-2" data-animate="stagger" data-stagger="0.12">
+        <div className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:grid-rows-2" data-animate="stagger" data-stagger="0.12">
           {/* Analyse photo */}
           <article className="relative flex min-h-[380px] flex-col overflow-hidden rounded-3xl bg-plum-900 sm:min-h-[420px] md:col-span-2 lg:col-span-1 lg:row-span-2">
             <Image src={IMAGES.analysisSample} alt="" fill sizes="(min-width:1024px) 33vw, 100vw" className="object-cover opacity-60" />
@@ -383,7 +383,7 @@ function TrustSection({ i18n }: { i18n: I18n }) {
   return (
     <section className="container-page py-16 lg:py-24" aria-labelledby="trust-title">
       <SectionHeading align="center" eyebrow={tr.eyebrow} title={<span id="trust-title">{tr.title}</span>} />
-      <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-animate="stagger" data-stagger="0.1">
+      <ul className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-animate="stagger" data-stagger="0.1">
         {tr.items.map((item, i) => {
           const Icon = icons[i];
           return (
@@ -406,7 +406,7 @@ function LoyaltySection({ i18n }: { i18n: I18n }) {
   const l = t.home.loyalty;
   return (
     <section className="bg-sand/70 py-16 lg:py-24" aria-labelledby="fidelite-title">
-      <div className="container-page grid items-center gap-12 lg:grid-cols-2">
+      <div className="container-page grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
         <div>
           <SectionHeading
             eyebrow={l.eyebrow}
@@ -417,7 +417,7 @@ function LoyaltySection({ i18n }: { i18n: I18n }) {
             }
             description={l.description}
           />
-          <ul className="mt-8 grid gap-3 sm:grid-cols-2" data-animate="stagger" data-stagger="0.08">
+          <ul className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2" data-animate="stagger" data-stagger="0.08">
             {l.earn.map((e) => (
               <li key={e.label} className="flex items-center gap-3 rounded-2xl bg-card p-4 ring-1 ring-border">
                 <span className="w-12 shrink-0 text-lg font-semibold text-gold" dir="ltr">
@@ -487,7 +487,7 @@ function ProSection({ i18n }: { i18n: I18n }) {
   const p = t.home.pro;
   return (
     <section className="container-page pt-16 lg:pt-24" aria-labelledby="pro-title">
-      <div className="grid overflow-hidden rounded-[2rem] bg-blush lg:grid-cols-2">
+      <div className="grid grid-cols-1 overflow-hidden rounded-[2rem] bg-blush lg:grid-cols-2">
         <div className="p-6 sm:p-12 lg:p-14">
           <p className="eyebrow inline-flex items-center gap-2">
             <Store className="size-4" aria-hidden /> {p.eyebrow}

@@ -144,7 +144,7 @@ export function ModerationQueue({ initial }: { initial: readonly Flagged[] }) {
   }
 
   return (
-    <ul className="grid gap-3 xl:grid-cols-3 2xl:grid-cols-1">
+    <ul className="grid grid-cols-1 gap-3 xl:grid-cols-3 2xl:grid-cols-1">
       {rows.map((r) => {
         const high = r.score >= 60;
         return (

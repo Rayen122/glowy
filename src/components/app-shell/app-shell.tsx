@@ -87,7 +87,7 @@ export async function AppShell({
           <LogoutButton
             iconOnly
             label={t.header.logout}
-            className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
           />
         </div>
       </div>
@@ -101,7 +101,7 @@ export async function AppShell({
         <header className="sticky top-0 z-30 border-b border-border bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-md">
           <div className="flex h-16 items-center gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8">
           <MobileNav label={s.openNav}>{sidebar}</MobileNav>
-          <Link href="/" aria-label={s.backToSite} className="flex min-w-0 items-center gap-2 rounded-lg md:hidden">
+          <Link href="/" aria-label={s.backToSite} className="flex shrink-0 items-center gap-2 rounded-lg md:hidden">
             <Logo markOnly />
           </Link>
           <label className="relative hidden max-w-md flex-1 md:block">
@@ -142,7 +142,7 @@ export async function AppShell({
                   key={item.href}
                   href={item.href}
                   exact={item.exact}
-                  className="h-9 shrink-0 gap-2 rounded-full border border-border bg-card px-3.5 whitespace-nowrap [&_svg]:size-4"
+                  className="h-11 shrink-0 gap-2 rounded-full border border-border bg-card px-3.5 whitespace-nowrap [&_svg]:size-4"
                   activeClassName="border-primary bg-primary font-semibold text-primary-foreground hover:bg-primary hover:text-primary-foreground"
                 >
                   {item.icon}

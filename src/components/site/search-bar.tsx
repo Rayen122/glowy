@@ -60,7 +60,7 @@ export function SearchBar({
             onChange={(e) => setQ(e.target.value)}
             placeholder={s.servicePlaceholder}
             aria-label={s.serviceAria}
-            className="w-full min-w-0 bg-transparent text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-[15px]"
+            className="w-full min-w-0 bg-transparent text-base text-foreground placeholder:text-muted-foreground focus:outline-none lg:text-[15px]"
           />
         </span>
       </label>
@@ -77,7 +77,7 @@ export function SearchBar({
             placeholder={s.wherePlaceholder}
             aria-label={s.whereAria}
             list="bh-cities"
-            className="w-full min-w-0 bg-transparent text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-[15px]"
+            className="w-full min-w-0 bg-transparent text-base text-foreground placeholder:text-muted-foreground focus:outline-none lg:text-[15px]"
           />
           <datalist id="bh-cities">
             {CITY_OPTIONS.map((c) => (
@@ -106,7 +106,7 @@ export function SearchBar({
             value={when}
             onChange={(e) => setWhen(e.target.value as (typeof WHEN)[number])}
             aria-label={s.when}
-            className="w-full appearance-none bg-transparent pe-5 text-base text-foreground focus:outline-none md:text-[15px]"
+            className="w-full appearance-none bg-transparent pe-5 text-base text-foreground focus:outline-none lg:text-[15px]"
           >
             {WHEN.map((w) => (
               <option key={w} value={w}>

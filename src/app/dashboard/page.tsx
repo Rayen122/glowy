@@ -50,7 +50,7 @@ export default async function DashboardPage() {
               type="button"
               aria-pressed={i === 0}
               className={cn(
-                "h-9 shrink-0 rounded-full px-3.5 text-sm font-medium whitespace-nowrap transition-colors",
+                "h-11 shrink-0 rounded-full px-3.5 lg:h-9 text-sm font-medium whitespace-nowrap transition-colors",
                 i === 0 ? "bg-ink text-white" : "border border-border bg-card hover:bg-muted"
               )}
             >
@@ -72,7 +72,7 @@ export default async function DashboardPage() {
         <StatTile label={o.kpiNoShows} value={nf(kpis.noShows30)} icon={<UserX />} />
       </section>
 
-      <div data-animate="stagger" data-stagger="0.12" className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+      <div data-animate="stagger" data-stagger="0.12" className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         {/* Prévision d'affluence */}
         <section className="min-w-0 rounded-3xl bg-card p-4 ring-1 ring-border sm:p-6" aria-labelledby="forecast-title">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -87,7 +87,7 @@ export default async function DashboardPage() {
           <div className="mt-5">
             <AffluenceHeatmap days={HEATMAP_DAYS} hours={HEATMAP_HOURS} values={AFFLUENCE_FORECAST} />
           </div>
-          <ul className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+          <ul className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
             <li className="flex gap-3 rounded-2xl bg-muted/60 p-4 text-sm">
               <Users className="mt-0.5 size-4 shrink-0 text-plum-700" aria-hidden />
               <span>
@@ -146,7 +146,7 @@ export default async function DashboardPage() {
         </section>
       </div>
 
-      <div data-animate="stagger" data-stagger="0.12" className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+      <div data-animate="stagger" data-stagger="0.12" className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         {/* CA */}
         <section className="min-w-0 rounded-3xl bg-card p-4 ring-1 ring-border sm:p-6" aria-labelledby="revenue-title">
           <div className="flex flex-wrap items-end justify-between gap-3">
@@ -191,7 +191,7 @@ export default async function DashboardPage() {
             {o.allReviews}
           </Link>
         </div>
-        <ul data-animate="stagger" data-stagger="0.1" className="mt-4 grid gap-3 lg:grid-cols-3">
+        <ul data-animate="stagger" data-stagger="0.1" className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
           {reviews.map((r) => {
             const suspicious = r.suspicion > 60;
             return (

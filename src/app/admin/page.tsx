@@ -48,7 +48,7 @@ export default async function AdminPage() {
               type="button"
               aria-pressed={i === 1}
               className={cn(
-                "h-9 rounded-full px-3.5 text-sm font-medium whitespace-nowrap transition-colors",
+                "h-11 rounded-full px-3.5 lg:h-9 text-sm font-medium whitespace-nowrap transition-colors",
                 i === 1 ? "bg-ink text-white" : "border border-border bg-card hover:bg-muted"
               )}
             >
@@ -65,7 +65,7 @@ export default async function AdminPage() {
         <StatTile label={o.kpiRevenue} value={money(overview.revenue30d)} icon={<Coins />} />
       </section>
 
-      <div data-animate="stagger" data-stagger="0.12" className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+      <div data-animate="stagger" data-stagger="0.12" className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <section className="min-w-0 rounded-3xl bg-card p-4 ring-1 ring-border sm:p-6" aria-labelledby="growth-title">
           <h2 id="growth-title" className="font-semibold">
             {o.growthTitle}
@@ -113,7 +113,7 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      <div data-animate="stagger" data-stagger="0.12" className="grid gap-6 2xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+      <div data-animate="stagger" data-stagger="0.12" className="grid grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <section className="min-w-0 rounded-3xl bg-card p-4 ring-1 ring-border sm:p-6" aria-labelledby="pending-title">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">

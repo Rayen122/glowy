@@ -18,7 +18,7 @@ export default async function FavorisPage() {
         {t.account.favorites.title}
       </h1>
       <p className="mt-2 text-muted-foreground">{f(t.account.favorites.subtitle, { n: salons.length })}</p>
-      <div data-animate="stagger" data-stagger="0.1" className="mt-6 grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+      <div data-animate="stagger" data-stagger="0.1" className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-3">
         {salons.map((s) => (
           <SalonCard key={s.slug} salon={s} />
         ))}
