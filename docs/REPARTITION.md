@@ -1,129 +1,226 @@
-# Glowy — Répartition du projet en 5 personnes
+# Glowy — Répartition du travail en 5 personnes
 
-Chaque personne **possède** des dossiers : elle seule les modifie sans prévenir. Chacune a **1 partie classique + 1 IA**.
-Les zones partagées (section 7) se modifient en petit et en prévenant l'équipe.
-Explications Next.js, GSAP et lancement : [`GUIDE-EQUIPE.md`](GUIDE-EQUIPE.md).
+Source : *Cahier des charges Glowy v1.0 (28 septembre 2026)*, sections 3, 4 et 8.
+Chaque personne a **1 tâche classique + 1 IA**. Priorités du cahier : **I** = Indispensable (nécessaire à la démo), **Imp** = Important (version finale), **B** = Bonus.
+État : ✅ fait · 🟡 partiel (existe mais incomplet) · ⬜ à faire. *État estimé d'après le code au 18 octobre 2026.*
 
-| | Partie classique | IA |
+Explications Next.js, GSAP, lancement : [`GUIDE-EQUIPE.md`](GUIDE-EQUIPE.md).
+
+| | Tâche classique | IA |
 |---|---|---|
-| **P1** | Authentification + administration (Super Admin) | Recommandation de salons |
-| **P2** | Dashboard du salon (gérant / employé) | Prédiction d'affluence |
-| **P3** | Recherche + fiche salon + réservation | Chatbot |
-| **P4** | Avis + modération | Analyse des avis |
-| **P5** | Espace client + fidélité + notifications + PWA | Analyse photo (analyse beauté) |
+| **P1** | Authentification, rôles et Super Admin (§3.1, §3.6) | Recommandation de salons (§4.3) |
+| **P2** | Dashboard salon (§3.4) | Prédiction d'affluence (§4.5) |
+| **P3** | Recherche et réservation (§3.2) | Chatbot de réservation (§4.2) |
+| **P4** | Avis, modération et support (§3.5) | Analyse des avis (§4.4) |
+| **P5** | Espace client, paiement, abonnements et fidélité (§3.3, §3.7, ADM-05) | Analyse beauté par photo (§4.1) |
 
 ---
 
-## 1. Personne 1 — Auth, admin, recommandation
+## P1 — Authentification, rôles, Super Admin + IA recommandation
 
-**Pages** : `src/app/(auth)/` (connexion, inscription), `src/app/admin/` (`page.tsx`, `[module]`, `layout.tsx`, `template.tsx`)
-**API** : `src/app/api/auth/`, `src/app/api/admin/`
-**Modules** : `src/modules/identity/`, `src/modules/admin/`
-**Fichiers** : `src/auth.ts`, `src/auth.config.ts`, `src/proxy.ts`, `src/types/next-auth.d.ts`
-**Composants** : `components/auth/`, `components/admin/`, `components/site/auth-forms.tsx`
-**Tests** : à créer pour le blocage après 5 échecs, la validation des salons (un test admin existe déjà dans `tests/loyalty-reviews.test.ts`)
+**Dossiers possédés** : `src/modules/identity/`, `src/modules/admin/`, `src/app/(auth)/`, `src/app/admin/`, `src/app/api/auth/`, `src/app/api/admin/`, `src/auth.ts`, `src/auth.config.ts`, `src/proxy.ts`, `components/auth/`, `components/admin/` (hors file de modération = P4), `components/site/auth-forms.tsx`.
 
-À faire :
-- Connexion / inscription client et salon, blocage après 5 échecs, rôles, redirections.
-- Admin : file de validation des salons, blocage des utilisateurs, vue globale, journal d'audit.
-- **IA reco** : score de salons selon historique, favoris, catégories, lieu → nouveau `src/modules/recommendation/` + route `GET /api/me/recommendations` ; brancher le bloc « Recommandé pour vous » (`recommendedSalons` dans `modules/catalog`, aujourd'hui trié par score de démo).
+| Réf. | Exigence | Prio | État |
+|---|---|---|---|
+| AUTH-01 | Inscription client | I | ✅ |
+| AUTH-02 | Inscription salon + justificatif, en attente de validation | I | ✅ |
+| AUTH-03 | Connexion / déconnexion sécurisées, session | I | ✅ |
+| AUTH-04 | 4 rôles, contrôle d'accès sur chaque page et API | I | ✅ |
+| AUTH-05 | Réinitialisation du mot de passe par e-mail | Imp | ⬜ |
+| AUTH-06 | Vérification de l'adresse e-mail | Imp | ⬜ |
+| AUTH-07 | Création de comptes employés par le gérant | Imp | ⬜ (page à construire avec P2 : `dashboard/equipe`) |
+| AUTH-08 | Connexion avec Google | B | ⬜ |
+| ADM-01 | Vue globale : salons, clients, réservations, revenus, graphiques | I | 🟡 (chiffres réels ; courbes de croissance simulées) |
+| ADM-02 | Validation / refus des nouveaux salons | I | ✅ |
+| ADM-03 | Suspension / réactivation, voir le dashboard d'un salon | I | 🟡 (API faite, écran `admin/salons` à construire) |
+| ADM-04 | Utilisateurs : liste, blocage, réinitialisation | I | 🟡 (API de blocage faite, écran `admin/utilisateurs` à construire) |
+| ADM-06 | Catalogue global : catégories, villes, langues | Imp | ⬜ |
+| ADM-07 | Journal d'audit | Imp | 🟡 (écrit en base et affiché dans la vue globale, page dédiée à faire) |
+| ADM-08 | Rapports par ville / service / salon + export | Imp | ⬜ |
+| ADM-09 | Réglage du barème de fidélité, campagnes « double points » | Imp | 🟡 (collection `PointRule` prête, interface à construire — le moteur est à P5) |
+| ADM-10 | Annonces et notifications à tous | B | ⬜ |
 
-## 2. Personne 2 — Dashboard salon, affluence
+**IA — Recommandation de salons (§4.3)** ⬜ simulée (score de démo dans `lib/data.ts`)
+Entrée : historique, favoris, préférences, position, notes des salons, résultat de l'analyse photo. Sortie : liste classée avec score et explication « pourquoi ce salon ». Technologie : filtrage par similarité + score pondéré (distance, note, services, préférences).
+Critères : recommandations différentes selon le profil ; bonus pour un salon nouveau (lien avec la fidélité) ; nouveau client sans historique → salons les plus populaires à proximité ; message de secours si indisponible.
+Création : `src/modules/recommendation/` (domaine pur testable) + `GET /api/me/recommendations`, branché sur `recommendedSalons` (`modules/catalog`).
 
-**Pages** : `src/app/dashboard/` (`page.tsx`, `agenda`, `[module]`, `layout.tsx`, `template.tsx`)
-**API** : `src/app/api/dashboard/`
-**Module** : `src/modules/dashboard/`
-**Composants** : `components/dashboard/`, `components/charts/` (toutes les stats)
-**Tests** : à créer (périmètre : un gérant ne voit que son salon)
+**Fournit** : l'authentification et les rôles **dès le début** (déjà faits) ; l'interface de réglage du barème. **Dépend de** : salons (P2), historique (P3), notes (P4), analyse photo (P5) → données du seed au départ.
 
-À faire :
-- Vue du jour, agenda semaine / jour par employé, actions rapides (en cours, terminé, absent — `setBookingStatus` du module booking).
-- Gestion de l'équipe, des prestations, des horaires et congés (`createTimeOff` existe).
-- Stats réelles à la place des chiffres 30 jours simulés de `lib/data.ts`.
-- **IA affluence** : agrégation des réservations par jour/heure → prévision ; nouveau `src/modules/forecast/` + route `GET /api/salons/[slug]/affluence` ; brancher `affluence-heatmap.tsx` et `forecast-bars.tsx` (les champs `affluence` / `waitMinutes` des salons viennent de `lib/data.ts`).
-
-## 3. Personne 3 — Recherche, réservation, chatbot
-
-**Pages** : `src/app/(site)/page.tsx` (accueil), `src/app/(site)/salons/` (liste, `[slug]`, `[slug]/reserver`)
-**API** : `src/app/api/salons/`, `src/app/api/bookings/`
-**Modules** : `src/modules/booking/`, `src/modules/catalog/`
-**Composants** : `components/booking/`, `components/salon/`, `components/site/search-bar.tsx`, `components/ai/chatbot-widget.tsx`
-**Tests** : `tests/booking.test.ts` (anti double réservation : **doit rester vert**)
-
-À faire :
-- Recherche + filtres + carte Leaflet synchronisée, fiche salon, tunnel de réservation, annulation / report.
-- **Chatbot** : route `POST /api/chat` (LLM + outils « chercher un salon », « lire les créneaux », données publiques uniquement), limite de débit, repli si l'API échoue ; FR / AR / EN ; brancher `chatbot-widget.tsx`.
-- Accueil : P3 garde la structure, chaque personne ajoute son bloc (reco = P1, fidélité = P5…).
-
-## 4. Personne 4 — Avis, modération, analyse des avis
-
-**API** : `src/app/api/reviews/`
-**Module** : `src/modules/reviews/`
-**Composants** : section avis de `src/app/(site)/salons/[slug]/page.tsx` (bloc avis seulement), partie « avis signalés » de `components/admin/admin-queues.tsx` (avec P1)
-**Tests** : à créer à côté de `tests/loyalty-reviews.test.ts` (avis impossible sans RDV terminé, réponse, signalement, modération)
-
-À faire :
-- Avis vérifiés (RDV terminé uniquement), réponse du salon, signalement, file de modération (publier / masquer), répartition des notes.
-- **IA analyse des avis** : résumé, points forts / faibles, sentiment, score de toxicité pour pré-remplir la modération (décision **humaine**) → nouveau `src/modules/reviews/application/analysis.ts` (résultats déjà stockés dans `sentiment` / `suspicion` du modèle `Review`) ; badge « Résumé IA » sur la fiche salon.
-
-## 5. Personne 5 — Espace client, fidélité, notifications, analyse photo
-
-**Pages** : `src/app/(site)/compte/` (aperçu, `rendez-vous`, `fidelite`, `favoris`), `src/app/(site)/pro/`, `src/app/(site)/analyse-beaute/`, `src/app/offline/`, `src/app/manifest.ts`
-**API** : `src/app/api/me/` (profil, favoris, fidélité, notifications)
-**Modules** : `src/modules/account/`, `src/modules/loyalty/`, `src/modules/notifications/`
-**Composants** : `components/account/`, `components/loyalty/`, `components/ai/beauty-analysis.tsx`, `components/pwa/`, `components/motion/tilt-card.tsx`
-**Autres** : `public/sw.js`, `public/icons/`, `scripts/generate-pwa-icons.mjs`
-**Tests** : `tests/loyalty-reviews.test.ts` (fidélité : **doit rester vert**)
-
-À faire :
-- Mes RDV (à venir / passés, annuler, reporter), profil, favoris.
-- Fidélité : points après RDV terminé, niveaux, échange de récompenses, barème modifiable.
-- Notifications dans l'application + Web Push (routes d'abonnement push à créer : `src/modules/notifications` est prêt, il manque les routes API), PWA, page `/pro`.
-- **IA analyse photo** : upload sécurisé (type et taille limités) → route `POST /api/beauty-analysis` vers un modèle de vision ; consentement explicite ; mention « conseil indicatif, pas un avis médical » ; résultat stocké dans `PhotoAnalysis` ; brancher `beauty-analysis.tsx`.
+**Modèles à ajouter** (si besoin) : `Role`/`Session` sont gérés par Auth.js ; `VerificationBadge` (AVI-03, aujourd'hui le champ `verified` du salon).
 
 ---
 
-## 6. Qui dépend de qui
+## P2 — Dashboard salon + IA prédiction d'affluence
 
-```
-P1 identity ──► tous (qui est connecté, quel rôle)
-P3 booking  ──► P2 (agenda, statuts)  ──► P5 (points après RDV terminé)  ──► P4 (avis après RDV terminé)
-P5 notifications ◄── tous (événements : réservation, avis, validation de salon)
-P1 reco ◄── P3 (catalogue) + P5 (favoris)
-P2 affluence ──► P3 (affichage sur la fiche et la recherche)
-```
+**Dossiers possédés** : `src/modules/dashboard/`, `src/app/dashboard/`, `src/app/api/dashboard/`, `components/dashboard/`, `components/charts/`.
 
-Ordre conseillé : P1 et P3 d'abord (connexion et réservation), puis P2 / P4 / P5, puis les IA.
-Pour dépendre d'un autre module, **importer son `index.ts` uniquement** (ex. `@/modules/booking`), jamais ses fichiers internes.
+| Réf. | Exigence | Prio | État |
+|---|---|---|---|
+| SAL-01 | Vue d'ensemble : RDV du jour, CA, taux de remplissage | I | ✅ |
+| SAL-02 | Profil du salon : description, adresse, photos, portfolio avant/après | I | ⬜ (`dashboard/parametres`) |
+| SAL-03 | Services : prix, durées, catégories, forfaits | I | ⬜ (`dashboard/services`) |
+| SAL-04 | Agenda jour / semaine / mois, couleurs par employé, blocage de créneaux | I | 🟡 (vue jour faite ; semaine, mois et blocage via `createTimeOff` à brancher) |
+| SAL-05 | Employés : comptes, horaires, congés | I | ⬜ (`dashboard/equipe`) |
+| SAL-06 | Statistiques : CA, services populaires, heures de pointe, annulations, absences | I | ⬜ (chiffres 30 jours simulés) |
+| SAL-07 | Paramètres : horaires d'ouverture, politique d'annulation, acompte | Imp | ⬜ |
+| SAL-08 | Mini-CRM : fiche client, historique, notes, clients inactifs | Imp | ⬜ (`dashboard/clients`) |
+| SAL-09 | Caisse et factures PDF | Imp | ⬜ |
+| SAL-10 | Promotions, codes promo, offres de dernière minute | Imp | ⬜ |
+| SAL-11 | Export des rapports PDF / Excel | Imp | ⬜ |
+| SAL-12 | Stocks avec alerte de stock bas | B | ⬜ |
+| SAL-13 | Commissions des employés | B | ⬜ |
+| SAL-14 | Plusieurs succursales | B | ⬜ |
 
-## 7. Zones partagées (à prévenir avant de modifier)
+**IA — Prédiction d'affluence (§4.5)** ⬜ simulée (`affluence` / `waitMinutes` dans `lib/data.ts`)
+Entrée : historique des réservations (données simulées au départ). Sortie : prévision par jour et par heure, conseils de planning (nombre d'employés), heures creuses pour les promotions et les points bonus. Technologie : régression / séries temporelles, service Python **ou** calcul dans Next.js.
+Critères : erreur de prévision mesurée sur des données de test ; affichage dans le dashboard ; **heures creuses transmises au moteur de fidélité (P5)**.
+Création : `src/modules/forecast/` + `GET /api/salons/[slug]/affluence`, branché sur `affluence-heatmap.tsx` et `forecast-bars.tsx`.
+
+**Fournit** : services, horaires et employés à P3 ; heures creuses à P5. **Dépend de** : authentification (P1), réservations (P3).
+
+**Modèles à ajouter** : `Package` (forfaits), `Promotion`, `StockItem`, `ClientNote`, `Invoice`.
+
+---
+
+## P3 — Recherche et réservation + IA chatbot
+
+**Dossiers possédés** : `src/modules/booking/`, `src/modules/catalog/`, `src/app/(site)/salons/`, `src/app/(site)/page.tsx` (accueil, chaque personne y ajoute son bloc), `src/app/api/salons/`, `src/app/api/bookings/`, `components/booking/`, `components/salon/`, `components/site/search-bar.tsx`, `components/ai/chatbot-widget.tsx`.
+**Tests à garder verts** : `tests/booking.test.ts`.
+
+| Réf. | Exigence | Prio | État |
+|---|---|---|---|
+| RES-01 | Recherche par ville, service, note et prix | I | ✅ |
+| RES-02 | Page détail : services, prix, horaires, photos, avis | I | ✅ |
+| RES-03 | Réservation : service, employé, créneau | I | ✅ |
+| RES-04 | Verrou anti-conflit (aucun créneau réservé deux fois) | I | ✅ (test automatisé) |
+| RES-05 | Confirmation, annulation, report selon la politique du salon | I | ✅ |
+| RES-06 | Carte des salons (OpenStreetMap) | Imp | ✅ |
+| RES-07 | Rappels par e-mail et SMS avant le RDV | Imp | 🟡 (confirmation simulée à la réservation ; rappels planifiés à faire) |
+| RES-08 | File d'attente virtuelle et affluence en temps réel | Imp | ⬜ (modèle `WaitingQueue` absent) |
+| RES-09 | Liste d'attente pour un créneau complet | B | ⬜ |
+
+**IA — Chatbot de réservation (§4.2)** ⬜ composant d'interface simulé
+Entrée : message libre (« je veux une coupe pour un mariage samedi »). Sortie : salons et créneaux **réellement disponibles**. Technologie : modèle de langage avec appel des API de recherche et de réservation.
+Critères : comprend service, date et heure ; propose **au moins 3 créneaux réels** ; **ne réserve qu'après confirmation explicite** ; fonctionne en français et en arabe ; repli vers le formulaire si le service IA est indisponible.
+Création : `POST /api/chat` (limite de débit, données publiques uniquement), branché sur `chatbot-widget.tsx`.
+
+**Fournit** : l'événement `booking.completed` à P4 et P5 ; l'historique de réservations à P1 et P2. **Dépend de** : services et horaires (P2), authentification (P1).
+
+**Modèles à ajouter** : `WaitingQueue`, `Slot` (si créneaux explicites).
+
+---
+
+## P4 — Avis, modération, support + IA analyse des avis
+
+**Dossiers possédés** : `src/modules/reviews/`, `src/app/api/reviews/`, `dashboard/avis`, `admin/moderation`, la file de modération de `components/admin/admin-queues.tsx` (avec P1), le bloc avis de la fiche salon.
+**Tests** : à créer (le test fidélité/avis existe dans `tests/loyalty-reviews.test.ts`).
+
+| Réf. | Exigence | Prio | État |
+|---|---|---|---|
+| AVI-01 | Avis seulement après un RDV terminé (avis vérifié) | I | ✅ |
+| AVI-02 | Note 1 à 5, commentaire, photo optionnelle | I | ✅ (envoi de photo à brancher côté interface) |
+| AVI-03 | Badge « Salon vérifié » après validation du Super Admin | I | ✅ (validation faite par P1) |
+| AVI-04 | Réponse du salon à un avis | Imp | 🟡 (API faite, écran `dashboard/avis` à construire) |
+| AVI-05 | Signalement d'un avis par le salon ou un utilisateur | Imp | 🟡 (API faite, bouton à brancher) |
+| AVI-06 | Espace de modération : avis et signalements | Imp | 🟡 (file affichée dans la vue admin, page `admin/moderation` à construire) |
+| AVI-07 | Tickets de support clients et salons | B | ⬜ (modèle `SupportTicket` absent) |
+
+**IA — Analyse des avis (§4.4)** ⬜ simulée (`sentiment` et `suspicion` stockés dans `Review`)
+Entrée : textes des avis d'un salon. Sortie : sentiment (positif, neutre, négatif), résumé des points forts et faibles, **score de suspicion par avis**. Technologie : modèle de langage **ou** modèle de sentiment pré-entraîné + règles (textes copiés, comptes récents).
+Critères : résumé affiché sur la page du salon ; avis suspects envoyés à la modération ; **décision finale toujours humaine**.
+Création : `src/modules/reviews/application/analysis.ts` + résumé mis en cache, relancé à chaque nouvel avis.
+
+**Fournit** : l'événement `review.published` à P5 ; les notes des salons à P1 et P3. **Dépend de** : réservations terminées (P3), authentification (P1).
+
+**Modèles à ajouter** : `SupportTicket`.
+
+---
+
+## P5 — Espace client, paiement, abonnements, fidélité + IA analyse photo
+
+**Dossiers possédés** : `src/modules/account/`, `src/modules/loyalty/`, `src/modules/notifications/`, `src/app/(site)/compte/`, `src/app/(site)/pro/`, `src/app/(site)/analyse-beaute/`, `src/app/api/me/`, `components/account/`, `components/loyalty/`, `components/ai/beauty-analysis.tsx`, `components/pwa/`, `src/i18n/`, `public/sw.js`, `src/app/manifest.ts`, `admin/abonnements`.
+**Tests à garder verts** : `tests/loyalty-reviews.test.ts`.
+
+| Réf. | Exigence | Prio | État |
+|---|---|---|---|
+| CLI-01 | Profil client modifiable | I | 🟡 (API `PATCH /api/me`, formulaire à vérifier) |
+| CLI-02 | Historique des rendez-vous | I | ✅ |
+| CLI-03 | Favoris (salons et professionnels) | Imp | 🟡 (salons faits, professionnels à faire) |
+| CLI-04 | « Refaire le même rendez-vous » | Imp | 🟡 (liste affichée sur l'aperçu, réservation en un clic à brancher) |
+| CLI-05 | Acompte et paiement en ligne (mode test) | Imp | 🟡 (paiement test enregistré, interface de paiement à finir) |
+| CLI-06 | Interface FR / AR (RTL) / EN | Imp | ✅ |
+| CLI-07 | Notifications dans l'application | Imp | 🟡 (API faite, cloche d'interface et abonnement push à brancher) |
+| ADM-05 | Plans Gratuit / Pro / Premium et commissions | Imp | ⬜ (pages `pro` et `admin/abonnements`) |
+| FID-01 | Points Glowy globaux : solde et historique | I | ✅ |
+| FID-02 | Gain de points selon le barème, bonus « nouveau salon », paliers | I | ✅ |
+| FID-03 | Niveaux Bronze / Argent / Or / Platine, barre de progression | Imp | ✅ |
+| FID-04 | Catalogue de récompenses et échange | Imp | ✅ |
+| FID-05 | Parrainage avec code personnel | Imp | 🟡 (code + points faits, saisie du code à l'inscription à vérifier) |
+| FID-06 | Points et récompenses propres à chaque salon (créés par le gérant) | Imp | ⬜ (écran côté `dashboard/promotions`, avec P2) |
+| FID-07 | Anti-fraude et expiration à 12 mois | Imp | 🟡 (plafonds faits, expiration à planifier + prévenir avant) |
+| FID-08 | Badges (Explorateur, Fidèle, Critique utile, Ambassadeur, Ponctuel) | B | 🟡 (calculés, `Badge`/`UserBadge` non stockés) |
+
+**IA — Analyse beauté par photo (§4.1)** ⬜ simulée (`beauty-analysis.tsx`)
+Entrée : photo de cheveux ou de visage, **avec consentement**. Sortie : état général, problèmes détectés, conseils, services recommandés (JSON structuré). Technologie : modèle de langage avec vision (API), prompt structuré.
+Critères : réponse en **moins de 15 secondes** ; message « conseil indicatif, pas un diagnostic médical » ; **suppression de la photo possible à tout moment** ; résultat enregistré dans l'historique (`PhotoAnalysis`) ; +10 points une fois par mois.
+Création : `POST /api/beauty-analysis` (type et taille limités).
+
+**Fournit** : le moteur de points et de récompenses ; l'historique des analyses à P1. **Dépend de** : authentification (P1), réservations (P3), événements de P3 et P4, heures creuses de P2.
+
+**Modèles à ajouter** : `Plan`, `Subscription`, `Referral`, `Tier`, `Badge`, `UserBadge`, `Invoice` (avec P2).
+
+---
+
+## Règles communes
+
+**Livrables de chaque tâche** (§8) : schéma de base et données de test, API, interface, tests, documentation (fonctionnement, limites, exemples).
+**Règle de dépendance** (§8) : P1 livre l'authentification de base dès le début ; les autres avancent avec le jeu de données de test (`npm run db:seed`) et branchent les vrais modules ensuite. Les modules communiquent **par événements** (`booking.completed`, `review.published`…) : on ajoute un abonné dans `src/modules/subscribers.ts` sans modifier le module émetteur.
+**Chaque IA** est une **API indépendante** avec un **message de secours** si le service est indisponible.
+
+**Organisation de l'équipe** (§13) :
+- Branche `main` protégée, **une branche par fonctionnalité** (`feature/nom`), fusion par **pull request relue par un autre membre**.
+- Messages de commit courts : `feat(booking): ajout du verrou de créneau`.
+- Suivi : tableau **GitHub Projects** (À faire, En cours, En revue, Terminé), une carte par exigence du cahier.
+- Réunions : point de 15 minutes **2 fois par semaine**, revue d'avancement en fin de semaine.
+- Qualité : lint et tests à chaque pull request (**GitHub Actions**, à mettre en place).
+- Toute décision sur la base de données ou les API est **notée dans la documentation**.
+
+**Zones partagées** (prévenir l'équipe avant de modifier) :
 
 | Zone | Règle |
 |---|---|
-| `src/i18n/dictionaries/{fr,en,ar}.ts` | ajouter **vos clés dans un bloc à vous** (ex. `account`, `admin`) ; toujours les 3 langues ensemble |
-| `src/infrastructure/db/models.ts` | ajouter un champ ou une collection : petite PR dédiée, annoncée à l'équipe |
+| `src/i18n/dictionaries/{fr,en,ar}.ts` | ajouter vos clés dans un bloc à vous ; toujours les 3 langues ensemble (le propriétaire du dossier `i18n` est P5) |
+| `src/infrastructure/db/models.ts` | ajouter un modèle : petite PR dédiée, annoncée |
 | `src/lib/data.ts`, `src/lib/modules.ts` | données mock : ne supprimer que ce qui est remplacé par la vraie base |
-| `src/app/globals.css`, `components/ui/`, `components/motion/` (sauf `tilt-card`), `lib/gsap.ts` | design system : accord de l'équipe |
-| `components/app-shell/`, `components/site/` (header, footer), `src/app/layout.tsx`, `src/app/(site)/layout.tsx` | structure commune |
+| `globals.css`, `components/ui/`, `components/motion/`, `lib/gsap.ts` | design system : accord de l'équipe |
+| `components/app-shell/`, `components/site/` (header, footer), layouts racines | structure commune |
 | `src/modules/subscribers.ts`, `src/infrastructure/event-bus.ts`, `src/core/domain/` | ajout d'événement : petite PR dédiée |
 | `package.json` | une dépendance ajoutée = prévenir |
-| `src/proxy.ts` | P1 uniquement |
 
-## 8. Travail en parallèle sans conflit
+## Écarts entre le cahier et le code à décider ensemble
 
-- Une branche par tâche : `p1/auth-reco`, `p2/dashboard`, `p3/chatbot`, `p4/avis-ia`, `p5/photo-ia`.
-- Chacun commite dans **ses dossiers** ; un fichier d'une autre personne = lui demander ou ouvrir une petite PR séparée.
-- `git pull --rebase origin main` chaque matin ; PR petites (< 400 lignes), relue par une autre personne.
-- Avant la PR : `npx tsc --noEmit`, `npm run lint`, `npm test`.
-- Nouvelle IA = nouveau module `src/modules/<nom>/` avec `domain/` (calcul pur testable), `application/`, `infrastructure/` ; la route API reste fine.
+| Cahier | Code actuel | Décision à noter |
+|---|---|---|
+| PostgreSQL + Prisma (§6, §10) | **MongoDB + Mongoose**, migration faite le 18 octobre | confirmer, puis mettre à jour le cahier ; la protection contre les injections passe par Zod + Mongoose, pas « requêtes paramétrées Prisma » |
+| Tests : Jest + Playwright (§6) | `node:test` + `tsx` (14 tests) | garder `node:test` ou migrer ; Playwright pour les parcours complets à ajouter |
+| CI GitHub Actions (§13) | absente | à créer (lint, `tsc`, `npm test`) — proposition : P1 |
+| Images : Cloudinary ou S3 (§6) | URLs d'images externes uniquement | choisir un stockage avant l'envoi de photos (P2 portfolio, P4 avis, P5 analyse) |
+| Déploiement : Vercel + base hébergée (§6, §12) | non fait | MongoDB Atlas + Vercel ; à faire avant la démo |
+| Livrables : UML, schéma de base, slides (§12) | non fait | chaque personne dessine les diagrammes de son module (cas d'utilisation, classes, séquences) |
 
-## 9. Planning
+## Critères d'acceptation et démonstration (§12)
 
-| Semaine | P1 | P2 | P3 | P4 | P5 |
-|---|---|---|---|---|---|
-| 1 | prise en main (guide, lancement, tests) + connexion / rôles | prise en main + vue du jour | prise en main + recherche / filtres | prise en main + avis vérifiés | prise en main + mes RDV |
-| 2 | admin : validation, utilisateurs | agenda + statuts | fiche salon + tunnel | réponse + signalement | fidélité : niveaux, échange |
-| 3 | audit + tests | équipe, services, horaires | annulation / report + tests | modération + tests | notifications + push |
-| 4 | **IA reco** | **IA affluence** | **IA chatbot** | **IA analyse avis** | **IA analyse photo** |
-| 5 | animations GSAP + responsive 375 / 768 / 1024 / 1280 + accessibilité | idem | idem | idem | idem |
-| 6 | intégration, `npm run build`, bugs, démo | | | | |
+Minimum : un client s'inscrit, se connecte, cherche et réserve sans conflit (P1, P3) · un gérant valide et suit ses RDV (P2) · le Super Admin valide, suspend, voit la vue globale (P1) · avis uniquement après un RDV terminé (P4) · points après un RDV terminé avec bonus « nouveau salon » et niveau (P5) · **les 5 IA répondent avec un message de secours en cas de panne**.
+
+Scénario de 5 minutes : photo → conseils (P5) · recommandation d'un salon avec bonus nouveau salon (P1) · réservation par formulaire ou chatbot (P3) · le gérant voit le RDV et la prévision d'affluence (P2) · avis vérifié résumé par l'IA et points gagnés (P4, P5) · le Super Admin suit l'activité et modère un avis suspect (P1, P4).
+
+## Planning (6 semaines)
+
+| Semaine | Objectif |
+|---|---|
+| 1 | prise en main (guide, lancement, tests) ; figer les écarts ci-dessus ; GitHub Projects + CI |
+| 2–3 | les exigences **Indispensable** de chaque personne (colonnes « I » ⬜ et 🟡) |
+| 4 | les **Important**, puis les 5 **IA** (version simple avec repli, puis améliorée) |
+| 5 | responsive 375 / 768 / 1024 / 1280, accessibilité, animations, tests |
+| 6 | intégration, déploiement, UML et documentation, slides, répétition de la démo ; les **Bonus** seulement s'il reste du temps |
