@@ -847,7 +847,10 @@ export const en: Dictionary = {
     openNav: "Open navigation",
     search: "Search",
     searchPlaceholder: "Search for a client, an appointment, a salon…",
-    notifications: "Notifications, 3 unread",
+    notifications: "Notifications",
+    notificationsUnread: "Notifications, {n} unread",
+    notificationsEmpty: "No notifications yet.",
+    markAllRead: "Mark all as read",
   },
 
   dashboard: {

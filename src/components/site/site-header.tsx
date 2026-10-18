@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ScanFace, Store, UserRound } from "lucide-react";
 import { homeForRole } from "@/auth.config";
+import { NotificationBell } from "@/components/app-shell/notification-bell";
 import { Logo } from "@/components/brand/logo";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { useI18n } from "@/i18n/client";
@@ -75,6 +76,7 @@ export function SiteHeader({ user }: { user: HeaderUser }) {
               <Store className="size-4" aria-hidden />
               {t.header.pro}
             </Link>
+            {user && <NotificationBell className="size-9 sm:size-10" />}
             {user ? (
               <Link
                 href={homeForRole(user.role)}
