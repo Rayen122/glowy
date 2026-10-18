@@ -11,7 +11,7 @@ export function MobileNav({ children, label }: { children: React.ReactNode; labe
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-foreground hover:bg-muted lg:hidden" aria-label={label}>
+      <SheetTrigger className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-foreground hover:bg-muted lg:hidden" aria-label={label}>
         <Menu className="size-5" aria-hidden />
       </SheetTrigger>
       <SheetContent side={dir === "rtl" ? "right" : "left"} className="w-[86vw] max-w-[300px] bg-sidebar p-4" showCloseButton={false}>

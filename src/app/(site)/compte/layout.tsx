@@ -26,7 +26,7 @@ export default async function CompteLayout({ children }: { children: React.React
   ];
 
   return (
-    <div className="container-page grid gap-6 py-6 sm:gap-8 sm:py-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:py-12 xl:grid-cols-[260px_minmax(0,1fr)]">
+    <div className="container-page grid grid-cols-1 gap-6 py-6 sm:gap-8 sm:py-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:py-12 xl:grid-cols-[260px_minmax(0,1fr)]">
       <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
         <div className="flex items-center gap-3 rounded-3xl bg-card p-4 ring-1 ring-border">
           <Avatar className="size-12">

@@ -76,7 +76,7 @@ export function SalonResults({
   };
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)]">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)]">
       <div className="min-w-0">
         {/* Filtres : une seule rangée au-dessus des résultats */}
         <div className="flex flex-wrap items-center gap-2">
@@ -89,7 +89,7 @@ export function SalonResults({
                 aria-pressed={on}
                 onClick={() => toggle(id)}
                 className={cn(
-                  "inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors duration-200",
+                  "inline-flex h-11 items-center gap-1.5 rounded-full border px-3.5 lg:h-9 text-sm font-medium transition-colors duration-200",
                   on
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-border bg-card text-foreground hover:border-plum-300 hover:bg-plum-50"
@@ -114,7 +114,7 @@ export function SalonResults({
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as SortId)}
-              className="h-10 rounded-full border border-border bg-card px-3 text-base font-medium text-foreground sm:h-9 sm:text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+              className="h-10 rounded-full border border-border bg-card px-3 text-base font-medium text-foreground sm:h-9 lg:text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
             >
               {SORTS.map((id) => (
                 <option key={id} value={id}>

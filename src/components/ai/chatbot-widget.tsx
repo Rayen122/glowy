@@ -265,7 +265,7 @@ export function ChatbotWidget() {
               placeholder={c.placeholder}
               aria-label={c.messageAria}
               dir="auto"
-              className="h-11 min-w-0 flex-1 bg-transparent text-base placeholder:text-muted-foreground focus:outline-none sm:text-sm"
+              className="h-11 min-w-0 flex-1 bg-transparent text-base placeholder:text-muted-foreground focus:outline-none lg:text-sm"
             />
             <button
               type="submit"

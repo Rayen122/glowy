@@ -213,7 +213,7 @@ export function BookingFlow({
           <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
             <MapPin className="size-4 shrink-0" aria-hidden /> {salon.address}
           </p>
-          <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-2">
+          <dl className="mt-5 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
             <div>
               <dt className="text-muted-foreground">{b.date}</dt>
               <dd className="font-semibold">{f(b.at, { date: dayLong, time })}</dd>
@@ -249,9 +249,9 @@ export function BookingFlow({
   }
 
   return (
-    <div className="grid gap-10 pb-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:pb-0 xl:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="grid grid-cols-1 gap-10 pb-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:pb-0 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="min-w-0">
-        <Link href={`/salons/${salon.slug}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground">
+        <Link href={`/salons/${salon.slug}`} className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground">
           <ArrowLeft className="size-4 rtl:rotate-180" aria-hidden /> {salon.name}
         </Link>
 
@@ -265,7 +265,7 @@ export function BookingFlow({
                 onClick={() => setStep(i)}
                 aria-current={i === step ? "step" : undefined}
                 aria-label={`${i + 1}. ${b.steps[id]}`}
-                className="group w-full py-1 text-start disabled:cursor-default"
+                className="group min-h-11 w-full py-1 text-start disabled:cursor-default"
               >
                 <span className={cn("block h-1 rounded-full transition-colors", i <= step ? "bg-primary" : "bg-border")} />
                 <span
@@ -331,7 +331,7 @@ export function BookingFlow({
 
           {/* Étape 2 : professionnel */}
           {step === 1 && (
-            <div className="mt-6 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label={b.proAria}>
+            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup" aria-label={b.proAria}>
               {[{ id: "any", name: b.anyPro, role: b.anyProHint, rating: 0 }, ...employees.map((e) => ({ ...e, role: tc(e.role) }))].map((e) => {
                 const on = employee === e.id;
                 const full = employees.find((x) => x.id === e.id);
@@ -542,7 +542,7 @@ export function BookingFlow({
 
               <fieldset className="rounded-2xl border border-border bg-card p-5">
                 <legend className="px-1 font-semibold">{b.payment}</legend>
-                <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {[
                     { id: "online" as const, icon: CreditCard, title: f(b.payOnline, { amount: money(deposit) }), text: b.payOnlineHint },
                     { id: "onsite" as const, icon: Store, title: b.payOnsite, text: b.payOnsiteHint },
