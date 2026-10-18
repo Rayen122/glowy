@@ -5,8 +5,10 @@
  */
 export type DomainEvents = {
   "user.registered": { userId: string };
-  "salon.registered": { salonId: string; ownerId: string };
+  "salon.registered": { salonId: string; ownerId: string; plan: string };
   "salon.statusChanged": { salonId: string; status: string; actorId: string };
+  "plan.paymentRequested": { paymentId: string; salonId: string };
+  "plan.paymentDecided": { paymentId: string; salonId: string; accepted: boolean; actorId: string };
   "booking.created": { bookingId: string };
   "booking.cancelled": { bookingId: string; late: boolean; by: "client" | "salon" };
   "booking.completed": { bookingId: string };

@@ -13,6 +13,7 @@ import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { Types } from "mongoose";
 import type { BookingStatus, Category, PlanId, PointReason } from "../src/core/domain/enums";
+import { PLAN_PRICES } from "../src/core/domain/enums";
 import { slugify } from "../src/core/domain/text";
 import { addDays, toMinutes, tunisToday, tunisToUtc } from "../src/core/domain/time";
 import {
@@ -21,6 +22,7 @@ import {
   disconnectDb,
   Employee,
   Notification,
+  PlanPayment,
   PointRule,
   PointTransaction,
   resetAll,
@@ -208,6 +210,7 @@ async function main() {
       status: "ACTIVE",
       verified: s.verified,
       plan: (["premium", "pro", "gratuit"] as PlanId[])[index % 3],
+      planUntil: index % 3 === 2 ? null : new Date(Date.now() + (12 + index) * 86_400_000),
       owner: owner._id,
       createdAt: new Date(Date.parse(`${addDays(TODAY, -300 + index * 20)}T09:00:00Z`)),
       photos: s.gallery.map((url, position) => ({ url, position })),
@@ -215,6 +218,32 @@ async function main() {
       services,
     });
     salonIds.set(s.slug, salon._id);
+    // Abonnements : les plans payants ont un paiement accepté dans l'historique, quelques demandes attendent le Super Admin
+    if (salon.plan !== "gratuit") {
+      await PlanPayment.create({
+        salon: salon._id,
+        requestedBy: owner._id,
+        plan: salon.plan,
+        amount: PLAN_PRICES[salon.plan],
+        channel: index % 2 ? "D17" : "VIREMENT",
+        reference: `${index % 2 ? "D17" : "VIR"}-26-${String(3100 + index * 37)}`,
+        status: "ACCEPTED",
+        decidedBy: admin._id,
+        decidedAt: new Date(Date.now() - (18 - index) * 86_400_000),
+        paidUntil: salon.planUntil,
+        createdAt: new Date(Date.now() - (19 - index) * 86_400_000),
+      });
+    } else if ([2, 5].includes(index)) {
+      await PlanPayment.create({
+        salon: salon._id,
+        requestedBy: owner._id,
+        plan: index === 2 ? "pro" : "premium",
+        amount: PLAN_PRICES[index === 2 ? "pro" : "premium"],
+        channel: index === 2 ? "D17" : "VIREMENT",
+        reference: index === 2 ? "D17-26-004471" : "VIR-BIAT-22918",
+        createdAt: new Date(Date.now() - (index === 2 ? 5 : 26) * 3_600_000),
+      });
+    }
     for (const sv of services) serviceRows.set(`${s.slug}:${sv.name}`, { key: sv.key, name: sv.name, price: sv.price, durationMin: sv.durationMin });
 
     const team =
@@ -406,7 +435,7 @@ async function main() {
     const [firstName, ...rest] = p.owner.split(" ");
     const owner = await user({ email: `${slugify(p.owner)}@exemple.tn`, firstName, lastName: rest.join(" "), role: "MANAGER" });
     const category = (Object.entries(CATEGORY_LABEL).find(([, label]) => label === p.category)?.[0] ?? "coiffure") as Category;
-    await Salon.create({
+    const pending = await Salon.create({
       slug: slugify(p.name),
       name: p.name,
       category,
@@ -415,12 +444,16 @@ async function main() {
       address: `Centre-ville, ${p.city}`,
       lat: 36.8,
       lng: 10.18,
-      plan: p.plan,
+      plan: "gratuit",
       documentUrl: p.document,
       owner: owner._id,
       createdAt: new Date(Date.now() - p.hoursAgo * 3_600_000),
       coverUrl: img("photo-1560066984-138dadb4c035", 1200),
     });
+    // Le plan payant choisi à l'inscription attend le paiement (comme dans l'inscription réelle)
+    if (p.plan !== "gratuit") {
+      await PlanPayment.create({ salon: pending._id, requestedBy: owner._id, plan: p.plan, amount: PLAN_PRICES[p.plan], channel: "VIREMENT", note: "Plan choisi à l'inscription", createdAt: new Date(Date.now() - p.hoursAgo * 3_600_000) });
+    }
   }
 
   // ── Journal d'audit (ADM-07) ──
