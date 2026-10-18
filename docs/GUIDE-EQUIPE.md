@@ -488,7 +488,7 @@ Pour animer sans écrire de GSAP : **poser un attribut HTML** sur un élément d
 
 ## 9. Les tâches des 5 personnes
 
-> Dossiers et fichiers exacts possédés par chacun, zones partagées et dépendances : voir [`REPARTITION.md`](REPARTITION.md).
+> **La répartition de référence est [`REPARTITION.md`](REPARTITION.md)**, établie à partir du cahier des charges (exigences, priorités, état, dossiers possédés). Elle prime sur les résumés ci-dessous, qui n'incluent pas tout le périmètre du cahier (par exemple : support pour P4, paiement et abonnements pour P5).
 
 Chaque personne = **1 tâche classique + 1 fonctionnalité IA**. Les pages et fichiers cités sont déjà créés (souvent en version « placeholder » qui affiche les exigences du cahier via `src/lib/modules.ts`) : **ne repartez pas de zéro**.
 
