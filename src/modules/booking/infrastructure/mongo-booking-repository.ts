@@ -167,3 +167,10 @@ export async function createTimeOff(employeeId: string, startsAt: Date, endsAt: 
   await TimeOff.create({ _id, employee, startsAt, endsAt, label });
   return idOf(_id);
 }
+
+/** Supprime un blocage et libère ses tranches */
+export async function deleteTimeOff(timeOffId: string) {
+  const _id = objectId(timeOffId)!;
+  await releaseSlices({ timeOff: _id });
+  await TimeOff.deleteOne({ _id });
+}

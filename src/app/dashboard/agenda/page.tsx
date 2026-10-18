@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { BlockSlotButton, SalonSetupCard, UnblockButton } from "@/components/dashboard/agenda-actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getI18n } from "@/i18n/server";
 import { cn } from "@/lib/utils";
@@ -40,12 +41,21 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
   const salon = await staffSalon(user);
   const [{ t, tc, f, df }, day] = await Promise.all([getI18n(), salonDay(salon.id, date)]);
   const a = t.dashboard.agenda;
-  const EMPLOYEES = day.employees.map((e) => ({ id: e.id, name: e.name, avatar: e.avatarUrl, color: e.color }));
+  const EMPLOYEES = day.employees.map((e) => ({ id: e.id, name: e.name, avatar: e.avatarUrl, color: e.color, hours: e.workingHours }));
   const clamp = (minutes: number) => Math.min(END, Math.max(START, minutes));
   const now = utcToTunis(new Date());
   const NOW = date === today ? toMin(now.time) : null;
   const hours = Array.from({ length: (END - START) / 60 + 1 }, (_, i) => START / 60 + i);
   const height = (END - START) * PX_PER_MIN;
+  /** Plages indisponibles d'un professionnel : jour fermé, ou hors horaires (les siens, sinon ceux du salon) */
+  const unavailable = (own: { startsAt: string; endsAt: string } | null) => {
+    const open = own ? { opensAt: own.startsAt, closesAt: own.endsAt } : day.opening;
+    if (!open) return [{ from: START, to: END }];
+    return [
+      { from: START, to: clamp(toMin(open.opensAt)) },
+      { from: clamp(toMin(open.closesAt)), to: END },
+    ].filter((r) => r.to > r.from);
+  };
 
   return (
     <div className="space-y-5">
@@ -62,15 +72,15 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
                 key={v}
                 type="button"
                 aria-pressed={i === 0}
-                className={cn("h-9 rounded-full px-4 text-sm font-medium", i === 0 ? "bg-card shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                disabled={i !== 0}
+                title={i !== 0 ? a.soon : undefined}
+                className={cn("h-9 rounded-full px-4 text-sm font-medium", i === 0 ? "bg-card shadow-sm" : "cursor-not-allowed text-muted-foreground/60")}
               >
                 {a.views[v]}
               </button>
             ))}
           </div>
-          <button type="button" className="inline-flex h-10 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-semibold hover:bg-muted">
-            <Plus className="size-4" aria-hidden /> {a.block}
-          </button>
+          {user.role !== "EMPLOYEE" && <BlockSlotButton employees={EMPLOYEES.map((e) => ({ id: e.id, name: e.name }))} date={date} />}
         </div>
       </header>
 
@@ -86,6 +96,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
             <ChevronRight className="size-4 rtl:rotate-180" aria-hidden />
           </Link>
           <p className="ms-2 font-semibold first-letter:uppercase">{df(date, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
+          {EMPLOYEES.length > 0 && !day.opening && <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">{a.closedDay}</span>}
         </div>
         <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm" aria-label={a.legendAria}>
           {EMPLOYEES.map((e) => (
@@ -100,7 +111,14 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
         </ul>
       </div>
 
-      {/* Téléphone : défilement horizontal par colonne (aimantation), colonne des heures fixe */}
+      {EMPLOYEES.length === 0 ? (
+        user.role === "MANAGER" ? (
+          <SalonSetupCard />
+        ) : (
+          <p className="rounded-3xl bg-card p-10 text-center text-sm text-muted-foreground ring-1 ring-border">{a.noTeamText}</p>
+        )
+      ) : (
+      /* Téléphone : défilement horizontal par colonne (aimantation), colonne des heures fixe */
       <div data-animate="fade-up" className="snap-x snap-mandatory scroll-ps-16 overflow-x-auto overscroll-x-contain rounded-3xl bg-card ring-1 ring-border">
         <div className="min-w-[600px] sm:min-w-[760px]">
           {/* En-têtes colonnes */}
@@ -150,13 +168,18 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
                   </div>
                 ))}
 
+                {unavailable(e.hours).map((r) => (
+                  <div key={r.from} className="hatch pointer-events-none absolute inset-x-0 bg-muted/40" style={{ top: (r.from - START) * PX_PER_MIN, height: (r.to - r.from) * PX_PER_MIN }} aria-hidden />
+                ))}
+
                 {day.blocks.filter((b) => b.employeeId === e.id).map((b) => (
                   <div
-                    key={b.time}
-                    className="hatch absolute inset-x-1.5 flex items-start rounded-lg bg-muted/40 px-2.5 py-1.5 text-xs font-medium text-muted-foreground ring-1 ring-border"
-                    style={{ top: (clamp(toMin(b.time)) - START) * PX_PER_MIN + 2, height: Math.max(20, (clamp(toMin(b.end)) - clamp(toMin(b.time))) * PX_PER_MIN - 4) }}
+                    key={b.id}
+                    className="hatch absolute inset-x-1.5 flex items-start rounded-lg bg-muted/40 py-1.5 ps-2.5 pe-8 text-xs font-medium text-muted-foreground ring-1 ring-border"
+                    style={{ top: (clamp(toMin(b.time)) - START) * PX_PER_MIN + 2, height: Math.max(28, (clamp(toMin(b.end)) - clamp(toMin(b.time))) * PX_PER_MIN - 4) }}
                   >
                     {tc(b.label)}
+                    {user.role !== "EMPLOYEE" && <UnblockButton id={b.id} label={tc(b.label)} />}
                   </div>
                 ))}
 
@@ -206,6 +229,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
