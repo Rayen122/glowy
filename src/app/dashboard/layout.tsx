@@ -86,10 +86,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <Link
           href="/dashboard/agenda"
           aria-label={d.newBooking}
-          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-primary px-3 text-sm font-semibold text-primary-foreground hover:bg-plum-800 sm:px-4"
+          className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-primary px-3 text-sm font-semibold text-primary-foreground hover:bg-plum-800 max-[420px]:w-11 max-[420px]:px-0 sm:px-4"
         >
           <Plus className="size-4" aria-hidden />
-          <span>{d.newBooking}</span>
+          {/* Très petits écrans : icône seule (le libellé reste lu par les lecteurs d'écran) */}
+          <span className="max-[420px]:sr-only">{d.newBooking}</span>
         </Link>
       }
     >

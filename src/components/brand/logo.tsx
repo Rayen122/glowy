@@ -18,7 +18,7 @@ export function Logo({ className, inverted, markOnly }: LogoProps) {
   return (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
       <LogoMark inverted={inverted} />
-      {!markOnly && <span className={cn("text-[1.3rem] leading-none font-bold tracking-[-0.03em]", inverted ? "text-white" : "text-ink")}>Glowy</span>}
+      {!markOnly && <span className={cn("text-[1.15rem] leading-none font-bold tracking-[-0.03em] sm:text-[1.3rem]", inverted ? "text-white" : "text-ink")}>Glowy</span>}
     </span>
   );
 }

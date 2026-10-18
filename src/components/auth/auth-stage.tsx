@@ -179,7 +179,7 @@ export function AuthStage() {
       <div data-orb className="pointer-events-none absolute end-[-140px] -bottom-48 -z-10 size-[520px] rounded-full bg-[#d17a9e]/25 blur-[130px]" aria-hidden />
 
       <div className="relative z-10 flex items-center justify-between gap-4">
-        <Link href="/" aria-label={st.backHome} className="rounded-xl focus-visible:ring-3 focus-visible:ring-white/40 focus-visible:outline-none">
+        <Link href="/" aria-label={st.backHome} className="inline-flex min-h-11 items-center rounded-xl focus-visible:ring-3 focus-visible:ring-white/40 focus-visible:outline-none">
           <Logo inverted />
         </Link>
         <div className="flex items-center gap-2">

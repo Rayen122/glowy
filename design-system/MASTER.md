@@ -166,7 +166,13 @@ Chorégraphies dédiées : `HeroMotion` (accueil), `AuthStage` + `AuthCard` (con
 - Formulaires : `<label>` systématique, messages d'erreur près du champ, bouton désactivé pendant l'envoi.
 - Mise en page en propriétés logiques (`ms-`, `pe-`, `start-`, `end-`) pour le RTL arabe ;
   flèches directionnelles avec `rtl:rotate-180`.
-- Responsive vérifié à 375, 768, 1024, 1280 px, sans défilement horizontal.
+- Responsive vérifié de **320 à 1440 px**, sans défilement horizontal, en français, en anglais et en arabe (RTL) :
+  coller `scripts/responsive-audit.js` dans la console du site lancé en local, puis `await __audit(['/chemin'], [320, 375, 768, 1280])` (résultat attendu : `OK`).
+- **Même contenu sur téléphone et sur PC** : on adapte (réduction, retour à la ligne, défilement horizontal des rangées de puces et des tableaux), on ne masque pas.
+  Seuls compactages admis : barre « Réserver » fixe, tiroir de navigation, bouton d'action en icône seule sous 420 px, prénom réduit à l'avatar sous 360 px.
+- Une grille qui passe en colonnes (`lg:grid-cols-…`) commence par `grid-cols-1` : sans cela, un tableau ou un long mot élargit toute la colonne sur téléphone.
+- Champs de saisie en **16 px** jusqu'à `lg` (`text-base lg:text-sm`) : iOS zoome la page au focus sous 16 px, iPad compris.
+- Cibles tactiles : **44 px** (`h-11`, `min-h-11`) jusqu'à `lg` ; un lien seul sur sa ligne prend `min-h-11 inline-flex items-center`.
 
 ---
 

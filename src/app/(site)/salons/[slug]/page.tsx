@@ -70,11 +70,11 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
     <div className="container-page pt-4 pb-12 lg:pb-20">
       {/* Fil d'Ariane */}
       <nav aria-label={s.breadcrumb} className="flex min-w-0 items-center gap-1 text-sm text-muted-foreground">
-        <Link href="/" className="shrink-0 hover:text-foreground">
+        <Link href="/" className="inline-flex min-h-11 shrink-0 items-center hover:text-foreground">
           {s.home}
         </Link>
         <ChevronRight className="size-3.5 shrink-0 rtl:rotate-180" aria-hidden />
-        <Link href={`/salons?ville=${encodeURIComponent(salon.city)}`} className="shrink-0 hover:text-foreground">
+        <Link href={`/salons?ville=${encodeURIComponent(salon.city)}`} className="inline-flex min-h-11 shrink-0 items-center hover:text-foreground">
           {tc(salon.city)}
         </Link>
         <ChevronRight className="size-3.5 shrink-0 rtl:rotate-180" aria-hidden />
@@ -131,7 +131,7 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
           ))}
           <button
             type="button"
-            className="absolute end-2.5 bottom-2.5 inline-flex h-8 items-center gap-1.5 rounded-full bg-card px-3 text-xs font-medium shadow-soft ring-1 ring-border hover:bg-muted sm:end-4 sm:bottom-4 sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
+            className="absolute end-2.5 bottom-2.5 inline-flex h-11 items-center gap-1.5 rounded-full bg-card px-3 sm:h-9 text-xs font-medium shadow-soft ring-1 ring-border hover:bg-muted sm:end-4 sm:bottom-4 sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
           >
             <Images className="size-4" aria-hidden />
             {f(s.seeAllPhotos, { n: 24 })}
@@ -139,7 +139,7 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
         </div>
       </section>
 
-      <div className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0">
           {/* Sous-navigation */}
           <nav
@@ -247,7 +247,7 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
               </p>
             </div>
 
-            <div data-animate="stagger" data-stagger="0.12" className="mt-6 grid gap-4 md:grid-cols-[240px_minmax(0,1fr)]">
+            <div data-animate="stagger" data-stagger="0.12" className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-[240px_minmax(0,1fr)]">
               <div className="rounded-2xl border border-border bg-card p-5">
                 <p className="text-5xl font-semibold tracking-tight">{nf(salon.rating, { minimumFractionDigits: 1 })}</p>
                 <div className="mt-1 flex gap-0.5" aria-hidden>
@@ -279,7 +279,7 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
                 </p>
                 {aiSummary && <p className="mt-3 leading-relaxed text-foreground">{tc(aiSummary.summary)}</p>}
                 {aiSummary && (
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{s.strengths}</p>
                     <ul className="mt-2 space-y-1.5">
@@ -399,7 +399,7 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
             <h2 id="infos-title" className="display text-3xl text-ink">
               {s.sections.infos}
             </h2>
-            <div data-animate="stagger" className="mt-6 grid gap-4 md:grid-cols-2">
+            <div data-animate="stagger" className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="rounded-2xl border border-border bg-card p-5">
                 <h3 className="font-semibold">{s.hours}</h3>
                 <dl className="mt-3 space-y-2 text-sm">
