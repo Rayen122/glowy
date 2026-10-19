@@ -252,6 +252,20 @@ const pushSubscriptionSchema = new Schema(
 );
 pushSubscriptionSchema.index({ user: 1 });
 
+/** Lien à usage unique envoyé par e-mail : réinitialisation du mot de passe (AUTH-05), vérification de l'adresse (AUTH-06). Seule l'empreinte SHA-256 est stockée. */
+const accountTokenSchema = new Schema(
+  {
+    user: { type: ObjectId, ref: "User", required: true },
+    purpose: { type: String, enum: ["reset", "verify"], required: true },
+    tokenHash: { type: String, required: true, unique: true },
+    expiresAt: { type: Date, required: true },
+    usedAt: optional(Date),
+  },
+  { timestamps: { createdAt: true, updatedAt: false } }
+);
+// Les jetons expirés disparaissent seuls (index TTL)
+accountTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 86_400 });
+
 /** E-mails et SMS simulés (démonstration) : conservés pour être consultés par le Super Admin — cahier §1.4 */
 const outboxMessageSchema = new Schema(
   {
@@ -380,6 +394,7 @@ export const PlanPayment = defineModel("PlanPayment", planPaymentSchema);
 export const Notification = defineModel("Notification", notificationSchema);
 export const PushSubscription = defineModel("PushSubscription", pushSubscriptionSchema);
 export const OutboxMessage = defineModel("OutboxMessage", outboxMessageSchema);
+export const AccountToken = defineModel("AccountToken", accountTokenSchema);
 export const PointRule = defineModel("PointRule", pointRuleSchema);
 export const PointTransaction = defineModel("PointTransaction", pointTransactionSchema);
 export const Reward = defineModel("Reward", rewardSchema);
@@ -402,7 +417,7 @@ export type ReviewDoc = Lean<typeof reviewSchema>;
 export type PointTransactionDoc = Omit<Lean<typeof pointTransactionSchema>, "updatedAt">;
 
 /** Toutes les collections, pour vider la base (seed, tests) */
-export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, PointRule, PointTransaction, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog];
+export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog];
 
 /** Vide toutes les collections et recrée les index, dont les index uniques (seed, tests) */
 export async function resetAll() {

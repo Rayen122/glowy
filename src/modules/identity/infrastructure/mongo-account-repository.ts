@@ -1,4 +1,4 @@
-import { idOf, objectId, Salon, User, withTransaction, type UserDoc } from "@/infrastructure/db";
+import { AccountToken, idOf, objectId, Salon, User, withTransaction, type UserDoc } from "@/infrastructure/db";
 import type { AccountRepository, UserAccount } from "../application/ports";
 
 const toAccount = (u: UserDoc): UserAccount => ({
@@ -44,6 +44,24 @@ export const mongoAccountRepository: AccountRepository = {
   setPasswordHash: async (userId, passwordHash) => {
     await User.updateOne({ _id: objectId(userId) }, { $set: { passwordHash, failedLogins: 0, lockedUntil: null } });
   },
+
+  saveToken: async (userId, purpose, tokenHash, expiresAt) => {
+    const user = objectId(userId)!;
+    // Un seul lien valide par compte et par usage : les anciens sont invalidés
+    await AccountToken.updateMany({ user, purpose, usedAt: null }, { $set: { usedAt: new Date() } });
+    await AccountToken.create({ user, purpose, tokenHash, expiresAt });
+  },
+
+  consumeToken: async (purpose, tokenHash, now) => {
+    const token = await AccountToken.findOneAndUpdate({ tokenHash, purpose, usedAt: null, expiresAt: { $gt: now } }, { $set: { usedAt: now } }).lean();
+    return token ? token.user.toString() : null;
+  },
+
+  markEmailVerified: async (userId, at) => {
+    await User.updateOne({ _id: objectId(userId)!, emailVerified: null }, { $set: { emailVerified: at } });
+  },
+
+  isEmailVerified: async (userId) => Boolean((await User.findById(objectId(userId), { emailVerified: 1 }).lean())?.emailVerified),
 
   async createClient(data) {
     const user = await User.create({ ...data, referredBy: objectId(data.referredById) });

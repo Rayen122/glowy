@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ChartColumn, CreditCard, Gift, LayoutGrid, ScrollText, Settings, ShieldAlert, Store, Users } from "lucide-react";
+import { ChartColumn, CreditCard, Gift, LayoutGrid, Mail, ScrollText, Settings, ShieldAlert, Store, Users } from "lucide-react";
 import { AppShell, type NavGroup } from "@/components/app-shell/app-shell";
 import { getI18n } from "@/i18n/server";
 import { requirePageUser } from "@/infrastructure/session";
@@ -41,6 +41,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       label: a.nav.system,
       items: [
         { href: "/admin/audit", label: m.audit.title, icon: <ScrollText /> },
+        { href: "/admin/messages", label: t.manage.admin.outboxTitle, icon: <Mail /> },
         { href: "/admin/parametres", label: a.nav.settings, icon: <Settings /> },
       ],
     },

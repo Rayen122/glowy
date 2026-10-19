@@ -34,24 +34,6 @@ export const SALON_MODULES: ModuleDef<keyof Dictionary["modules"]["salon"]>[] = 
 ];
 
 export const ADMIN_MODULES: ModuleDef<keyof Dictionary["modules"]["admin"]>[] = [
-  {
-    slug: "salons",
-    owners: [1],
-    requirements: [
-      { ref: "ADM-02", priority: "must" },
-      { ref: "ADM-03", priority: "must" },
-      { ref: "AVI-03", priority: "must" },
-    ],
-  },
-  { slug: "utilisateurs", owners: [1], requirements: [{ ref: "ADM-04", priority: "must" }] },
-  {
-    slug: "moderation",
-    owners: [4],
-    requirements: [
-      { ref: "AVI-06", priority: "should" },
-      { ref: "AVI-07", priority: "bonus" },
-    ],
-  },
   { slug: "abonnements", owners: [5], requirements: [{ ref: "ADM-05", priority: "should" }] },
   {
     slug: "fidelite",
@@ -62,7 +44,6 @@ export const ADMIN_MODULES: ModuleDef<keyof Dictionary["modules"]["admin"]>[] = 
     ],
   },
   { slug: "rapports", owners: [1], requirements: [{ ref: "ADM-08", priority: "should" }] },
-  { slug: "audit", owners: [1], requirements: [{ ref: "ADM-07", priority: "should" }] },
   {
     slug: "parametres",
     owners: [1],

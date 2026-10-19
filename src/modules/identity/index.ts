@@ -6,19 +6,23 @@ import { systemClock } from "@/core/domain/clock";
 import { eventBus } from "@/infrastructure/event-bus";
 import { makeAccess } from "./application/access";
 import { makeIdentity } from "./application/use-cases";
+import { sendEmail } from "@/modules/notifications";
 import { bcryptPasswordHasher } from "./infrastructure/bcrypt-password-hasher";
+import { cryptoTokens } from "./infrastructure/crypto-tokens";
 import { mongoAccountRepository } from "./infrastructure/mongo-account-repository";
 import { mongoStaffDirectory } from "./infrastructure/mongo-staff-directory";
 
 export const { staffSalonId, canManageSalon } = makeAccess(mongoStaffDirectory);
-export const { register, authenticate, demoAccount, sessionUser, createStaffAccount } = makeIdentity({
+export const { register, authenticate, demoAccount, sessionUser, createStaffAccount, requestPasswordReset, resetPassword, sendEmailVerification, verifyEmail, changePassword } = makeIdentity({
   accounts: mongoAccountRepository,
   hasher: bcryptPasswordHasher,
   events: eventBus,
   clock: systemClock,
+  tokens: cryptoTokens,
+  mailer: { send: sendEmail },
 });
 
-export { credentialsInput, registerInput, type RegisterInput } from "./application/schemas";
+export { changePasswordInput, credentialsInput, forgotPasswordInput, registerInput, resetPasswordInput, verifyEmailInput, type RegisterInput } from "./application/schemas";
 export type { SalonAccess } from "./application/access";
 export type { UserAccount } from "./application/ports";
 export { LOGIN_POLICY } from "./domain/account";

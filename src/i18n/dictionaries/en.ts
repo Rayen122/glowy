@@ -1094,6 +1094,7 @@ export const en: Dictionary = {
         "user.unblock": "unblocked a user account",
         "review.hide": "hid a reported review",
         "review.keep": "kept a reported review",
+        "user.passwordReset": "sent a password reset link to {target}",
       },
     },
     queues: {
