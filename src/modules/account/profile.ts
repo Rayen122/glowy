@@ -3,13 +3,17 @@ import { notFound } from "@/core/domain/errors";
 import { objectId, User, type UserDoc } from "@/infrastructure/db";
 import { alreadyAwarded, award } from "@/modules/loyalty";
 
+const IMAGE_URL = z.string().trim().regex(/^(https:\/\/\S+|\/api\/media\/[a-f\d]{24})$/i, "Image invalide");
+
+/** CLI-01 : chaque champ est facultatif ; null efface la valeur (téléphone, ville, photo) */
 export const profileInput = z.object({
-  firstName: z.string().trim().min(1).max(60).optional(),
-  lastName: z.string().trim().min(1).max(60).optional(),
-  phone: z.string().trim().regex(/^[+\d\s]{8,20}$/, "Numéro invalide").optional(),
-  city: z.string().trim().max(60).optional(),
-  birthDate: z.iso.date().optional(),
+  firstName: z.string().trim().min(1, "Indiquez votre prénom").max(60).optional(),
+  lastName: z.string().trim().min(1, "Indiquez votre nom").max(60).optional(),
+  phone: z.string().trim().regex(/^[+\d\s]{8,20}$/, "Numéro invalide").nullable().optional(),
+  city: z.string().trim().max(60).nullable().optional(),
+  birthDate: z.iso.date("Date invalide").nullable().optional(),
   locale: z.enum(["fr", "ar", "en"]).optional(),
+  avatarUrl: IMAGE_URL.nullable().optional(),
 });
 
 export async function getProfile(userId: string) {
@@ -28,6 +32,7 @@ export async function getProfile(userId: string) {
     role: user.role,
     referralCode: user.referralCode,
     avatarUrl: user.avatarUrl ?? null,
+    emailVerified: Boolean(user.emailVerified),
     createdAt: user.createdAt,
   };
 }
@@ -35,7 +40,11 @@ export async function getProfile(userId: string) {
 /** CLI-01 ; profil complet (téléphone, ville, date de naissance) = +20 pts une seule fois */
 export async function updateProfile(userId: string, input: z.infer<typeof profileInput>) {
   const { birthDate, ...rest } = input;
-  const user = await User.findByIdAndUpdate(objectId(userId), { $set: { ...rest, ...(birthDate ? { birthDate: new Date(birthDate) } : {}) } }, { returnDocument: "after" }).lean<UserDoc>();
+  const user = await User.findByIdAndUpdate(
+    objectId(userId),
+    { $set: { ...rest, ...(birthDate !== undefined ? { birthDate: birthDate ? new Date(`${birthDate}T12:00:00Z`) : null } : {}) } },
+    { returnDocument: "after" }
+  ).lean<UserDoc>();
   if (!user) throw notFound("Utilisateur introuvable.");
   if (user.phone && user.city && user.birthDate && !(await alreadyAwarded(userId, "PROFILE_COMPLETED", {}))) await award(userId, "PROFILE_COMPLETED");
   return getProfile(userId);

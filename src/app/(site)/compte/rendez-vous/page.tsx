@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { CalendarX, CircleCheck, Clock, Hourglass, Repeat, UserX } from "lucide-react";
-import { CancelBookingButton, ReviewDialog } from "@/components/account/booking-actions";
+import { rebookHref } from "@/lib/rebook";
+import { addDays, tunisToday } from "@/core/domain/time";
+import { CancelBookingButton, RescheduleButton, ReviewDialog } from "@/components/account/booking-actions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { BookingStatus } from "@/core/domain/enums";
 import type { I18n } from "@/i18n/format";
@@ -69,9 +71,16 @@ function BookingList({ bookings, i18n }: { bookings: AccountBooking[]; i18n: I18
             <div className="flex flex-wrap gap-2">
               {active && (
                 <>
-                  <Link href={`/salons/${b.salon.slug}/reserver`} className="inline-flex h-10 items-center rounded-full border border-border px-4 text-sm font-semibold hover:bg-muted">
-                    {t.account.overview.reschedule}
-                  </Link>
+                  {b.employee.key && b.items.every((i) => i.serviceKey) ? (
+                    <RescheduleButton
+                      bookingId={b.id}
+                      salonSlug={b.salon.slug}
+                      serviceKeys={b.items.map((i) => i.serviceKey!)}
+                      employeeKey={b.employee.key}
+                      cancellationHours={b.salon.cancellationHours}
+                      minDate={addDays(tunisToday(), 1)}
+                    />
+                  ) : null}
                   <CancelBookingButton bookingId={b.id} />
                 </>
               )}
@@ -80,7 +89,7 @@ function BookingList({ bookings, i18n }: { bookings: AccountBooking[]; i18n: I18
               )}
               {(b.status === "COMPLETED" || b.status === "CANCELLED" || b.status === "NO_SHOW") && (
                 <Link
-                  href={`/salons/${b.salon.slug}/reserver`}
+                  href={rebookHref(b)}
                   className="inline-flex h-10 items-center gap-2 rounded-full border border-plum-300 px-4 text-sm font-semibold text-plum-800 hover:bg-plum-50"
                 >
                   <Repeat className="size-4" aria-hidden /> {t.account.overview.again}
