@@ -47,6 +47,7 @@ export function BookingFlow({
   initialServiceId,
   initialTime,
   depositPercent = 20,
+  initialEmployee,
 }: {
   salon: Salon;
   serviceGroups: { id: string; label: string; services: Service[] }[];
@@ -59,6 +60,8 @@ export function BookingFlow({
   user: { name: string; email: string; phone?: string | null } | null;
   /** Acompte en ligne fixé par le salon (SAL-07), en % ; 0 = pas d'acompte */
   depositPercent?: number;
+  /** Professionnel présélectionné (« Refaire le même rendez-vous », CLI-04) */
+  initialEmployee?: string;
   initialServiceId?: string;
   initialTime?: string;
 }) {
@@ -78,7 +81,7 @@ export function BookingFlow({
   );
   const [step, setStep] = useState(initialServiceId ? 1 : 0);
   const [serviceIds, setServiceIds] = useState<string[]>(initialServiceId ? [initialServiceId] : []);
-  const [employee, setEmployee] = useState<string>("any");
+  const [employee, setEmployee] = useState<string>(initialEmployee && employees.some((e) => e.id === initialEmployee) ? initialEmployee : "any");
   const [day, setDay] = useState(() => (initialTime ? 0 : Math.max(0, DAYS.findIndex((d) => !d.closed))));
   const [time, setTime] = useState<string | null>(initialTime ?? null);
   const [lockLeft, setLockLeft] = useState(initialTime ? LOCK_SECONDS : 0);

@@ -63,6 +63,20 @@ export const mongoReviewRepository: ReviewRepository = {
       return toRecord(await Review.findByIdAndUpdate(review, { $set: { status: outcome.review } }, { session, returnDocument: "after" }).orFail().lean());
     }),
 
+  async toggleHelpful(id, userId) {
+    const _id = objectId(id);
+    const user = objectId(userId);
+    const voted = Boolean(await Review.exists({ _id, helpfulBy: user }));
+    const review = await Review.findByIdAndUpdate(
+      _id,
+      voted ? { $pull: { helpfulBy: user }, $inc: { helpful: -1 } } : { $addToSet: { helpfulBy: user }, $inc: { helpful: 1 } },
+      { returnDocument: "after", projection: { helpful: 1 } }
+    )
+      .orFail()
+      .lean();
+    return { helpful: Math.max(0, review.helpful), voted: !voted };
+  },
+
   async refreshSalonRating(salonId) {
     const salon = objectId(salonId);
     const [agg] = await Review.aggregate<{ avg: number; count: number }>([

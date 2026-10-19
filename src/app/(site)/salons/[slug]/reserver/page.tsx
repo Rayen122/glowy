@@ -37,6 +37,7 @@ export default async function ReserverPage({ params, searchParams }: PageProps<"
         initialServiceId={knownService(one(sp.service)) ?? (heure ? defaultService : undefined)}
         initialTime={heure}
         depositPercent={detail.depositAmount}
+        initialEmployee={one(sp.pro)}
       />
     </div>
   );

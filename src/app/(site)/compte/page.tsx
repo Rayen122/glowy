@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, CalendarClock, CircleCheck, Clock, MapPin, Navigation, PenLine, Repeat, ScanFace, Star, UserPlus, UserRound } from "lucide-react";
+import { ArrowRight, CircleCheck, Clock, MapPin, Navigation, PenLine, Repeat, ScanFace, Star, UserPlus, UserRound } from "lucide-react";
+import { RescheduleButton } from "@/components/account/booking-actions";
+import { rebookHref } from "@/lib/rebook";
 import { TierProgress } from "@/components/loyalty/tier-progress";
 import { SalonCard } from "@/components/salon/salon-card";
 import { getI18n } from "@/i18n/server";
@@ -8,7 +10,7 @@ import { tierFor } from "@/lib/data";
 import { getAccountSummary, lastPhotoAnalysis } from "@/modules/account";
 import { recommendedSalons } from "@/modules/catalog";
 import { requirePageUser } from "@/infrastructure/session";
-import { tunisToday, utcToTunis } from "@/core/domain/time";
+import { addDays, tunisToday, utcToTunis } from "@/core/domain/time";
 
 export default async function ComptePage() {
   const user = await requirePageUser();
@@ -36,7 +38,7 @@ export default async function ComptePage() {
           href: "/compte/rendez-vous",
         }
       : null,
-    profileDone ? null : { icon: UserRound, title: o.profileTitle, text: o.profileText, pts: 20, cta: o.profileCta, href: "/compte" },
+    profileDone ? null : { icon: UserRound, title: o.profileTitle, text: o.profileText, pts: 20, cta: o.profileCta, href: "/compte/profil" },
     { icon: UserPlus, title: o.referTitle, text: f(o.referText, { code: profile.referralCode }), pts: 50, cta: o.referCta, href: "/compte/fidelite#parrainage" },
   ].filter((x): x is NonNullable<typeof x> => x !== null);
 
@@ -92,12 +94,16 @@ export default async function ComptePage() {
                   >
                     <Navigation className="size-4" aria-hidden /> {t.salon.directions}
                   </a>
-                  <Link
-                    href={`/salons/${next.salon.slug}/reserver`}
-                    className="inline-flex h-10 items-center gap-2 rounded-full border border-border px-4 text-sm font-semibold hover:bg-muted"
-                  >
-                    <CalendarClock className="size-4" aria-hidden /> {o.reschedule}
-                  </Link>
+                  {next.employee.key && next.items.every((i) => i.serviceKey) && (
+                    <RescheduleButton
+                      bookingId={next.id}
+                      salonSlug={next.salon.slug}
+                      serviceKeys={next.items.map((i) => i.serviceKey!)}
+                      employeeKey={next.employee.key}
+                      cancellationHours={next.salon.cancellationHours}
+                      minDate={addDays(tunisToday(), 1)}
+                    />
+                  )}
                   <Link href="/compte/rendez-vous" className="inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold text-destructive hover:bg-danger-soft">
                     {o.cancel}
                   </Link>
@@ -188,7 +194,7 @@ export default async function ComptePage() {
                   </p>
                 </div>
                 <Link
-                  href={`/salons/${s.slug}/reserver`}
+                  href={rebookHref(b)}
                   aria-label={`${o.again} — ${services(b)}`}
                   className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-plum-300 px-3 text-sm font-semibold text-plum-800 hover:bg-primary hover:text-primary-foreground sm:px-4"
                 >
