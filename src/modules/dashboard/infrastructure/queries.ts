@@ -2,8 +2,8 @@ import { cache } from "react";
 import type { Actor } from "@/core/domain/actor";
 import { notFound } from "@/core/domain/errors";
 import { shortName } from "@/core/domain/text";
-import { toMinutes, tunisToday, utcToTunis, weekdayOf } from "@/core/domain/time";
-import { Booking, idOf, objectId, Review, Salon, User } from "@/infrastructure/db";
+import { addDays, toMinutes, tunisDayRange, tunisToday, utcToTunis, weekdayOf } from "@/core/domain/time";
+import { Booking, Employee, idOf, objectId, Review, Salon, User } from "@/infrastructure/db";
 import { salonAgenda } from "@/modules/booking";
 import { currentSalonId } from "./current-salon";
 
@@ -71,4 +71,52 @@ export async function recentSalonReviews(salonId: string, take = 3) {
       suspicion: r.suspicion ?? 0,
     };
   });
+}
+
+/** SAL-04 : rendez-vous d'une période (vues semaine et mois de l'agenda), regroupés par jour */
+export async function salonRange(salonId: string, from: string, days: number) {
+  const salon = objectId(salonId)!;
+  const start = tunisDayRange(from).start;
+  const end = tunisDayRange(addDays(from, days - 1)).end;
+  const [salonDoc, employees, bookings] = await Promise.all([
+    Salon.findById(salon, { openingHours: 1 }).lean(),
+    Employee.find({ salon, active: true }, { name: 1, color: 1 }).sort({ createdAt: 1 }).lean(),
+    Booking.find({ salon, startsAt: { $gte: start, $lt: end }, status: { $ne: "CANCELLED" } }, { client: 1, employee: 1, startsAt: 1, endsAt: 1, status: 1, totalPrice: 1, items: 1 })
+      .sort({ startsAt: 1 })
+      .lean(),
+  ]);
+  const clients = await User.find({ _id: { $in: bookings.map((b) => b.client) } }, { firstName: 1, lastName: 1 }).lean();
+  const colorOf = new Map(employees.map((e) => [idOf(e), e.color]));
+  const byDay = new Map<string, typeof rows>();
+  const rows = bookings.map((b) => {
+    const client = clients.find((c) => c._id.equals(b.client));
+    const local = utcToTunis(b.startsAt);
+    return {
+      id: idOf(b),
+      date: local.date,
+      time: local.time,
+      end: utcToTunis(b.endsAt).time,
+      client: client ? shortName(client.firstName, client.lastName) : "",
+      service: b.items.map((i) => i.name).join(" + "),
+      employeeId: b.employee.toString(),
+      color: colorOf.get(b.employee.toString()) ?? 1,
+      status: b.status,
+      price: b.totalPrice,
+    };
+  });
+  for (const r of rows) byDay.set(r.date, [...(byDay.get(r.date) ?? []), r]);
+  return {
+    employees: employees.map((e) => ({ id: idOf(e), name: e.name, color: e.color })),
+    days: Array.from({ length: days }, (_, i) => {
+      const date = addDays(from, i);
+      const list = byDay.get(date) ?? [];
+      const opening = salonDoc?.openingHours.find((o) => o.weekday === weekdayOf(date));
+      return {
+        date,
+        open: Boolean(opening?.opensAt),
+        bookings: list,
+        revenue: list.filter((b) => b.status === "COMPLETED").reduce((a, b) => a + b.price, 0),
+      };
+    }),
+  };
 }

@@ -314,4 +314,18 @@ export const manageAr: ManageDictionary = {
     empty: "لا تقييمات لهذا الفرز.",
     suspicion: "الاشتباه {n}٪",
   },
+  agenda: {
+    prevWeek: "الأسبوع السابق",
+    nextWeek: "الأسبوع التالي",
+    prevMonth: "الشهر السابق",
+    nextMonth: "الشهر التالي",
+    thisWeek: "هذا الأسبوع",
+    thisMonth: "هذا الشهر",
+    weekRange: "أسبوع من {from} إلى {to}",
+    count: "{n} موعد",
+    closed: "مغلق",
+    empty: "لا مواعيد",
+    totals: "{n} موعدًا · {revenue} محصّلة",
+    openDay: "فتح يوم {date}",
+  },
 };
