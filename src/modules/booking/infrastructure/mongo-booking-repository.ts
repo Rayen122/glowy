@@ -28,8 +28,8 @@ const after = { returnDocument: "after" as const };
 
 export const mongoBookingRepository: BookingRepository = {
   async salonBySlug(slug) {
-    const salon = await Salon.findOne({ slug }, { status: 1 }).lean();
-    return salon ? { id: idOf(salon), active: salon.status === "ACTIVE" } : null;
+    const salon = await Salon.findOne({ slug }, { status: 1, depositAmount: 1 }).lean();
+    return salon ? { id: idOf(salon), active: salon.status === "ACTIVE", depositPercent: salon.depositAmount } : null;
   },
 
   async salonPolicy(salonId) {

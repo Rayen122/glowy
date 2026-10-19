@@ -64,7 +64,7 @@ export function makeBooking({ bookings, access, events, clock }: BookingDeps) {
         startsAt,
         endsAt,
         totalPrice: total,
-        deposit: depositFor(total, input.paymentMethod),
+        deposit: depositFor(total, input.paymentMethod, salon.depositPercent),
         paymentMethod: input.paymentMethod,
         note: input.note || null,
         offPeak: isOffPeak(day.weekday, minutes),

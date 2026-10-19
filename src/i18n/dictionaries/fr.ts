@@ -1,3 +1,4 @@
+import { manageFr } from "./manage.fr";
 /**
  * Dictionnaire français — source de vérité.
  * Les dictionnaires en.ts et ar.ts ont exactement les mêmes clés (type Dictionary).
@@ -255,8 +256,9 @@ export const fr = {
     firstVisit: "premier RDV dans ce salon",
     forecastToday: "Affluence prévue aujourd'hui",
     bestTime: "Meilleur moment :",
-    deposit: "Acompte de {amount}, déduit le jour J",
-    freeCancel: "Annulation gratuite jusqu'à 24 h avant",
+    deposit: "Acompte en ligne de {percent} % (entre 10 et 30 DT), déduit le jour J",
+    noDeposit: "Pas d'acompte : vous payez sur place",
+    freeCancel: "Annulation gratuite jusqu'à {hours} h avant",
   },
 
   loyalty: {
@@ -1199,6 +1201,8 @@ export const fr = {
       "ADM-10": "Annonces et notifications envoyées à tous les salons ou clients",
     },
   },
+
+  manage: manageFr,
 
   content: {} as Record<string, string>,
 };
