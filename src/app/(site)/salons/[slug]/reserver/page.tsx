@@ -36,6 +36,7 @@ export default async function ReserverPage({ params, searchParams }: PageProps<"
         user={profile ? { name: `${profile.firstName} ${profile.lastName}`.trim(), email: profile.email, phone: profile.phone } : null}
         initialServiceId={knownService(one(sp.service)) ?? (heure ? defaultService : undefined)}
         initialTime={heure}
+        depositPercent={detail.depositAmount}
       />
     </div>
   );

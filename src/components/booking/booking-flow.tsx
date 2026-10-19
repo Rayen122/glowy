@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, CalendarPlus, Check, Clock, CreditCard, Lock, MapPin, Store, TimerReset, Users } from "lucide-react";
 import { toast } from "sonner";
+import { depositFor } from "@/modules/booking/domain/policy";
 import { PointsBadge, Rating } from "@/components/salon/badges";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useI18n } from "@/i18n/client";
@@ -45,6 +46,7 @@ export function BookingFlow({
   user,
   initialServiceId,
   initialTime,
+  depositPercent = 20,
 }: {
   salon: Salon;
   serviceGroups: { id: string; label: string; services: Service[] }[];
@@ -55,6 +57,8 @@ export function BookingFlow({
   today: string;
   /** Cliente connectée (null : connexion demandée au moment de confirmer) */
   user: { name: string; email: string; phone?: string | null } | null;
+  /** Acompte en ligne fixé par le salon (SAL-07), en % ; 0 = pas d'acompte */
+  depositPercent?: number;
   initialServiceId?: string;
   initialTime?: string;
 }) {
@@ -87,7 +91,7 @@ export function BookingFlow({
   const services = serviceIds.map((id) => allServices.find((s) => s.id === id)).filter(Boolean) as Service[];
   const total = services.reduce((a, s) => a + s.price, 0);
   const duration = services.reduce((a, s) => a + s.duration, 0);
-  const deposit = total ? Math.min(30, Math.max(10, Math.round(total * 0.2))) : 0;
+  const deposit = depositFor(total, "ONLINE", depositPercent);
   const emp = employees.find((e) => e.id === employee);
 
   // Disponibilités réelles du jour choisi ; `refresh` force un rechargement (créneau pris entre-temps)
