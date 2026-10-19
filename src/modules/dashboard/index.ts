@@ -18,3 +18,4 @@ export { addLeave, createEmployee, createEmployeeAccount, deleteEmployee, listTe
 export { salonSettings, updateSalonSettings, type SalonSettings } from "./infrastructure/settings";
 export { createService, deleteService, listSalonServices, updateService, type ManagedService } from "./infrastructure/services";
 export { salonBookingsCsv, salonStats, STAT_PERIODS, type SalonStats, type StatPeriod } from "./infrastructure/stats";
+export { ADMIN_SALON_COOKIE, currentSalonId } from "./infrastructure/current-salon";

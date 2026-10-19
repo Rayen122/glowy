@@ -39,6 +39,12 @@ export interface AccountRepository {
   /** Compte du personnel créé par un gérant (AUTH-07) */
   createStaffUser(data: { email: string; passwordHash: string; firstName: string; lastName: string; referralCode: string }): Promise<{ id: string }>;
   setPasswordHash(userId: string, passwordHash: string): Promise<void>;
+  /** Lien à usage unique (empreinte seulement) */
+  saveToken(userId: string, purpose: "reset" | "verify", tokenHash: string, expiresAt: Date): Promise<void>;
+  /** Consomme un lien valide (non utilisé, non expiré) et renvoie l'utilisateur, ou null */
+  consumeToken(purpose: "reset" | "verify", tokenHash: string, now: Date): Promise<string | null>;
+  markEmailVerified(userId: string, at: Date): Promise<void>;
+  isEmailVerified(userId: string): Promise<boolean>;
   emailTaken(email: string): Promise<boolean>;
   referralCodeTaken(code: string): Promise<boolean>;
   salonSlugTaken(slug: string): Promise<boolean>;
@@ -47,6 +53,16 @@ export interface AccountRepository {
   /** Compte gérant + salon en attente de validation, dans une même transaction */
   createSalonOwner(data: NewSalonOwner): Promise<{ user: { id: string; role: Role }; salon: { id: string; slug: string; status: string } }>;
   saveLoginState(userId: string, state: LoginState): Promise<void>;
+}
+
+/** Générateur de liens secrets (aléatoire cryptographique) et empreinte stockée */
+export interface TokenFactory {
+  create(): { token: string; hash: string };
+  hash(token: string): string;
+}
+
+export interface Mailer {
+  send(to: string, subject: string, text: string): Promise<void>;
 }
 
 export interface PasswordHasher {

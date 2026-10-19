@@ -687,21 +687,6 @@ export const ADMIN_KPIS = {
   revenueDelta: 7.6,
 };
 
-/** month : premier jour du mois (ISO) */
-export const BOOKINGS_BY_MONTH = [
-  { month: "2025-10-01", value: 5200 },
-  { month: "2025-11-01", value: 5900 },
-  { month: "2025-12-01", value: 7400 },
-  { month: "2026-01-01", value: 6100 },
-  { month: "2026-02-01", value: 6800 },
-  { month: "2026-03-01", value: 8100 },
-  { month: "2026-04-01", value: 8600 },
-  { month: "2026-05-01", value: 9300 },
-  { month: "2026-06-01", value: 10400 },
-  { month: "2026-07-01", value: 11900 },
-  { month: "2026-08-01", value: 11400 },
-  { month: "2026-09-01", value: 12860 },
-];
 
 export type PlanId = "gratuit" | "pro" | "premium";
 
@@ -768,13 +753,6 @@ export const ADMIN_AUDIT = [
   { who: "", role: "system", action: "expire", target: "", minutesAgo: 1620 },
 ] as const;
 
-export const TOP_CITIES_ADMIN = [
-  { city: "Tunis", bookings: 5120 },
-  { city: "Sousse", bookings: 2210 },
-  { city: "Sfax", bookings: 1840 },
-  { city: "Nabeul", bookings: 1130 },
-  { city: "Monastir", bookings: 760 },
-];
 
 export const PLANS: { id: PlanId; name: string; price: number; audience: string; highlighted?: boolean; features: string[] }[] = [
   {
