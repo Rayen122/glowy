@@ -316,6 +316,20 @@ export const manageFr = {
     empty: "Aucun avis pour ce filtre.",
     suspicion: "Suspicion {n} %",
   },
+  agenda: {
+    prevWeek: "Semaine précédente",
+    nextWeek: "Semaine suivante",
+    prevMonth: "Mois précédent",
+    nextMonth: "Mois suivant",
+    thisWeek: "Cette semaine",
+    thisMonth: "Ce mois-ci",
+    weekRange: "Semaine du {from} au {to}",
+    count: "{n} RDV",
+    closed: "Fermé",
+    empty: "Aucun rendez-vous",
+    totals: "{n} rendez-vous · {revenue} encaissés",
+    openDay: "Voir la journée du {date}",
+  },
 };
 
 export type ManageDictionary = typeof manageFr;
