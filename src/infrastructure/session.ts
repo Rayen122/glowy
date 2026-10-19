@@ -24,6 +24,13 @@ export async function requireUser(...roles: Role[]): Promise<Actor & { firstName
   return { id: user.id, role: user.role, firstName: user.firstName, lastName: user.lastName, email: user.email };
 }
 
+/** Utilisateur connecté et actif, ou null (routes ouvertes aux visiteurs) */
+export async function currentActor(): Promise<Actor | null> {
+  const session = await currentUser();
+  const user = session ? await sessionUser(session.id) : null;
+  return user ? { id: user.id, role: user.role } : null;
+}
+
 /** Variante pour les pages : redirige au lieu de lever une erreur */
 export async function requirePageUser(...roles: Role[]) {
   try {
