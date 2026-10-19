@@ -7,9 +7,8 @@ import { BookingsArea } from "@/components/charts/bookings-area";
 import { StatTile } from "@/components/charts/stat-tile";
 import type { PlanId } from "@/core/domain/enums";
 import { getI18n } from "@/i18n/server";
-import { BOOKINGS_BY_MONTH, TOP_CITIES_ADMIN } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { adminOverview, adminQueues } from "@/modules/admin";
+import { adminOverview, adminQueues, bookingsByCity, platformGrowth } from "@/modules/admin";
 import { requirePageUser } from "@/infrastructure/session";
 import { tunisToday } from "@/core/domain/time";
 
@@ -23,7 +22,7 @@ const PERIODS = ["d7", "d30", "m12"] as const;
 
 export default async function AdminPage() {
   await requirePageUser("ADMIN");
-  const [{ t, tc, f, nf, money, df, ago }, overview, queues] = await Promise.all([getI18n(), adminOverview(), adminQueues()]);
+  const [{ t, tc, f, nf, money, df, ago }, overview, queues, growth, cities] = await Promise.all([getI18n(), adminOverview(), adminQueues(), platformGrowth(), bookingsByCity(365)]);
   const a = t.admin;
   const o = a.overview;
   const PLAN_SPLIT = (["gratuit", "pro", "premium"] as PlanId[]).map((plan) => ({ plan, salons: overview.plans.find((p) => p.plan === plan)?.count ?? 0 }));
@@ -72,7 +71,7 @@ export default async function AdminPage() {
           </h2>
           <p className="text-sm text-muted-foreground">{o.growthHint}</p>
           <div className="mt-4">
-            <BookingsArea data={BOOKINGS_BY_MONTH} />
+            <BookingsArea data={growth.map((g) => ({ month: g.month, value: g.bookings }))} />
           </div>
         </section>
 
@@ -108,7 +107,7 @@ export default async function AdminPage() {
             <h2 id="cities-title" className="font-semibold">
               {o.citiesTitle}
             </h2>
-            <BarList className="mt-4" items={TOP_CITIES_ADMIN.map((c) => ({ label: tc(c.city), value: c.bookings }))} />
+            <BarList className="mt-4" items={cities.slice(0, 6).map((c) => ({ label: tc(c.city), value: c.bookings }))} />
           </section>
         </div>
       </div>

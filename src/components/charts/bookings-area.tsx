@@ -27,6 +27,11 @@ export function BookingsArea({ data }: { data: Datum[] }) {
   const c = t.charts;
   const config = { value: { label: c.bookings, color: "var(--series-1)" } } satisfies ChartConfig;
   const last = data[data.length - 1];
+  // Graduation ronde couvrant le maximum (4 intervalles)
+  const raw = Math.max(1, ...data.map((d) => d.value)) / 3;
+  const magnitude = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].map((k) => k * magnitude).find((v) => v >= raw) ?? raw;
+  const ticks = [0, step, 2 * step, 3 * step];
   return (
     <>
       <div dir="ltr">
@@ -52,8 +57,8 @@ export function BookingsArea({ data }: { data: Datum[] }) {
               axisLine={false}
               width={52}
               fontSize={11}
-              ticks={[0, 5000, 10000, 15000]}
-              domain={[0, 15000]}
+              ticks={ticks}
+              domain={[0, ticks[3]]}
               tickFormatter={(v: number) => nf(v)}
             />
             <Tooltip cursor={{ stroke: "#b9aab4", strokeWidth: 1 }} content={<TooltipCard />} />

@@ -11,3 +11,4 @@ export const { setSalonStatus, setUserStatus } = makeAdmin({ admin: mongoAdminRe
 export { salonActionInput, userActionInput } from "./application/schemas";
 export { adminOverview, adminQueues, type PendingSalonRow } from "./infrastructure/queries";
 export type { FlaggedReviewRow } from "./domain/policy";
+export { auditTrail, bookingsByCity, listSalonsForAdmin, listUsersForAdmin, moderationHistory, PAGE_SIZE, platformGrowth, salonExists, sendPasswordResetFor, type AdminSalonRow, type AdminUserRow } from "./infrastructure/manage";
