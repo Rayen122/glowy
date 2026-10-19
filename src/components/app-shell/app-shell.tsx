@@ -95,10 +95,10 @@ export async function AppShell({
   );
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[256px_minmax(0,1fr)] xl:grid-cols-[272px_minmax(0,1fr)]">
-      <aside className="sticky top-0 hidden h-dvh pt-[max(1.25rem,env(safe-area-inset-top))] border-e border-sidebar-border bg-sidebar px-4 py-5 lg:block">{sidebar}</aside>
+    <div className="min-h-dvh lg:grid lg:grid-cols-[256px_minmax(0,1fr)] xl:grid-cols-[272px_minmax(0,1fr)] print:block">
+      <aside className="sticky top-0 hidden h-dvh pt-[max(1.25rem,env(safe-area-inset-top))] border-e border-sidebar-border bg-sidebar px-4 py-5 lg:block print:hidden">{sidebar}</aside>
       <div className="flex min-w-0 flex-col">
-        <header className="sticky top-0 z-30 border-b border-border bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-md">
+        <header className="sticky top-0 z-30 border-b border-border bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-md print:hidden">
           <div className="flex h-16 items-center gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8">
           <MobileNav label={s.openNav}>{sidebar}</MobileNav>
           <Link href="/" aria-label={s.backToSite} className="flex shrink-0 items-center gap-2 rounded-lg md:hidden">
@@ -124,7 +124,7 @@ export async function AppShell({
           </div>
         </header>
         {/* Écrans plus étroits : recherche et navigation de la barre latérale, en onglets qui défilent */}
-        <div className="border-b border-border bg-background lg:hidden">
+        <div className="border-b border-border bg-background lg:hidden print:hidden">
           <label className="relative block px-3 pt-3 sm:px-6 md:hidden">
             <span className="sr-only">{s.search}</span>
             <Search className="pointer-events-none absolute start-6.5 top-[calc(50%+0.375rem)] size-4 -translate-y-1/2 text-muted-foreground sm:start-9.5" aria-hidden />

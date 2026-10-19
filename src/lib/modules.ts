@@ -21,14 +21,6 @@ export const SALON_MODULES: ModuleDef<keyof Dictionary["modules"]["salon"]>[] = 
       { ref: "IA 4.4", priority: "should" },
     ],
   },
-  {
-    slug: "statistiques",
-    owners: [2],
-    requirements: [
-      { ref: "SAL-06", priority: "must" },
-      { ref: "SAL-11", priority: "should" },
-    ],
-  },
   { slug: "caisse", owners: [2], requirements: [{ ref: "SAL-09", priority: "should" }] },
   {
     slug: "promotions",
