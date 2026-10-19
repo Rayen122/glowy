@@ -1,3 +1,4 @@
+import { manageEn } from "./manage.en";
 import type { Dictionary } from "./fr";
 
 /** English dictionary — same keys as fr.ts (checked by the Dictionary type). */
@@ -250,8 +251,9 @@ export const en: Dictionary = {
     firstVisit: "first visit to this salon",
     forecastToday: "Expected crowd today",
     bestTime: "Best time:",
-    deposit: "{amount} deposit, deducted on the day",
-    freeCancel: "Free cancellation up to 24 hours before",
+    deposit: "{percent}% online deposit (10 to 30 TND), deducted on the day",
+    noDeposit: "No deposit: you pay at the salon",
+    freeCancel: "Free cancellation up to {hours} hours before",
   },
 
   loyalty: {
@@ -1195,6 +1197,8 @@ export const en: Dictionary = {
   },
 
   /* Données de démo : clé = texte français de src/lib/data.ts */
+  manage: manageEn,
+
   content: {
     // Villes
     Tunis: "Tunis",

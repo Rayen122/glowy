@@ -28,7 +28,7 @@ export type NewBooking = Omit<BookingRecord, "id" | "status" | "cancelledAt" | "
 };
 
 export interface BookingRepository {
-  salonBySlug(slug: string): Promise<{ id: string; active: boolean } | null>;
+  salonBySlug(slug: string): Promise<{ id: string; active: boolean; depositPercent: number } | null>;
   salonPolicy(salonId: string): Promise<{ cancellationHours: number }>;
   activeServices(salonId: string, keys: string[]): Promise<ServiceRef[]>;
   daySchedule(salonId: string, date: string, opts?: { employeeKey?: string; employeeId?: string; ignoreBookingId?: string }): Promise<DaySchedule>;
