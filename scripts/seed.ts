@@ -398,6 +398,66 @@ async function main() {
     await ReviewReport.create({ review: review._id, source: f.reportedBy === "ai" ? "AI" : "SALON", reason: f.reasons.join(" · ") });
   }
 
+  // ── Historique d'activité du Salon Yasmine sur 90 jours (statistiques, rapports, prédiction d'affluence) ──
+  {
+    const slug = "salon-yasmine-la-marsa";
+    let seed = 20261019;
+    const rand = () => {
+      seed = (seed * 16807) % 2147483647;
+      return (seed - 1) / 2147483646;
+    };
+    const pick = <T,>(list: readonly T[]) => list[Math.floor(rand() * list.length)];
+    const FIRST = ["Rania", "Mouna", "Olfa", "Asma", "Hela", "Leila", "Emna", "Nadia", "Sonia", "Ines", "Yosra", "Meriem", "Salma", "Dorra", "Amel", "Rim", "Wafa", "Sana", "Khaoula", "Fatma", "Karim", "Walid", "Sami", "Mehdi"];
+    const LAST = ["H.", "B.", "K.", "T.", "M.", "G.", "S.", "J.", "A.", "Z."];
+    const regulars = await Promise.all(Array.from({ length: 36 }, (_, i) => clientFor(`${FIRST[i % FIRST.length]} ${LAST[(i * 7) % LAST.length]}`)));
+    const team = EMPLOYEES.map((e) => e.id);
+    const catalog = [...serviceRows.entries()].filter(([k]) => k.startsWith(`${slug}:`)).map(([, v]) => v).filter((v) => v.durationMin <= 150);
+    const rows: Record<string, unknown>[] = [];
+    for (let back = 90; back >= 1; back--) {
+      const date = addDays(TODAY, -back);
+      const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
+      const hours = OPENING_HOURS.find((h) => h.weekday === weekday)?.hours;
+      if (!hours) continue;
+      const opens = toMinutes(hours.slice(0, 5));
+      const closes = toMinutes(hours.slice(-5));
+      // Plus de monde en fin de semaine et en fin de journée
+      const perEmployee = weekday === 6 ? 4 : weekday >= 4 ? 3 : 2;
+      for (const employeeKey of team) {
+        let cursor = opens + Math.floor(rand() * 4) * 30;
+        for (let n = 0; n < perEmployee + (rand() < 0.4 ? 1 : 0); n++) {
+          const service = pick(catalog);
+          cursor = Math.max(cursor, opens) + (rand() < 0.5 ? 0 : 30);
+          if (cursor + service.durationMin > closes) break;
+          const startsAt = tunisToUtc(date, `${String(Math.floor(cursor / 60)).padStart(2, "0")}:${String(cursor % 60).padStart(2, "0")}`);
+          const endsAt = new Date(startsAt.getTime() + service.durationMin * 60_000);
+          const roll = rand();
+          const status: BookingStatus = roll < 0.07 ? "CANCELLED" : roll < 0.12 ? "NO_SHOW" : "COMPLETED";
+          const online = rand() < 0.3;
+          const deposit = online ? Math.min(30, Math.max(10, Math.round(service.price * 0.2))) : 0;
+          rows.push({
+            client: pick(regulars),
+            salon: salonIds.get(slug)!,
+            employee: employeeIds.get(`${slug}:${employeeKey}`)!,
+            startsAt,
+            endsAt,
+            status,
+            totalPrice: service.price,
+            deposit,
+            paymentMethod: online ? "ONLINE" : "ONSITE",
+            offPeak: weekday >= 1 && weekday <= 3 && cursor >= 600 && cursor < 720,
+            createdAt: new Date(startsAt.getTime() - (1 + Math.floor(rand() * 10)) * 86_400_000),
+            completedAt: status === "COMPLETED" ? endsAt : null,
+            cancelledAt: status === "CANCELLED" ? new Date(startsAt.getTime() - 86_400_000) : null,
+            items: [{ serviceKey: service.key, name: service.name, price: service.price, durationMin: service.durationMin }],
+            payment: deposit ? { amount: deposit, status: status === "CANCELLED" ? "REFUNDED" : "PAID", provider: "test", reference: "TEST-SEED" } : null,
+          });
+          cursor += service.durationMin;
+        }
+      }
+    }
+    await Booking.insertMany(rows);
+  }
+
   // Moyennes dénormalisées
   for (const salonId of salonIds.values()) {
     const [agg] = await Review.aggregate<{ avg: number; count: number }>([{ $match: { salon: salonId, status: "PUBLISHED" } }, { $group: { _id: null, avg: { $avg: "$rating" }, count: { $sum: 1 } } }]);
