@@ -26,6 +26,8 @@ export function makeReviews({ reviews, access, events, clock }: { reviews: Revie
       case "reply": // AVI-04 : le gérant répond publiquement
         if (!isSalonStaff || actor.role === "EMPLOYEE") throw forbidden();
         return reviews.reply(reviewId, input.reply, clock.now());
+      case "helpful":
+        return reviews.toggleHelpful(reviewId, actor.id);
       case "report": // AVI-05
         return reviews.report({ reviewId, reporterId: actor.id, source: isSalonStaff ? "SALON" : "USER", reason: input.reason });
       case "hide":
