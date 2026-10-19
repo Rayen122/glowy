@@ -1,3 +1,4 @@
+import { manageAr } from "./manage.ar";
 import type { Dictionary } from "./fr";
 
 /** القاموس العربي — نفس مفاتيح fr.ts (يتحقق منها النوع Dictionary). يُعرض من اليمين إلى اليسار. */
@@ -249,8 +250,9 @@ export const ar: Dictionary = {
     firstVisit: "أول موعد في هذا الصالون",
     forecastToday: "الازدحام المتوقع اليوم",
     bestTime: "أفضل وقت:",
-    deposit: "عربون بقيمة {amount}، يُخصم يوم الموعد",
-    freeCancel: "إلغاء مجاني حتى 24 ساعة قبل الموعد",
+    deposit: "عربون عبر الإنترنت بنسبة {percent}٪ (بين 10 و30 د.ت)، يُخصم يوم الموعد",
+    noDeposit: "لا عربون: تدفع في الصالون",
+    freeCancel: "إلغاء مجاني حتى {hours} ساعة قبل الموعد",
   },
 
   loyalty: {
@@ -1194,6 +1196,8 @@ export const ar: Dictionary = {
   },
 
   /* Données de démo : clé = texte français de src/lib/data.ts */
+  manage: manageAr,
+
   content: {
     // المدن
     Tunis: "تونس",

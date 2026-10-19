@@ -16,9 +16,12 @@ export const LOCK_GRAIN_MIN = 5;
 /** Heure creuse (+10 pts). Règle provisoire en attendant la prédiction d'affluence (IA P2) : lun.–mer., 10 h – 12 h. */
 export const isOffPeak = (weekday: number, minutes: number) => weekday >= 1 && weekday <= 3 && minutes >= 600 && minutes < 720;
 
-/** Acompte en ligne : 20 % du total, entre 10 et 30 DT (même règle que l'interface) */
-export const depositFor = (total: number, method: PaymentMethod) =>
-  method === "ONLINE" && total > 0 ? Math.min(30, Math.max(10, Math.round(total * 0.2))) : 0;
+/**
+ * Acompte en ligne : `percent` % du total réglé par le salon (SAL-07, 20 % par défaut, 0 = pas d'acompte),
+ * borné entre 10 et 30 DT et jamais au-delà du total. Même règle dans le tunnel de réservation.
+ */
+export const depositFor = (total: number, method: PaymentMethod, percent = 20) =>
+  method === "ONLINE" && total > 0 && percent > 0 ? Math.min(total, 30, Math.max(10, Math.round((total * percent) / 100))) : 0;
 
 /** Le créneau commence-t-il trop tôt pour être encore réservé ? */
 export const startsTooSoon = (startsAt: Date, now: Date) => startsAt.getTime() < now.getTime() + MIN_LEAD_MIN * 60_000;

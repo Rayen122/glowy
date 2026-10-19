@@ -490,11 +490,11 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
             <ul className="mt-6 space-y-2 border-t border-border pt-5 text-sm text-muted-foreground">
               <li className="flex gap-2">
                 <ShieldCheck className="mt-0.5 size-4 shrink-0 text-plum-600" aria-hidden />
-                {f(s.deposit, { amount: money(20) })}
+                {detail.depositAmount > 0 ? f(s.deposit, { percent: nf(detail.depositAmount) }) : s.noDeposit}
               </li>
               <li className="flex gap-2">
                 <Clock className="mt-0.5 size-4 shrink-0 text-plum-600" aria-hidden />
-                {s.freeCancel}
+                {f(s.freeCancel, { hours: nf(detail.cancellationHours) })}
               </li>
             </ul>
           </div>
