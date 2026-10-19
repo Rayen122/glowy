@@ -12,15 +12,6 @@ export type ModuleDef<Slug extends string = string> = { slug: Slug; owners: numb
 
 export const SALON_MODULES: ModuleDef<keyof Dictionary["modules"]["salon"]>[] = [
   { slug: "clients", owners: [2], requirements: [{ ref: "SAL-08", priority: "should" }] },
-  {
-    slug: "avis",
-    owners: [4],
-    requirements: [
-      { ref: "AVI-04", priority: "should" },
-      { ref: "AVI-05", priority: "should" },
-      { ref: "IA 4.4", priority: "should" },
-    ],
-  },
   { slug: "caisse", owners: [2], requirements: [{ ref: "SAL-09", priority: "should" }] },
   {
     slug: "promotions",

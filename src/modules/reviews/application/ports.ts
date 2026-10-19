@@ -14,6 +14,8 @@ export interface ReviewRepository {
   moderate(id: string, decision: "hide" | "keep", actorId: string, at: Date): Promise<ReviewRecord>;
   /** Note moyenne et nombre d'avis publiés du salon (dénormalisés pour la recherche) */
   refreshSalonRating(salonId: string): Promise<void>;
+  /** Vote « utile » : ajoute ou retire le vote de cet utilisateur */
+  toggleHelpful(id: string, userId: string): Promise<{ helpful: number; voted: boolean }>;
 }
 
 export interface SalonAccessPort {
