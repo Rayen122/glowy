@@ -1,18 +1,18 @@
 import type { Role } from "@/core/domain/actor";
 import type { Clock } from "@/core/domain/clock";
-import { conflict } from "@/core/domain/errors";
+import { badRequest, conflict, unauthorized } from "@/core/domain/errors";
 import type { EventPublisher } from "@/core/domain/events";
 import { slugify } from "@/core/domain/text";
-import { afterFailedLogin, coordsFor, isLocked, referralCandidate, temporaryPassword } from "../domain/account";
-import type { AccountRepository, PasswordHasher, UserAccount } from "./ports";
+import { afterFailedLogin, coordsFor, isLocked, referralCandidate, temporaryPassword, TOKEN_TTL_MINUTES } from "../domain/account";
+import type { AccountRepository, Mailer, PasswordHasher, TokenFactory, UserAccount } from "./ports";
 import type { RegisterInput } from "./schemas";
 
-export type IdentityDeps = { accounts: AccountRepository; hasher: PasswordHasher; events: EventPublisher; clock: Clock };
+export type IdentityDeps = { accounts: AccountRepository; hasher: PasswordHasher; events: EventPublisher; clock: Clock; tokens: TokenFactory; mailer: Mailer };
 
 export type AuthResult = { ok: true; user: UserAccount } | { ok: false; reason: "invalid" | "locked" | "blocked" };
 
 /** Comptes (P1) : inscription (AUTH-01, AUTH-02) et vérification des identifiants (AUTH-03) */
-export function makeIdentity({ accounts, hasher, events, clock }: IdentityDeps) {
+export function makeIdentity({ accounts, hasher, events, clock, tokens, mailer }: IdentityDeps) {
   async function uniqueReferralCode(base: string) {
     for (;;) {
       const code = referralCandidate(base);
@@ -119,5 +119,65 @@ export function makeIdentity({ accounts, hasher, events, clock }: IdentityDeps) 
     return { id: user.id, email, temporaryPassword: password };
   }
 
-  return { register, authenticate, demoAccount, sessionUser, createStaffAccount };
+  async function issueLink(user: { id: string }, purpose: "reset" | "verify") {
+    const { token, hash } = tokens.create();
+    await accounts.saveToken(user.id, purpose, hash, new Date(clock.now().getTime() + TOKEN_TTL_MINUTES[purpose] * 60_000));
+    return token;
+  }
+
+  /**
+   * AUTH-05 : envoie un lien de réinitialisation valable 1 h. Même réponse que le compte existe ou non
+   * (pas d'énumération des adresses) ; rien n'est envoyé à un compte bloqué.
+   */
+  async function requestPasswordReset(email: string, origin: string) {
+    const user = await accounts.findByEmail(email.trim().toLowerCase());
+    if (!user || user.status !== "ACTIVE") return { sent: true };
+    const token = await issueLink(user, "reset");
+    await mailer.send(
+      user.email,
+      "Réinitialiser votre mot de passe Glowy",
+      `Bonjour ${user.firstName},\n\nPour choisir un nouveau mot de passe, ouvrez ce lien (valable 1 heure) :\n${origin}/reinitialiser?token=${token}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez ce message.`
+    );
+    return { sent: true };
+  }
+
+  /** AUTH-05 : nouveau mot de passe ; le lien ne sert qu'une fois et débloque le compte */
+  async function resetPassword(token: string, password: string) {
+    const userId = await accounts.consumeToken("reset", tokens.hash(token), clock.now());
+    if (!userId) throw badRequest("INVALID_TOKEN", "Ce lien n'est plus valable. Demandez-en un nouveau.");
+    await accounts.setPasswordHash(userId, await hasher.hash(password));
+    // Le lien reçu par e-mail prouve aussi que l'adresse est la bonne
+    await accounts.markEmailVerified(userId, clock.now());
+    return { reset: true };
+  }
+
+  /** AUTH-06 : lien de vérification (48 h), envoyé à l'inscription et sur demande */
+  async function sendEmailVerification(userId: string, origin: string) {
+    const user = await accounts.findById(userId);
+    if (!user || (await accounts.isEmailVerified(userId))) return { sent: false };
+    const token = await issueLink(user, "verify");
+    await mailer.send(
+      user.email,
+      "Confirmez votre adresse e-mail",
+      `Bonjour ${user.firstName},\n\nConfirmez votre adresse e-mail en ouvrant ce lien (valable 48 heures) :\n${origin}/verifier-email?token=${token}`
+    );
+    return { sent: true };
+  }
+
+  async function verifyEmail(token: string) {
+    const userId = await accounts.consumeToken("verify", tokens.hash(token), clock.now());
+    if (!userId) throw badRequest("INVALID_TOKEN", "Ce lien n'est plus valable. Demandez-en un nouveau depuis votre compte.");
+    await accounts.markEmailVerified(userId, clock.now());
+    return { verified: true };
+  }
+
+  /** Changement de mot de passe d'un utilisateur connecté : l'ancien est exigé */
+  async function changePassword(userId: string, current: string, next: string) {
+    const user = await accounts.findById(userId);
+    if (!user?.passwordHash || !(await hasher.verify(current, user.passwordHash))) throw unauthorized("Mot de passe actuel incorrect.");
+    await accounts.setPasswordHash(userId, await hasher.hash(next));
+    return { changed: true };
+  }
+
+  return { register, authenticate, demoAccount, sessionUser, createStaffAccount, requestPasswordReset, resetPassword, sendEmailVerification, verifyEmail, changePassword };
 }

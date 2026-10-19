@@ -1100,6 +1100,7 @@ export const fr = {
         "user.unblock": "a débloqué un compte utilisateur",
         "review.hide": "a masqué un avis signalé",
         "review.keep": "a conservé un avis signalé",
+        "user.passwordReset": "a envoyé un lien de réinitialisation du mot de passe à {target}",
       },
     },
     queues: {
