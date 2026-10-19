@@ -208,3 +208,12 @@ export function ManageHeader({ title, description, action }: { title: string; de
 }
 
 export { api };
+
+/** Impression de la page (le navigateur propose « Enregistrer en PDF ») — le menu et l'en-tête sont masqués à l'impression */
+export function PrintButton({ label }: { label: string }) {
+  return (
+    <button type="button" onClick={() => window.print()} className={cn(SECONDARY_BUTTON, "h-10 px-4 print:hidden")}>
+      {label}
+    </button>
+  );
+}

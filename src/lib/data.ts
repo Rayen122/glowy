@@ -654,35 +654,6 @@ export const SALON_BLOCKS = [
   { employee: "sami", time: "11:00", end: "13:30", label: "Formation" },
 ];
 
-const seeded = (seed: number) => () => {
-  seed = (seed * 16807) % 2147483647;
-  return (seed - 1) / 2147483646;
-};
-
-/** CA journalier sur 30 jours (dimanche = fermé) */
-export const REVENUE_30D = (() => {
-  const rand = seeded(42);
-  const start = new Date(Date.UTC(2026, 7, 30));
-  return Array.from({ length: 30 }, (_, i) => {
-    const d = new Date(start.getTime() + i * 86_400_000);
-    const dow = d.getUTCDay();
-    const base = dow === 0 ? 0 : dow === 6 ? 1650 : dow === 5 ? 1300 : 900;
-    const value = base === 0 ? 0 : Math.round(base + (rand() - 0.4) * 380 + i * 6);
-    return {
-      date: d.toISOString().slice(0, 10),
-      revenue: value,
-    };
-  });
-})();
-
-export const POPULAR_SERVICES = [
-  { name: "Coupe femme + brushing", count: 142 },
-  { name: "Brushing", count: 118 },
-  { name: "Coloration racines", count: 64 },
-  { name: "Balayage", count: 41 },
-  { name: "Chignon de mariée", count: 29 },
-];
-
 /** Jours (1 = lundi … 6 = samedi) et heures de la prévision d'affluence */
 export const HEATMAP_DAYS = [1, 2, 3, 4, 5, 6];
 export const HEATMAP_HOURS = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
