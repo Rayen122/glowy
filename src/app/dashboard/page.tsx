@@ -6,8 +6,8 @@ import { RevenueBars } from "@/components/charts/revenue-bars";
 import { StatTile } from "@/components/charts/stat-tile";
 import { BookingStatusActions } from "@/components/dashboard/booking-status";
 import { getI18n } from "@/i18n/server";
-import { AFFLUENCE_FORECAST, HEATMAP_DAYS, HEATMAP_HOURS, POPULAR_SERVICES, REVENUE_30D, weekdayIso } from "@/lib/data";
-import { recentSalonReviews, salonKpis, staffSalon } from "@/modules/dashboard";
+import { AFFLUENCE_FORECAST, HEATMAP_DAYS, HEATMAP_HOURS, weekdayIso } from "@/lib/data";
+import { recentSalonReviews, salonKpis, salonStats, staffSalon } from "@/modules/dashboard";
 import { requirePageUser } from "@/infrastructure/session";
 import { tunisToday } from "@/core/domain/time";
 import { cn } from "@/lib/utils";
@@ -25,12 +25,12 @@ const PERIODS = ["today", "d7", "d30", "month"] as const;
 export default async function DashboardPage() {
   const user = await requirePageUser("MANAGER", "EMPLOYEE", "ADMIN");
   const salon = await staffSalon(user);
-  const [{ t, tc, f, nf, money, df, hour }, kpis, reviews] = await Promise.all([getI18n(), salonKpis(salon.id), recentSalonReviews(salon.id)]);
+  const [{ t, tc, f, nf, money, df, hour }, kpis, reviews, stats30] = await Promise.all([getI18n(), salonKpis(salon.id), recentSalonReviews(salon.id), salonStats(salon.id, 30)]);
   const d = t.dashboard;
   const o = d.overview;
   const today = tunisToday();
-  // Statistiques sur 30 jours (SAL-06, P2) : données de démonstration en attendant le module statistiques
-  const total30 = REVENUE_30D.reduce((a, x) => a + x.revenue, 0);
+  // Statistiques réelles sur 30 jours (SAL-06)
+  const total30 = stats30.revenue;
   const upcoming = kpis.day.bookings.filter((b) => b.status !== "COMPLETED" && b.status !== "NO_SHOW").slice(0, 6);
   const weekday = (w: number) => df(weekdayIso(w), { weekday: "long" });
 
@@ -158,13 +158,16 @@ export default async function DashboardPage() {
             </div>
             <p className="text-2xl font-semibold tracking-tight">
               {money(total30)}
-              <span className="ms-2 text-xs font-semibold text-success" dir="ltr">
-                +{nf(9.4)} %
-              </span>
+              {stats30.revenueChange != null && (
+                <span className={cn("ms-2 text-xs font-semibold", stats30.revenueChange >= 0 ? "text-success" : "text-destructive")} dir="ltr">
+                  {stats30.revenueChange >= 0 ? "+" : "−"}
+                  {nf(Math.abs(Math.round(stats30.revenueChange * 1000) / 10))} %
+                </span>
+              )}
             </p>
           </div>
           <div className="mt-5">
-            <RevenueBars data={REVENUE_30D} />
+            <RevenueBars data={stats30.series} />
           </div>
         </section>
 
@@ -174,7 +177,7 @@ export default async function DashboardPage() {
             {o.popularTitle}
           </h2>
           <p className="text-sm text-muted-foreground">{o.popularHint}</p>
-          <BarList className="mt-5" items={POPULAR_SERVICES.map((s) => ({ label: tc(s.name), value: s.count }))} />
+          <BarList className="mt-5" items={stats30.services.slice(0, 5).map((s) => ({ label: tc(s.name), value: s.count }))} />
         </section>
       </div>
 
