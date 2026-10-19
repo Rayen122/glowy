@@ -373,6 +373,19 @@ const photoAnalysisSchema = new Schema(
 );
 photoAnalysisSchema.index({ user: 1, createdAt: -1 });
 
+/** SAL-08 : note du salon sur une cliente (allergie, préférence, remarque) — visible du seul personnel du salon */
+const clientNoteSchema = new Schema(
+  {
+    salon: { type: ObjectId, ref: "Salon", required: true },
+    client: { type: ObjectId, ref: "User", required: true },
+    author: { type: ObjectId, ref: "User", default: null },
+    kind: { type: String, enum: ["allergy", "preference", "note"], default: "note" },
+    text: { type: String, required: true },
+  },
+  { timestamps: { createdAt: true, updatedAt: false } }
+);
+clientNoteSchema.index({ salon: 1, client: 1, createdAt: -1 });
+
 /** Journal des actions sensibles (ADM-07) */
 const auditLogSchema = new Schema(
   {
@@ -405,6 +418,7 @@ export const Review = defineModel("Review", reviewSchema);
 export const ReviewReport = defineModel("ReviewReport", reviewReportSchema);
 export const PhotoAnalysis = defineModel("PhotoAnalysis", photoAnalysisSchema);
 export const AuditLog = defineModel("AuditLog", auditLogSchema);
+export const ClientNote = defineModel("ClientNote", clientNoteSchema);
 
 /** Document lu avec .lean() : champs du schéma + _id (+ dates automatiques) */
 type Lean<S extends Schema> = InferSchemaType<S> & { _id: Types.ObjectId; createdAt: Date; updatedAt: Date };
@@ -419,7 +433,7 @@ export type ReviewDoc = Lean<typeof reviewSchema>;
 export type PointTransactionDoc = Omit<Lean<typeof pointTransactionSchema>, "updatedAt">;
 
 /** Toutes les collections, pour vider la base (seed, tests) */
-export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog];
+export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog, ClientNote];
 
 /** Vide toutes les collections et recrée les index, dont les index uniques (seed, tests) */
 export async function resetAll() {
