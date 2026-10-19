@@ -2,12 +2,12 @@ import type { Actor } from "@/core/domain/actor";
 import { conflict, notFound } from "@/core/domain/errors";
 import { slugify } from "@/core/domain/text";
 import { objectId, Salon } from "@/infrastructure/db";
-import { staffSalonId } from "@/modules/identity";
 import type { ServiceInput } from "../application/schemas";
+import { currentSalonId } from "./current-salon";
 
 /** SAL-03 : prestations du salon (imbriquées dans le document salon) — réservé au gérant et au Super Admin */
 
-const managedSalon = async (actor: Actor) => objectId(await staffSalonId(actor))!;
+const managedSalon = async (actor: Actor) => objectId(await currentSalonId(actor))!;
 
 export type ManagedService = {
   id: string;

@@ -34,3 +34,14 @@ export const registerInput = z.discriminatedUnion("type", [
 export type RegisterInput = z.infer<typeof registerInput>;
 
 export const credentialsInput = z.object({ email: z.email().trim().toLowerCase(), password: z.string().min(1).max(128) });
+
+/** AUTH-05 : demande de lien de réinitialisation */
+export const forgotPasswordInput = z.object({ email: z.email("Adresse e-mail invalide").trim().toLowerCase() });
+/** AUTH-05 : nouveau mot de passe à partir du lien reçu */
+export const resetPasswordInput = z.object({ token: z.string().min(20).max(200), password: PASSWORD });
+/** AUTH-06 : lien de vérification de l'adresse e-mail */
+export const verifyEmailInput = z.object({ token: z.string().min(20).max(200) });
+/** Changement de mot de passe d'un utilisateur connecté (ex. employé avec un mot de passe temporaire) */
+export const changePasswordInput = z
+  .object({ current: z.string().min(1).max(128), next: PASSWORD })
+  .refine((v) => v.current !== v.next, { message: "Le nouveau mot de passe doit être différent", path: ["next"] });

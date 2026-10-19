@@ -5,14 +5,15 @@ import { slugify } from "@/core/domain/text";
 import { addDays, tunisToUtc, utcToTunis } from "@/core/domain/time";
 import { Booking, Employee, objectId, TimeOff, User } from "@/infrastructure/db";
 import { createTimeOff, deleteTimeOff } from "@/modules/booking";
-import { createStaffAccount, staffSalonId } from "@/modules/identity";
+import { createStaffAccount } from "@/modules/identity";
 import { sendEmail } from "@/modules/notifications";
 import type { EmployeeInput, LeaveInput } from "../application/schemas";
+import { currentSalonId } from "./current-salon";
 
 /** SAL-05 / AUTH-07 : équipe du salon — réservé au gérant et au Super Admin */
 
 const ACTIVE = ["PENDING", "CONFIRMED", "IN_PROGRESS"] as ("PENDING" | "CONFIRMED" | "IN_PROGRESS")[];
-const managedSalon = async (actor: Actor) => objectId(await staffSalonId(actor))!;
+const managedSalon = async (actor: Actor) => objectId(await currentSalonId(actor))!;
 
 async function ownEmployee(actor: Actor, employeeId: string) {
   const salon = await managedSalon(actor);

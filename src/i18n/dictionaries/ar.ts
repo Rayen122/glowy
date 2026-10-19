@@ -1093,6 +1093,7 @@ export const ar: Dictionary = {
         "user.unblock": "رفع الحظر عن حساب مستخدم",
         "review.hide": "أخفى تقييمًا مُبلغًا عنه",
         "review.keep": "أبقى على تقييم مُبلغ عنه",
+        "user.passwordReset": "أرسل رابط إعادة تعيين كلمة المرور إلى {target}",
       },
     },
     queues: {

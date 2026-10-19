@@ -49,3 +49,7 @@ export function temporaryPassword(length = 12) {
   const bytes = crypto.getRandomValues(new Uint8Array(length));
   return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("");
 }
+
+/** Durée de validité des liens envoyés par e-mail */
+export const TOKEN_TTL_MINUTES = { reset: 60, verify: 48 * 60 } as const;
+export type TokenPurpose = keyof typeof TOKEN_TTL_MINUTES;

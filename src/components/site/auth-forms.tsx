@@ -319,7 +319,7 @@ export function LoginForm({ callbackUrl, demoEnabled }: { callbackUrl?: string; 
           <label className="flex cursor-pointer items-center gap-2 text-muted-foreground">
             <input type="checkbox" name="remember" className="size-4 rounded accent-[#6b2a5c]" /> {a.remember}
           </label>
-          <Link href="/connexion?reinitialiser=1" className="inline-flex min-h-11 items-center font-semibold whitespace-nowrap text-plum-700 hover:underline">
+          <Link href="/mot-de-passe-oublie" className="inline-flex min-h-11 items-center font-semibold whitespace-nowrap text-plum-700 hover:underline">
             {a.forgot}
           </Link>
         </div>
