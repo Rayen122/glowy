@@ -3,7 +3,7 @@ import type { Clock } from "@/core/domain/clock";
 import { conflict } from "@/core/domain/errors";
 import type { EventPublisher } from "@/core/domain/events";
 import { slugify } from "@/core/domain/text";
-import { afterFailedLogin, coordsFor, isLocked, referralCandidate } from "../domain/account";
+import { afterFailedLogin, coordsFor, isLocked, referralCandidate, temporaryPassword } from "../domain/account";
 import type { AccountRepository, PasswordHasher, UserAccount } from "./ports";
 import type { RegisterInput } from "./schemas";
 
@@ -104,5 +104,20 @@ export function makeIdentity({ accounts, hasher, events, clock }: IdentityDeps) 
     return user && user.status === "ACTIVE" ? user : null;
   }
 
-  return { register, authenticate, demoAccount, sessionUser };
+  /** AUTH-07 : compte de connexion d'un employé, avec un mot de passe temporaire à lui transmettre */
+  async function createStaffAccount(input: { email: string; firstName: string; lastName?: string }) {
+    const email = input.email.trim().toLowerCase();
+    if (await accounts.emailTaken(email)) throw conflict("EMAIL_TAKEN", "Un compte existe déjà avec cette adresse e-mail.");
+    const password = temporaryPassword();
+    const user = await accounts.createStaffUser({
+      email,
+      passwordHash: await hasher.hash(password),
+      firstName: input.firstName,
+      lastName: input.lastName ?? "",
+      referralCode: await uniqueReferralCode(input.firstName),
+    });
+    return { id: user.id, email, temporaryPassword: password };
+  }
+
+  return { register, authenticate, demoAccount, sessionUser, createStaffAccount };
 }

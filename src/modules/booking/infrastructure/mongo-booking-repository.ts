@@ -80,6 +80,8 @@ export const mongoBookingRepository: BookingRepository = {
       opening: opening?.opensAt && opening.closesAt ? { opensAt: opening.opensAt, closesAt: opening.closesAt } : null,
       employees: employees.map((e) => {
         const own = e.workingHours.find((w) => w.weekday === weekday);
+        // Jour de repos : plage vide, aucun créneau proposé
+        if (own?.off) return { id: idOf(e), key: e.key, workingHours: { startsAt: "00:00", endsAt: "00:00" } };
         return { id: idOf(e), key: e.key, workingHours: own?.startsAt && own.endsAt ? { startsAt: own.startsAt, endsAt: own.endsAt } : null };
       }),
       busy,

@@ -42,3 +42,10 @@ export const referralCandidate = (base: string) => {
   const prefix = base.normalize("NFD").replace(/[^A-Za-z]/g, "").toUpperCase().slice(0, 8) || "BH";
   return `${prefix}-${randomCode(4)}`;
 };
+
+/** Mot de passe temporaire (compte créé par un gérant) : aléatoire cryptographique, sans caractères ambigus (0/O, 1/l) */
+export function temporaryPassword(length = 12) {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(length));
+  return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("");
+}

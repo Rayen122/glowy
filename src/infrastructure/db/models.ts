@@ -128,7 +128,8 @@ const employeeSchema = new Schema(
     avatarUrl: optional(String),
     rating: { type: Number, default: 0 },
     active: { type: Boolean, default: true },
-    workingHours: { type: [{ _id: false, weekday: Number, startsAt: String, endsAt: String }], default: [] },
+    /** Horaires propres d'un jour (sinon ceux du salon) ; `off` = jour de repos */
+    workingHours: { type: [{ _id: false, weekday: Number, startsAt: String, endsAt: String, off: { type: Boolean, default: false } }], default: [] },
   },
   { timestamps: true }
 );
@@ -251,6 +252,18 @@ const pushSubscriptionSchema = new Schema(
 );
 pushSubscriptionSchema.index({ user: 1 });
 
+/** E-mails et SMS simulés (démonstration) : conservés pour être consultés par le Super Admin — cahier §1.4 */
+const outboxMessageSchema = new Schema(
+  {
+    channel: { type: String, enum: ["email", "sms"], required: true },
+    to: { type: String, required: true },
+    subject: { type: String, default: "" },
+    text: { type: String, required: true },
+  },
+  { timestamps: { createdAt: true, updatedAt: false } }
+);
+outboxMessageSchema.index({ createdAt: -1 });
+
 // ── Fidélité (P5) ───────────────────────────────────────────
 /** Barème réglable par le Super Admin (ADM-09) */
 const pointRuleSchema = new Schema({
@@ -366,6 +379,7 @@ export const Booking = defineModel("Booking", bookingSchema);
 export const PlanPayment = defineModel("PlanPayment", planPaymentSchema);
 export const Notification = defineModel("Notification", notificationSchema);
 export const PushSubscription = defineModel("PushSubscription", pushSubscriptionSchema);
+export const OutboxMessage = defineModel("OutboxMessage", outboxMessageSchema);
 export const PointRule = defineModel("PointRule", pointRuleSchema);
 export const PointTransaction = defineModel("PointTransaction", pointTransactionSchema);
 export const Reward = defineModel("Reward", rewardSchema);
@@ -388,7 +402,7 @@ export type ReviewDoc = Lean<typeof reviewSchema>;
 export type PointTransactionDoc = Omit<Lean<typeof pointTransactionSchema>, "updatedAt">;
 
 /** Toutes les collections, pour vider la base (seed, tests) */
-export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, PointRule, PointTransaction, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog];
+export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, PointRule, PointTransaction, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog];
 
 /** Vide toutes les collections et recrée les index, dont les index uniques (seed, tests) */
 export async function resetAll() {
