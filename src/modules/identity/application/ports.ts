@@ -36,6 +36,9 @@ export interface AccountRepository {
   findByEmail(email: string): Promise<UserAccount | null>;
   findByRole(role: Role, email: string): Promise<UserAccount | null>;
   findById(id: string): Promise<UserAccount | null>;
+  /** Compte du personnel créé par un gérant (AUTH-07) */
+  createStaffUser(data: { email: string; passwordHash: string; firstName: string; lastName: string; referralCode: string }): Promise<{ id: string }>;
+  setPasswordHash(userId: string, passwordHash: string): Promise<void>;
   emailTaken(email: string): Promise<boolean>;
   referralCodeTaken(code: string): Promise<boolean>;
   salonSlugTaken(slug: string): Promise<boolean>;

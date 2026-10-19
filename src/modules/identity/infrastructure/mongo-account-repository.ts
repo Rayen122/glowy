@@ -36,6 +36,15 @@ export const mongoAccountRepository: AccountRepository = {
     return found ? idOf(found) : null;
   },
 
+  async createStaffUser(data) {
+    const user = await User.create({ ...data, role: "EMPLOYEE" });
+    return { id: idOf(user) };
+  },
+
+  setPasswordHash: async (userId, passwordHash) => {
+    await User.updateOne({ _id: objectId(userId) }, { $set: { passwordHash, failedLogins: 0, lockedUntil: null } });
+  },
+
   async createClient(data) {
     const user = await User.create({ ...data, referredBy: objectId(data.referredById) });
     return { id: idOf(user), role: user.role };
