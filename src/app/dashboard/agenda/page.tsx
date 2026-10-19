@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { BlockSlotButton, SalonSetupCard, UnblockButton } from "@/components/dashboard/agenda-actions";
+import { AgendaMonth, AgendaWeek } from "@/components/dashboard/agenda-views";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getI18n } from "@/i18n/server";
 import { cn } from "@/lib/utils";
@@ -35,7 +36,8 @@ const TINT: Record<number, { bar: string; bg: string; dot: string }> = {
 /** Agenda du jour (SAL-04) : ?date=AAAA-MM-JJ, colonnes par employé, réservations et blocages réels */
 export default async function AgendaPage({ searchParams }: PageProps<"/dashboard/agenda">) {
   const user = await requirePageUser("MANAGER", "EMPLOYEE", "ADMIN");
-  const { date: requested } = await searchParams;
+  const { date: requested, vue } = await searchParams;
+  const view = vue === "semaine" ? "week" : vue === "mois" ? "month" : "day";
   const today = tunisToday();
   const date = typeof requested === "string" && /^\d{4}-\d{2}-\d{2}$/.test(requested) ? requested : today;
   const salon = await staffSalon(user);
@@ -67,23 +69,25 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="inline-flex rounded-full bg-muted p-1" role="group" aria-label={a.viewAria}>
-            {(["day", "week", "month"] as const).map((v, i) => (
-              <button
+            {(["day", "week", "month"] as const).map((v) => (
+              <Link
                 key={v}
-                type="button"
-                aria-pressed={i === 0}
-                disabled={i !== 0}
-                title={i !== 0 ? a.soon : undefined}
-                className={cn("h-11 rounded-full px-4 text-sm font-medium lg:h-9", i === 0 ? "bg-card shadow-sm" : "cursor-not-allowed text-muted-foreground/60")}
+                href={`?${v === "day" ? "" : `vue=${v === "week" ? "semaine" : "mois"}&`}date=${date}`}
+                aria-current={view === v ? "page" : undefined}
+                className={cn("inline-flex h-11 items-center rounded-full px-4 text-sm font-medium lg:h-9", view === v ? "bg-card shadow-sm" : "text-muted-foreground hover:text-foreground")}
               >
                 {a.views[v]}
-              </button>
+              </Link>
             ))}
           </div>
           {user.role !== "EMPLOYEE" && <BlockSlotButton employees={EMPLOYEES.map((e) => ({ id: e.id, name: e.name }))} date={date} />}
         </div>
       </header>
 
+      {view === "week" && <AgendaWeek salonId={salon.id} date={date} />}
+      {view === "month" && <AgendaMonth salonId={salon.id} date={date} />}
+      {view === "day" && (
+      <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <Link href={`?date=${addDays(date, -1)}`} className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-card hover:bg-muted" aria-label={a.prevDay}>
@@ -229,6 +233,8 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
           </div>
         </div>
       </div>
+      )}
+      </>
       )}
     </div>
   );

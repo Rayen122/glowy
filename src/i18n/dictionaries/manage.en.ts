@@ -314,4 +314,18 @@ export const manageEn: ManageDictionary = {
     empty: "No reviews for this filter.",
     suspicion: "Suspicion {n}%",
   },
+  agenda: {
+    prevWeek: "Previous week",
+    nextWeek: "Next week",
+    prevMonth: "Previous month",
+    nextMonth: "Next month",
+    thisWeek: "This week",
+    thisMonth: "This month",
+    weekRange: "Week of {from} to {to}",
+    count: "{n} appts",
+    closed: "Closed",
+    empty: "No appointments",
+    totals: "{n} appointments · {revenue} earned",
+    openDay: "Open the day of {date}",
+  },
 };
