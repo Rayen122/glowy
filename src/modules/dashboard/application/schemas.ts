@@ -85,3 +85,10 @@ export const employeeAccountInput = z.object({ email: z.email("Adresse e-mail in
 
 export type EmployeeInput = z.infer<typeof employeeInput>;
 export type LeaveInput = z.infer<typeof leaveInput>;
+
+/** SAL-08 : note du salon sur une cliente */
+export const clientNoteInput = z.object({
+  kind: z.enum(["allergy", "preference", "note"]).default("note"),
+  text: z.string().trim().min(2, "2 caractères minimum").max(500),
+});
+export type ClientNoteInput = z.infer<typeof clientNoteInput>;
