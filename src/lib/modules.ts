@@ -11,15 +11,6 @@ export type Requirement = { ref: keyof Dictionary["modules"]["requirements"]; pr
 export type ModuleDef<Slug extends string = string> = { slug: Slug; owners: number[]; requirements: Requirement[] };
 
 export const SALON_MODULES: ModuleDef<keyof Dictionary["modules"]["salon"]>[] = [
-  {
-    slug: "equipe",
-    owners: [2],
-    requirements: [
-      { ref: "SAL-05", priority: "must" },
-      { ref: "AUTH-07", priority: "should" },
-      { ref: "SAL-13", priority: "bonus" },
-    ],
-  },
   { slug: "clients", owners: [2], requirements: [{ ref: "SAL-08", priority: "should" }] },
   {
     slug: "avis",

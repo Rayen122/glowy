@@ -4,7 +4,7 @@
 import type { EventSubscriber } from "@/core/domain/events";
 import { makeNotifier } from "./application/notifier";
 import { registerNotificationSubscribers } from "./application/subscribers";
-import { consoleMailer, consoleSms } from "./infrastructure/console-channels";
+import { consoleMailer, consoleSms, latestOutbox } from "./infrastructure/console-channels";
 import { mongoInAppStore } from "./infrastructure/mongo-in-app-store";
 import { mongoNotificationFacts } from "./infrastructure/mongo-notification-facts";
 import { mongoPushSubscriptions } from "./infrastructure/mongo-push-subscriptions";
@@ -16,6 +16,11 @@ export const { notify, subscribe, unsubscribe, inbox, markAllRead, pushPublicKey
 
 export const registerSubscribers = (bus: EventSubscriber) =>
   registerNotificationSubscribers(bus, { notify, facts: mongoNotificationFacts, mailer: consoleMailer, sms: consoleSms });
+
+/** E-mail ou SMS (simulés pour la démonstration, visibles dans la boîte d'envoi du Super Admin) */
+export const sendEmail = (to: string, subject: string, text: string) => consoleMailer.send(to, subject, text);
+export const sendSms = (phone: string, text: string) => consoleSms.send(phone, text);
+export { latestOutbox };
 
 export { pointsEarned, pushTest, type Message } from "./domain/messages";
 export { pushSubscriptionInput, pushUnsubscribeInput } from "./application/schemas";
