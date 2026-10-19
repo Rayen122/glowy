@@ -17,6 +17,7 @@ import {
   Star,
   ThumbsUp,
 } from "lucide-react";
+import { ReviewFeedback } from "@/components/manage/reviews-manager";
 import { ForecastBars } from "@/components/charts/forecast-bars";
 import { AffluencePill, PointsBadge, Rating, VerifiedBadge } from "@/components/salon/badges";
 import { FavoriteButton } from "@/components/salon/favorite-button";
@@ -379,13 +380,8 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
                           </p>
                         </div>
                       )}
-                      <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                        <button type="button" className="inline-flex h-9 items-center gap-1 rounded-full px-2 hover:bg-muted hover:text-foreground">
-                          <ThumbsUp className="size-3.5" aria-hidden /> {f(s.helpful, { n: r.helpful })}
-                        </button>
-                        <button type="button" className="inline-flex h-9 items-center gap-1 rounded-full px-2 hover:bg-muted hover:text-foreground">
-                          <Flag className="size-3.5" aria-hidden /> {s.report}
-                        </button>
+                      <div className="mt-3">
+                        <ReviewFeedback reviewId={r.id} helpful={r.helpful} loggedIn={Boolean(session)} />
                       </div>
                     </div>
                   </div>

@@ -340,6 +340,8 @@ const reviewSchema = new Schema(
     reply: optional(String),
     repliedAt: optional(Date),
     helpful: { type: Number, default: 0 },
+    /** Utilisateurs ayant trouvé l'avis utile (un vote par personne) */
+    helpfulBy: { type: [{ type: ObjectId, ref: "User" }], default: [] },
   },
   { timestamps: true }
 );

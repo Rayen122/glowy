@@ -12,7 +12,7 @@ export async function listClientBookings(clientId: string) {
   const bookings = await Booking.find({ client }).sort({ startsAt: -1 }).lean();
   const [salons, employees, reviews] = await Promise.all([
     Salon.find({ _id: { $in: [...new Set(bookings.map((b) => b.salon.toString()))] } }, { slug: 1, name: 1, city: 1, address: 1, coverUrl: 1, lat: 1, lng: 1, cancellationHours: 1 }).lean(),
-    Employee.find({ _id: { $in: [...new Set(bookings.map((b) => b.employee.toString()))] } }, { name: 1 }).lean(),
+    Employee.find({ _id: { $in: [...new Set(bookings.map((b) => b.employee.toString()))] } }, { name: 1, key: 1, active: 1 }).lean(),
     Review.find({ booking: { $in: bookings.map((b) => b._id) } }, { booking: 1 }).lean(),
   ]);
   const salonById = new Map(salons.map((s) => [idOf(s), s]));
@@ -34,8 +34,8 @@ export async function listClientBookings(clientId: string) {
         lng: salon.lng,
         cancellationHours: salon.cancellationHours,
       },
-      employee: { name: employeeById.get(b.employee.toString())?.name ?? "" },
-      items: b.items.map((i) => ({ name: i.name ?? "", price: i.price ?? 0 })),
+      employee: { name: employeeById.get(b.employee.toString())?.name ?? "", key: employeeById.get(b.employee.toString())?.active ? (employeeById.get(b.employee.toString())?.key ?? null) : null },
+      items: b.items.map((i) => ({ name: i.name ?? "", price: i.price ?? 0, serviceKey: i.serviceKey ?? null })),
       review: reviewId ? { id: reviewId } : null,
       local: utcToTunis(b.startsAt),
     };

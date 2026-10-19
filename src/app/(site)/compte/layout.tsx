@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CalendarDays, Gift, Heart, LayoutGrid, ScanFace } from "lucide-react";
+import { CalendarDays, Gift, Heart, LayoutGrid, ScanFace, UserRound } from "lucide-react";
 import { NavLink } from "@/components/app-shell/nav-link";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { TierBadge } from "@/components/loyalty/tier-progress";
@@ -23,6 +23,7 @@ export default async function CompteLayout({ children }: { children: React.React
     { href: "/compte/fidelite", label: n.loyalty, icon: <Gift /> },
     { href: "/compte/favoris", label: n.favorites, icon: <Heart /> },
     { href: "/analyse-beaute", label: n.analysis, icon: <ScanFace /> },
+    { href: "/compte/profil", label: t.manage.profile.nav, icon: <UserRound /> },
   ];
 
   return (
