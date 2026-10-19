@@ -59,3 +59,29 @@ export const salonSettingsInput = z
   .partial();
 
 export type SalonSettingsInput = z.infer<typeof salonSettingsInput>;
+
+/** SAL-05 : professionnel du salon et ses horaires de travail (dans les horaires du salon) */
+export const employeeInput = z.object({
+  name: z.string().trim().min(2, "2 caractères minimum").max(60),
+  title: z.string().trim().min(2, "Indiquez le métier").max(60),
+  color: z.coerce.number().int().min(1).max(5).default(1),
+  avatarUrl: IMAGE_URL.nullable().default(null),
+  active: z.boolean().default(true),
+  workingHours: z
+    .array(z.object({ weekday: z.number().int().min(0).max(6), startsAt: TIME, endsAt: TIME, off: z.boolean().default(false) }))
+    .max(7)
+    .refine((days) => new Set(days.map((d) => d.weekday)).size === days.length, "Un même jour apparaît deux fois")
+    .refine((days) => days.every((d) => d.off || d.endsAt > d.startsAt), "L'heure de fin doit être après le début")
+    .default([]),
+});
+
+/** Congé d'un professionnel, sur un ou plusieurs jours entiers */
+export const leaveInput = z
+  .object({ from: DATE, to: DATE, label: z.string().trim().min(1, "Indiquez un libellé").max(60) })
+  .refine((v) => v.to >= v.from, { message: "La date de fin doit être après la date de début", path: ["to"] });
+
+/** AUTH-07 : compte de connexion d'un employé */
+export const employeeAccountInput = z.object({ email: z.email("Adresse e-mail invalide").trim().toLowerCase() });
+
+export type EmployeeInput = z.infer<typeof employeeInput>;
+export type LeaveInput = z.infer<typeof leaveInput>;
