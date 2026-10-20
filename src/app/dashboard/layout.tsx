@@ -8,6 +8,7 @@ import {
   ChevronsUpDown,
   CreditCard,
   Hourglass,
+  ListOrdered,
   LayoutGrid,
   MessageSquareText,
   Percent,
@@ -39,6 +40,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       items: [
         { href: "/dashboard", label: d.nav.overview, icon: <LayoutGrid />, exact: true },
         { href: "/dashboard/agenda", label: d.nav.agenda, icon: <CalendarDays /> },
+        { href: "/dashboard/file-attente", label: t.manage.queue.title, icon: <ListOrdered /> },
         { href: "/dashboard/statistiques", label: d.nav.statistics, icon: <ChartColumn /> },
       ],
     },

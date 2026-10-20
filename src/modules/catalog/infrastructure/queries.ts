@@ -4,14 +4,15 @@ import { slugify } from "@/core/domain/text";
 import { tunisToday, utcToTunis } from "@/core/domain/time";
 import { Booking, Employee, idOf, objectId, Review, Salon, User, type SalonDoc } from "@/infrastructure/db";
 import { getSalon as getMockSalon, type CategoryId, type Salon as SalonView } from "@/lib/data";
+import { liveAffluence } from "@/modules/affluence";
 import { getAvailability } from "@/modules/booking";
 
 /**
  * Lecture des salons pour l'interface (P3, RES-01 et RES-02).
  * Renvoie le type `Salon` déjà utilisé par les composants : les pages passent de la démo à la base sans changer d'UI.
  *
- * Champs produits par les IA, pas encore branchées (distance, affluence, raison et score de recommandation) :
- * repris des données de démo quand le salon y figure, sinon valeurs neutres.
+ * Affluence et attente : calculées en direct (RES-08, module Affluence).
+ * Champs des IA de recommandation (distance, raison, score) : repris des données de démo quand le salon y figure.
  */
 
 /** Quartiers rattachés à « Tunis » dans la recherche par ville */
@@ -30,7 +31,9 @@ const activeServices = (salon: SalonDoc) =>
 
 const sortedPhotos = (salon: SalonDoc) => [...salon.photos].sort((a, b) => a.position - b.position);
 
-async function toView(row: SalonDoc, opts: { visitedSalonIds: Set<string>; favoriteIds?: Set<string>; now: Date; withSlots: boolean }): Promise<SalonView> {
+type Live = Awaited<ReturnType<typeof liveAffluence>>;
+
+async function toView(row: SalonDoc, opts: { visitedSalonIds: Set<string>; favoriteIds?: Set<string>; now: Date; withSlots: boolean; live: Live }): Promise<SalonView> {
   const id = idOf(row);
   const mock = getMockSalon(row.slug);
   const services = activeServices(row);
@@ -55,10 +58,9 @@ async function toView(row: SalonDoc, opts: { visitedSalonIds: Set<string>; favor
     favorite: opts.favoriteIds?.has(id) ?? false,
     nextSlots: opts.withSlots ? await nextSlotsToday(id, opts.now) : [],
     topServices: services.slice(0, 3).map((s) => ({ name: s.name, price: s.price, duration: s.durationMin })),
-    // Champs IA (recommandation, affluence) — démo en attendant les modules P1 et P2
     distanceKm: mock?.distanceKm ?? 0,
-    affluence: mock?.affluence ?? "calme",
-    waitMinutes: mock?.waitMinutes ?? 0,
+    affluence: opts.live.get(id)?.level ?? "calme",
+    waitMinutes: opts.live.get(id)?.waitMinutes ?? 0,
     offPeak: mock?.offPeak,
     aiReason: mock?.aiReason ?? "",
     matchScore: mock?.matchScore ?? 50,
@@ -95,7 +97,8 @@ export async function searchSalons(params: SalonSearch, userId?: string, now = n
   }
 
   const [rows, visited, favorites] = await Promise.all([Salon.find({ $and: and }).lean<SalonDoc[]>(), visitedSalonIds(userId), favoriteSalonIds(userId)]);
-  const salons = await Promise.all(rows.map((row) => toView(row, { visitedSalonIds: visited, favoriteIds: favorites, now, withSlots: true })));
+  const live = await liveAffluence(rows.map((r) => idOf(r)), now);
+  const salons = await Promise.all(rows.map((row) => toView(row, { visitedSalonIds: visited, favoriteIds: favorites, now, withSlots: true, live })));
 
   const sorters: Record<NonNullable<SalonSearch["sort"]>, (a: SalonView, b: SalonView) => number> = {
     recommande: (a, b) => b.matchScore - a.matchScore,
@@ -146,7 +149,7 @@ export const getSalonDetail = cache(async (salonSlug: string, userId?: string) =
   const employeeById = new Map(reviewEmployees.map((e) => [idOf(e), e]));
   const bookingById = new Map(bookings.map((b) => [idOf(b), b]));
 
-  const salon = await toView(row, { visitedSalonIds: visited, now, withSlots: true });
+  const salon = await toView(row, { visitedSalonIds: visited, now, withSlots: true, live: await liveAffluence([id], now) });
   const analysed = sentiments.reduce((a, x) => a + x.count, 0);
   const share = (key: string) => (analysed ? Math.round(((sentiments.find((x) => x._id === key)?.count ?? 0) / analysed) * 100) : 0);
   const today = utcToTunis(now);
