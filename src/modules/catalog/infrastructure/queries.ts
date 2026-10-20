@@ -6,6 +6,7 @@ import { Booking, Employee, idOf, objectId, Review, Salon, User, type SalonDoc }
 import { getSalon as getMockSalon, type CategoryId, type Salon as SalonView } from "@/lib/data";
 import { liveAffluence } from "@/modules/affluence";
 import { getAvailability } from "@/modules/booking";
+import { buildProfile, emptyProfile, recommend, type TasteProfile } from "../domain/recommend";
 
 /**
  * Lecture des salons pour l'interface (P3, RES-01 et RES-02).
@@ -62,8 +63,8 @@ async function toView(row: SalonDoc, opts: { visitedSalonIds: Set<string>; favor
     affluence: opts.live.get(id)?.level ?? "calme",
     waitMinutes: opts.live.get(id)?.waitMinutes ?? 0,
     offPeak: mock?.offPeak,
-    aiReason: mock?.aiReason ?? "",
-    matchScore: mock?.matchScore ?? 50,
+    aiReason: "",
+    matchScore: 50,
   };
 }
 
@@ -81,6 +82,29 @@ async function visitedSalonIds(userId?: string) {
   return new Set(ids.map((id) => id.toString()));
 }
 
+/** IA P1 : goûts de la cliente d'après ses rendez-vous terminés, ses favoris et sa ville */
+export async function tasteProfile(userId?: string): Promise<TasteProfile> {
+  const client = objectId(userId);
+  if (!client) return emptyProfile();
+  const [user, bookings] = await Promise.all([
+    User.findById(client, { city: 1, favorites: 1 }).lean(),
+    Booking.find({ client, status: "COMPLETED" }, { salon: 1, items: 1, totalPrice: 1 }).sort({ startsAt: -1 }).limit(100).lean(),
+  ]);
+  const salons = await Salon.find({ _id: { $in: [...bookings.map((b) => b.salon), ...(user?.favorites ?? [])] } }, { category: 1, city: 1 }).lean();
+  const salonById = new Map(salons.map((s) => [idOf(s), s]));
+  return buildProfile({
+    visits: bookings.flatMap((b) => {
+      const salon = salonById.get(String(b.salon));
+      return salon ? [{ category: salon.category, city: salon.city, total: b.totalPrice, services: b.items.map((i) => i.name ?? "") }] : [];
+    }),
+    favorites: (user?.favorites ?? []).flatMap((id) => {
+      const salon = salonById.get(String(id));
+      return salon ? [{ id: String(id), category: salon.category }] : [];
+    }),
+    city: user?.city ?? null,
+  });
+}
+
 export type SalonSearch = { q?: string; city?: string; category?: CategoryId; sort?: "recommande" | "note" | "prix" | "distance" };
 
 /** RES-01 : recherche par ville, service ou nom, catégorie ; seuls les salons validés et actifs apparaissent */
@@ -96,9 +120,31 @@ export async function searchSalons(params: SalonSearch, userId?: string, now = n
     and.push({ $or: [{ name: contains(q) }, { specialties: q }, { services: { $elemMatch: { name: contains(q), active: true } } }] });
   }
 
-  const [rows, visited, favorites] = await Promise.all([Salon.find({ $and: and }).lean<SalonDoc[]>(), visitedSalonIds(userId), favoriteSalonIds(userId)]);
+  const [rows, visited, favorites, profile] = await Promise.all([Salon.find({ $and: and }).lean<SalonDoc[]>(), visitedSalonIds(userId), favoriteSalonIds(userId), tasteProfile(userId)]);
   const live = await liveAffluence(rows.map((r) => idOf(r)), now);
   const salons = await Promise.all(rows.map((row) => toView(row, { visitedSalonIds: visited, favoriteIds: favorites, now, withSlots: true, live })));
+
+  // IA P1 : score et raison de recommandation pour chaque salon
+  const scores = new Map(
+    recommend(
+      rows.map((row, i) => ({
+        id: idOf(row),
+        category: row.category,
+        city: row.city,
+        rating: row.ratingAvg,
+        reviews: row.reviewCount,
+        priceFrom: salons[i].priceFrom,
+        services: activeServices(row).map((s) => s.name),
+        slotsToday: salons[i].nextSlots.length,
+        calm: salons[i].affluence !== "forte",
+      })),
+      profile
+    ).map((r) => [r.id, r])
+  );
+  rows.forEach((row, i) => {
+    const r = scores.get(idOf(row));
+    if (r) Object.assign(salons[i], { matchScore: r.score, reason: r.reason });
+  });
 
   const sorters: Record<NonNullable<SalonSearch["sort"]>, (a: SalonView, b: SalonView) => number> = {
     recommande: (a, b) => b.matchScore - a.matchScore,
@@ -109,7 +155,7 @@ export async function searchSalons(params: SalonSearch, userId?: string, now = n
   return salons.sort(sorters[params.sort ?? "recommande"]);
 }
 
-/** Salons recommandés (accueil, espace client) — en attendant l'IA de recommandation (P1) : tri par score de démo */
+/** Salons recommandés (accueil, espace client) : tri par score de l'IA de recommandation (P1) */
 export async function recommendedSalons(limit: number, userId?: string, opts: { excludeVisited?: boolean } = {}) {
   const salons = await searchSalons({ sort: "recommande" }, userId);
   return salons.filter((s) => !opts.excludeVisited || !s.visited).slice(0, limit);
