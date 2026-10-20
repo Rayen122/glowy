@@ -3,6 +3,7 @@ import { CircleHelp, Search } from "lucide-react";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { Logo } from "@/components/brand/logo";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { ChangePasswordButton } from "@/components/manage/password-forms";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getI18n } from "@/i18n/server";
 import { MobileNav } from "./mobile-nav";
@@ -84,6 +85,7 @@ export async function AppShell({
             <p className="truncate font-semibold">{user.name}</p>
             <p className="truncate text-xs text-muted-foreground">{user.role}</p>
           </div>
+          <ChangePasswordButton className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground" />
           <LogoutButton
             iconOnly
             label={t.header.logout}
