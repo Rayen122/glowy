@@ -53,6 +53,23 @@ export const startOfMonth = (now: Date) => new Date(Date.UTC(now.getUTCFullYear(
 /** Code à présenter au salon après un échange de points (FID-04) */
 export const redemptionCode = () => `BH-${randomCode(6)}`;
 
+/** Anti-fraude (FID-07) : au plus 5 gains par jour et par type d'action, sauf réglage du Super Admin */
+export const DEFAULT_DAILY_CAP = 5;
+
+/** Préavis : les comptes inactifs depuis 11 mois sont prévenus un mois avant l'expiration (FID-07) */
+export const expiryWarningLimit = (now: Date) => {
+  const limit = new Date(now);
+  limit.setUTCMonth(limit.getUTCMonth() - 11);
+  return limit;
+};
+
+/** Date d'expiration d'un compte : 12 mois après la dernière activité */
+export const expiresOn = (lastActivityAt: Date) => {
+  const at = new Date(lastActivityAt);
+  at.setUTCFullYear(at.getUTCFullYear() + 1);
+  return at;
+};
+
 /** Expiration après 12 mois d'inactivité (FID-07) */
 export const inactivityLimit = (now: Date) => {
   const limit = new Date(now);

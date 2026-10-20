@@ -4,7 +4,7 @@ import type { LoyaltyRepository } from "../application/ports";
 export const mongoLoyaltyRepository: LoyaltyRepository = {
   async rule(reason) {
     const rule = await PointRule.findOne({ reason }).lean();
-    return rule ? { points: rule.points, active: rule.active, monthlyCap: rule.monthlyCap ?? null } : null;
+    return rule ? { points: rule.points, active: rule.active, monthlyCap: rule.monthlyCap ?? null, dailyCap: rule.dailyCap ?? null } : null;
   },
 
   countSince: (userId, reason, since, salonId) =>
@@ -67,6 +67,22 @@ export const mongoLoyaltyRepository: LoyaltyRepository = {
       const [redemption] = await Redemption.create([{ user, reward: objectId(reward.id)!, points: reward.cost, code }], { session });
       return { id: idOf(redemption), code: redemption.code, points: redemption.points };
     }),
+
+  expiringAccounts: async (before, notBefore) =>
+    (
+      await User.find(
+        {
+          "loyalty.lastActivityAt": { $lt: before, $gte: notBefore },
+          "loyalty.balance": { $gt: 0 },
+          $or: [{ "loyalty.expiryWarnedAt": null }, { $expr: { $lt: ["$loyalty.expiryWarnedAt", "$loyalty.lastActivityAt"] } }],
+        },
+        { loyalty: 1 }
+      ).lean()
+    ).map((u) => ({ userId: idOf(u), balance: u.loyalty?.balance ?? 0, lastActivityAt: u.loyalty?.lastActivityAt ?? new Date() })),
+
+  markExpiryWarned: async (userId, at) => {
+    await User.updateOne({ _id: objectId(userId) }, { $set: { "loyalty.expiryWarnedAt": at } });
+  },
 
   staleAccounts: async (before) =>
     (await User.find({ "loyalty.lastActivityAt": { $lt: before }, "loyalty.balance": { $gt: 0 } }, { loyalty: 1 }).lean()).map((u) => ({
