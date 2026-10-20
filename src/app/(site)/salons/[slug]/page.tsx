@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Clock,
   Flag,
+  Gift,
   Images,
   Languages,
   MapPin,
@@ -16,6 +17,7 @@ import {
   Sparkles,
   Star,
   ThumbsUp,
+  Timer,
 } from "lucide-react";
 import { ReviewFeedback } from "@/components/manage/reviews-manager";
 import { ForecastBars } from "@/components/charts/forecast-bars";
@@ -26,6 +28,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { auth } from "@/auth";
 import { getI18n } from "@/i18n/server";
 import { getSalonDetail } from "@/modules/catalog";
+import { listSalonRewards, publicOffers } from "@/modules/promotions";
 import {
   REVIEW_SUMMARY,
   TODAY_FORECAST,
@@ -60,7 +63,7 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
   if (!detail) notFound();
   const salon = detail.salon;
 
-  const { t, tc, f, nf, money, dur, df, hour, locale } = await getI18n();
+  const [{ t, tc, f, nf, money, dur, df, hour, locale }, offers, rewards] = await Promise.all([getI18n(), publicOffers(detail.id), listSalonRewards(detail.id)]);
   const s = t.salon;
   const totalReviews = Math.max(1, detail.distribution.reduce((a, d) => a + d.count, 0));
   const { positif, neutre, negatif } = detail.sentiment;
@@ -492,6 +495,21 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
                 <Clock className="mt-0.5 size-4 shrink-0 text-plum-600" aria-hidden />
                 {f(s.freeCancel, { hours: nf(detail.cancellationHours) })}
               </li>
+              {/* SAL-10 : offres de dernière minute ; FID-06 : récompenses propres au salon */}
+              {offers.map((o) => (
+                <li key={o.id} className="flex gap-2 font-medium text-success">
+                  <Timer className="mt-0.5 size-4 shrink-0" aria-hidden />
+                  {f(s.lastMinuteOffer, { value: o.percent != null ? `−${nf(o.percent)} %` : `−${money(o.amount ?? 0)}`, hours: nf(o.withinHours) })}
+                </li>
+              ))}
+              {rewards
+                .filter((r) => r.active)
+                .map((r) => (
+                  <li key={r.id} className="flex gap-2">
+                    <Gift className="mt-0.5 size-4 shrink-0 text-gold" aria-hidden />
+                    {f(s.salonReward, { label: r.label, points: nf(r.cost) })}
+                  </li>
+                ))}
             </ul>
           </div>
         </aside>

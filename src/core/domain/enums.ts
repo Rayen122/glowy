@@ -46,6 +46,10 @@ export type CashMethod = (typeof CASH_METHODS)[number];
 export const INVOICE_STATUSES = ["PAID", "VOID"] as const;
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
 
+/** Promotions du salon (SAL-10) : code à saisir ou remise automatique de dernière minute */
+export const PROMOTION_KINDS = ["CODE", "LAST_MINUTE"] as const;
+export type PromotionKind = (typeof PROMOTION_KINDS)[number];
+
 export const POINT_REASONS = [
   "BOOKING_COMPLETED",
   "NEW_SALON",
