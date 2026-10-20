@@ -156,6 +156,32 @@ export const en: Dictionary = {
     noWait: "no wait",
   },
 
+  insights: {
+    aspects: {
+      accueil: "the welcome",
+      resultat: "the result",
+      attente: "waiting times",
+      prix: "prices",
+      proprete: "cleanliness",
+      conseil: "the advice",
+      ponctualite: "punctuality",
+    },
+    aspectTitles: {
+      accueil: "Welcome",
+      resultat: "Result",
+      attente: "Waiting",
+      prix: "Prices",
+      proprete: "Cleanliness",
+      conseil: "Advice",
+      ponctualite: "Punctuality",
+    },
+    praised: "Clients mostly praise {list}.",
+    watch: "Negative remarks are about {list}.",
+    noWeakness: "No recurring weak point in recent reviews.",
+    notEnough: "Not enough reviews yet for a reliable summary.",
+    basedOn: "Automatic analysis of {n} verified reviews",
+    and: " and ",
+  },
   favorites: {
     addAria: "Add {name} to favourites",
     removeAria: "Remove {name} from favourites",

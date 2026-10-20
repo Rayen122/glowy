@@ -504,9 +504,11 @@ const reviewSchema = new Schema(
     photoUrl: optional(String),
     lang: { type: String, enum: LOCALES, default: "fr" },
     status: { type: String, enum: REVIEW_STATUSES, default: "PUBLISHED" },
-    /** Analyse IA des avis (P4) */
+    /** Analyse IA des avis (P4) : sentiment, aspects évoqués, score de suspicion de faux avis */
     sentiment: optional(String),
     suspicion: optional(Number),
+    aspects: { type: [{ _id: false, aspect: String, polarity: Number }], default: [] },
+    analyzedAt: optional(Date),
     reply: optional(String),
     repliedAt: optional(Date),
     helpful: { type: Number, default: 0 },
@@ -608,7 +610,7 @@ export type BookingDoc = Omit<Lean<typeof bookingSchema>, "items"> & {
   items: { serviceKey?: string | null; name?: string | null; price?: number | null; durationMin?: number | null }[];
 };
 export type PlanPaymentDoc = Lean<typeof planPaymentSchema>;
-export type ReviewDoc = Lean<typeof reviewSchema>;
+export type ReviewDoc = Omit<Lean<typeof reviewSchema>, "aspects"> & { aspects: { aspect?: string | null; polarity?: number | null }[] };
 export type PromotionDoc = Lean<typeof promotionSchema>;
 export type PointTransactionDoc = Omit<Lean<typeof pointTransactionSchema>, "updatedAt">;
 
