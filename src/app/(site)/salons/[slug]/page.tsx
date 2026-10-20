@@ -27,13 +27,11 @@ import { ShareButton } from "@/components/salon/share-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { auth } from "@/auth";
 import { getI18n } from "@/i18n/server";
+import { LiveQueue } from "@/components/salon/live-queue";
+import { liveAffluence, myQueueStatus, salonForecast, salonOpenNow } from "@/modules/affluence";
 import { getSalonDetail } from "@/modules/catalog";
 import { listSalonRewards, publicOffers } from "@/modules/promotions";
-import {
-  REVIEW_SUMMARY,
-  TODAY_FORECAST,
-  weekdayIso,
-} from "@/lib/data";
+import { REVIEW_SUMMARY, weekdayIso } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
 export async function generateMetadata({ params }: PageProps<"/salons/[slug]">): Promise<Metadata> {
@@ -63,7 +61,18 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
   if (!detail) notFound();
   const salon = detail.salon;
 
-  const [{ t, tc, f, nf, money, dur, df, hour, locale }, offers, rewards] = await Promise.all([getI18n(), publicOffers(detail.id), listSalonRewards(detail.id)]);
+  const role = session?.user.role;
+  const [{ t, tc, f, nf, money, dur, df, hour, locale }, offers, rewards, forecast, live, open, mine] = await Promise.all([
+    getI18n(),
+    publicOffers(detail.id),
+    listSalonRewards(detail.id),
+    salonForecast(detail.id),
+    liveAffluence([detail.id]),
+    salonOpenNow(slug),
+    myQueueStatus(role === "CLIENT" ? (session?.user.id ?? null) : null, slug),
+  ]);
+  const now = live.get(detail.id)!;
+  const currentIndex = forecast.points.findIndex((p) => p.hour === forecast.currentHour);
   const s = t.salon;
   const totalReviews = Math.max(1, detail.distribution.reduce((a, d) => a + d.count, 0));
   const { positif, neutre, negatif } = detail.sentiment;
@@ -452,8 +461,12 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
               </p>
               <Rating value={salon.rating} />
             </div>
-            <div className="mt-4 rounded-2xl bg-muted/70 p-3.5">
-              <AffluencePill level={salon.affluence} waitMinutes={salon.waitMinutes} />
+            <div className="mt-4">
+              <LiveQueue
+                slug={salon.slug}
+                initial={{ level: now.level, waitMinutes: now.waitMinutes, waiting: now.waiting, open, mine }}
+                viewer={!role ? "guest" : role === "CLIENT" ? "client" : "staff"}
+              />
             </div>
 
             <p className="mt-5 text-sm font-medium">{s.nextSlotsToday}</p>
@@ -481,10 +494,19 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
 
             <div className="mt-6 border-t border-border pt-5">
               <p className="text-sm font-semibold">{s.forecastToday}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                {s.bestTime} <span className="font-semibold text-foreground">{f(t.common.range, { from: hour(10), to: hour(12) })}</span>
-              </p>
-              <ForecastBars data={TODAY_FORECAST} currentIndex={1} className="mt-3" height={80} />
+              {forecast.source === "closed" ? (
+                <p className="mt-0.5 text-xs text-muted-foreground">{s.closedToday}</p>
+              ) : (
+                <>
+                  {forecast.best && (
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {s.bestTime} <span className="font-semibold text-foreground">{f(t.common.range, { from: hour(forecast.best.from), to: hour(forecast.best.to) })}</span>
+                    </p>
+                  )}
+                  <ForecastBars data={forecast.points} currentIndex={currentIndex >= 0 ? currentIndex : undefined} className="mt-3" height={80} />
+                  {forecast.source === "fallback" && <p className="mt-2 text-xs text-muted-foreground">{s.forecastFallback}</p>}
+                </>
+              )}
             </div>
 
             <ul className="mt-6 space-y-2 border-t border-border pt-5 text-sm text-muted-foreground">
