@@ -935,8 +935,6 @@ export const fr = {
       hidePassword: "Masquer le mot de passe",
       strength: ["Trop court", "Faible", "Moyen", "Bon", "Excellent"],
       google: "Continuer avec Google",
-      googleToast: "Connexion Google",
-      googleToastDesc: "Disponible avec Auth.js (AUTH-08, bonus).",
       orContinue: "ou continuer avec",
       remember: "Se souvenir de moi",
       forgot: "Mot de passe oublié ?",
