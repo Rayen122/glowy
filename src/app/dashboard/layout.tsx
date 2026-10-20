@@ -1,24 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  Boxes,
-  CalendarDays,
-  ChartColumn,
-  ChevronsUpDown,
-  CreditCard,
-  Hourglass,
-  ListOrdered,
-  LayoutGrid,
-  MessageSquareText,
-  Percent,
-  Plus,
-  Receipt,
-  Scissors,
-  Settings,
-  UserRound,
-  Users,
-} from "lucide-react";
+import { Boxes, CalendarDays, ChartColumn, ChevronsUpDown, CreditCard, Headset, Hourglass, LayoutGrid, ListOrdered, MessageSquareText, Percent, Plus, Receipt, Scissors, Settings, UserRound, Users } from "lucide-react";
 import { AppShell, type NavGroup } from "@/components/app-shell/app-shell";
 import { getI18n } from "@/i18n/server";
 import { lowStockCount, staffSalon } from "@/modules/dashboard";
@@ -61,6 +44,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       label: d.nav.settings,
       items: [
         { href: "/dashboard/parametres", label: d.nav.settingsPage, icon: <Settings /> },
+        { href: "/dashboard/support", label: t.manage.support.title, icon: <Headset /> },
         ...(user.role === "MANAGER" ? [{ href: "/dashboard/abonnement", label: d.nav.subscription, icon: <CreditCard /> }] : []),
       ],
     },
