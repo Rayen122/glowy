@@ -13,7 +13,11 @@ export type BookingRecord = {
   startsAt: Date;
   endsAt: Date;
   status: BookingStatus;
+  /** Prix après remise */
   totalPrice: number;
+  /** Remise de la promotion appliquée (SAL-10) */
+  discount: number;
+  promotionId: string | null;
   deposit: number;
   paymentMethod: PaymentMethod;
   offPeak: boolean;
@@ -23,8 +27,9 @@ export type BookingRecord = {
   createdAt: Date;
 };
 
-export type NewBooking = Omit<BookingRecord, "id" | "status" | "cancelledAt" | "completedAt" | "createdAt"> & {
+export type NewBooking = Omit<BookingRecord, "id" | "status" | "cancelledAt" | "completedAt" | "createdAt" | "promotionId"> & {
   items: ServiceRef[];
+  promo: { promotionId: string; code: string | null; label: string } | null;
 };
 
 export interface BookingRepository {
@@ -45,4 +50,12 @@ export interface BookingRepository {
 
 export interface SalonAccessPort {
   canManageSalon(actor: Actor, salonId: string): Promise<boolean>;
+}
+
+/** Promotions du salon (module Promotions, SAL-10) */
+export interface PromotionPort {
+  quote(salonId: string, ctx: { code?: string | null; subtotal: number; startsAt: Date }): Promise<{ promotionId: string; code: string | null; label: string; discount: number } | null>;
+  /** Réserve une utilisation du code ; false si le nombre maximal vient d'être atteint */
+  consume(promotionId: string): Promise<boolean>;
+  release(promotionId: string): Promise<void>;
 }
