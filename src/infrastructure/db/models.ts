@@ -62,6 +62,8 @@ const userSchema = new Schema(
       balance: { type: Number, default: 0 },
       lifetime: { type: Number, default: 0 },
       lastActivityAt: { type: Date, default: Date.now },
+      /** Préavis d'expiration envoyé (FID-07) ; renvoyé seulement après une nouvelle activité */
+      expiryWarnedAt: optional(Date),
     },
     /** Salons favoris (CLI-03) */
     favorites: { type: [{ type: ObjectId, ref: "Salon" }], default: [] },
@@ -183,6 +185,8 @@ const bookingSchema = new Schema(
     paymentMethod: { type: String, enum: PAYMENT_METHODS, default: "ONSITE" },
     note: optional(String),
     offPeak: { type: Boolean, default: false },
+    /** Rappels envoyés (RES-07) : la veille et 2 h avant */
+    reminders: { type: new Schema({ day: optional(Date), hour: optional(Date) }, { _id: false }), default: () => ({}) },
     /** Remise de la promotion appliquée (SAL-10) ; totalPrice est le prix après remise */
     discount: { type: Number, default: 0 },
     promo: { type: new Schema({ promotion: { type: ObjectId, ref: "Promotion" }, code: optional(String), label: String }, { _id: false }), default: null },
@@ -386,6 +390,8 @@ const pointRuleSchema = new Schema({
   points: { type: Number, required: true },
   active: { type: Boolean, default: true },
   monthlyCap: optional(Number),
+  /** Anti-fraude (FID-07) : plafond de lignes par jour et par type d'action ; null = défaut */
+  dailyCap: optional(Number),
 });
 
 /** Grand livre : toute variation de points laisse une ligne */
