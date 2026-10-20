@@ -5,6 +5,7 @@ import { AppError } from "@/core/domain/errors";
 import { tunisToUtc } from "@/core/domain/time";
 import { Notification } from "@/infrastructure/db";
 import { addWalkIn, bestWindow, forecastDay, joinQueue, leaveQueue, liveStatus, myQueueStatus, queueAction, salonQueue, waitFor } from "@/modules/affluence";
+import { isOffPeak } from "@/modules/booking";
 import { closeDb, FUTURE_MONDAY, makeSalon, makeUser, resetDb } from "./helpers";
 
 const OPENING = { opensAt: "09:00", closesAt: "13:00" };
@@ -24,6 +25,13 @@ describe("Affluence : prévision (IA P2), direct et file d'attente virtuelle (RE
     assert.deepEqual(bestWindow(points), { from: 11, to: 13, value: 0 });
     assert.equal(forecastDay([week], 2, OPENING).source, "fallback", "historique insuffisant");
     assert.deepEqual(forecastDay([week, week], 2, null), { points: [], source: "closed" });
+  });
+
+  test("heures creuses : celles prévues par l'IA, sinon la règle de repli (lun.–mer., 10 h – 12 h)", () => {
+    assert.equal(isOffPeak(2, 14 * 60 + 30, [14, 15]), true);
+    assert.equal(isOffPeak(2, 10 * 60, [14, 15]), false, "la prévision remplace la règle fixe");
+    assert.equal(isOffPeak(2, 10 * 60, null), true);
+    assert.equal(isOffPeak(5, 10 * 60, null), false);
   });
 
   test("attente estimée : chaque personne prend le premier professionnel libre", () => {
@@ -47,7 +55,7 @@ describe("Affluence : prévision (IA P2), direct et file d'attente virtuelle (RE
     const third = await salonQueue(salon.id, now);
     assert.deepEqual(third.waiting.map((w) => [w.position, w.waitMinutes]), [[1, 0], [2, 0], [3, 75]], "2 professionnelles libres ; durée moyenne des prestations (30 + 120) / 2 = 75 min");
 
-    await queueAction(owner, salon.id, first!.id, "call", async (userId, message) => Notification.create({ user: userId, ...message }), now);
+    await queueAction(owner, salon.id, first!.id, "call");
     assert.equal((await myQueueStatus(lina.id, "salon-a", now))?.status, "CALLED");
     assert.equal(await Notification.countDocuments({ user: lina.id, type: "queue.called" }), 1);
     assert.equal((await myQueueStatus(sara.id, "salon-a", now))?.position, 1, "Sara avance d'une place");
