@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Ban, CheckCircle2, ChevronLeft, ChevronRight, KeyRound, LayoutDashboard, PauseCircle, PlayCircle, Unlock, XCircle } from "lucide-react";
+import { Ban, CheckCircle2, ChevronLeft, ChevronRight, Clock, KeyRound, LayoutDashboard, PauseCircle, PlayCircle, Unlock, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useI18n } from "@/i18n/client";
 import { cn } from "@/lib/utils";
-import { api, FIELD, FormError, PRIMARY_BUTTON, useAction } from "./kit";
+import { api, FIELD, FormError, PRIMARY_BUTTON, SECONDARY_BUTTON, useAction } from "./kit";
 
 const SMALL = "inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-semibold hover:bg-muted disabled:opacity-60";
 
@@ -138,5 +138,25 @@ export function Pager({ page, pages, params }: { page: number; pages: number; pa
         <span />
       )}
     </nav>
+  );
+}
+
+/** RES-07 / FID-07 : lancement manuel des tâches planifiées (démonstration) */
+export function RunJobsButton() {
+  const { t, f } = useI18n();
+  const m = t.manage.admin;
+  const { run, pending } = useAction();
+  return (
+    <button
+      type="button"
+      disabled={pending}
+      onClick={async () => {
+        const done = await run(() => api<{ reminders: number; warned: number; expired: number }>("/api/cron", { method: "POST" }));
+        if (done) toast.success(f(m.jobsDone, done));
+      }}
+      className={SECONDARY_BUTTON}
+    >
+      <Clock className="size-4" aria-hidden /> {m.runJobs}
+    </button>
   );
 }

@@ -1,16 +1,19 @@
 import type { Clock } from "@/core/domain/clock";
 import type { PointReason } from "@/core/domain/enums";
 import { conflict, notFound } from "@/core/domain/errors";
-import { CAP_PER_SALON, DEFAULT_RULES, inactivityLimit, redemptionCode, startOfMonth, withTierBonus } from "../domain/rules";
-import type { LoyaltyRepository } from "./ports";
+import { tunisDayRange, tunisToday } from "@/core/domain/time";
+import { CAP_PER_SALON, DEFAULT_DAILY_CAP, DEFAULT_RULES, expiresOn, expiryWarningLimit, inactivityLimit, redemptionCode, startOfMonth, withTierBonus } from "../domain/rules";
+import type { ExpiryNotices, LoyaltyRepository } from "./ports";
 
 export type AwardOptions = { salonId?: string; bookingId?: string; reviewId?: string; label?: string };
 
 /** Moteur de fidélité : toute variation de points passe par award() ou redeem() (grand livre + compte). */
-export function makeLoyalty({ ledger, clock }: { ledger: LoyaltyRepository; clock: Clock }) {
+const SILENT: ExpiryNotices = { expiring: async () => {}, expired: async () => {} };
+
+export function makeLoyalty({ ledger, clock, notices = SILENT }: { ledger: LoyaltyRepository; clock: Clock; notices?: ExpiryNotices }) {
   async function ruleFor(reason: PointReason) {
     const fallback = DEFAULT_RULES[reason];
-    return (await ledger.rule(reason)) ?? { points: fallback.points, active: true, monthlyCap: fallback.monthlyCap ?? null };
+    return (await ledger.rule(reason)) ?? { points: fallback.points, active: true, monthlyCap: fallback.monthlyCap ?? null, dailyCap: null };
   }
 
   /**
@@ -25,6 +28,8 @@ export function makeLoyalty({ ledger, clock }: { ledger: LoyaltyRepository; cloc
       const used = await ledger.countSince(userId, reason, startOfMonth(now), CAP_PER_SALON.includes(reason) ? opts.salonId : undefined);
       if (used >= rule.monthlyCap) return 0;
     }
+    // Anti-fraude : plafond quotidien par type d'action (les pénalités ne sont jamais plafonnées)
+    if (rule.points > 0 && (await ledger.countSince(userId, reason, tunisDayRange(tunisToday(now)).start)) >= (rule.dailyCap ?? DEFAULT_DAILY_CAP)) return 0;
     const account = await ledger.account(userId);
     const points = withTierBonus(rule.points, account.lifetime);
     await ledger.record({ userId, points, reason, ...opts, at: now });
@@ -49,14 +54,29 @@ export function makeLoyalty({ ledger, clock }: { ledger: LoyaltyRepository; cloc
   }
 
   /** FID-07 : expiration après 12 mois d'inactivité — à appeler par une tâche planifiée */
+  /** FID-07 : points éternels interdits — expiration après 12 mois sans activité, la cliente est prévenue */
   async function expireInactivePoints() {
     const now = clock.now();
     const stale = await ledger.staleAccounts(inactivityLimit(now));
-    for (const account of stale) await ledger.record({ userId: account.userId, points: -account.balance, reason: "EXPIRATION", at: now });
+    for (const account of stale) {
+      await ledger.record({ userId: account.userId, points: -account.balance, reason: "EXPIRATION", at: now });
+      await notices.expired(account.userId, account.balance);
+    }
     return stale.length;
   }
 
-  return { award, alreadyAwarded, awardOnce, redeem, expireInactivePoints };
+  /** FID-07 : préavis un mois avant l'expiration, une seule fois par période d'inactivité */
+  async function warnExpiringPoints() {
+    const now = clock.now();
+    const accounts = await ledger.expiringAccounts(expiryWarningLimit(now), inactivityLimit(now));
+    for (const account of accounts) {
+      await notices.expiring(account.userId, account.balance, expiresOn(account.lastActivityAt));
+      await ledger.markExpiryWarned(account.userId, now);
+    }
+    return accounts.length;
+  }
+
+  return { award, alreadyAwarded, awardOnce, redeem, expireInactivePoints, warnExpiringPoints };
 }
 
 export type Loyalty = ReturnType<typeof makeLoyalty>;

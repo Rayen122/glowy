@@ -8,6 +8,7 @@ import { consoleMailer, consoleSms, latestOutbox } from "./infrastructure/consol
 import { mongoInAppStore } from "./infrastructure/mongo-in-app-store";
 import { mongoNotificationFacts } from "./infrastructure/mongo-notification-facts";
 import { mongoPushSubscriptions } from "./infrastructure/mongo-push-subscriptions";
+import { sendBookingReminders } from "./infrastructure/reminders";
 import { webPushSender } from "./infrastructure/web-push-sender";
 
 const notifier = makeNotifier({ store: mongoInAppStore, subscriptions: mongoPushSubscriptions, push: webPushSender });
@@ -22,6 +23,9 @@ export const sendEmail = (to: string, subject: string, text: string) => consoleM
 export const sendSms = (phone: string, text: string) => consoleSms.send(phone, text);
 export { latestOutbox };
 
-export { pointsEarned, pushTest, type Message } from "./domain/messages";
+/** RES-07 : rappels avant les rendez-vous (lancés par le planificateur) */
+export const sendReminders = (now = new Date()) => sendBookingReminders({ notify, email: sendEmail, sms: sendSms }, now);
+
+export { bookingReminder, pointsEarned, pointsExpired, pointsExpiring, pushTest, type Message } from "./domain/messages";
 export { pushSubscriptionInput, pushUnsubscribeInput } from "./application/schemas";
 export type { Notify } from "./application/notifier";

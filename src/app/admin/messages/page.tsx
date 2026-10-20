@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Mail, MessageSquare } from "lucide-react";
+import { RunJobsButton } from "@/components/manage/admin-actions";
 import { ManageHeader } from "@/components/manage/kit";
 import { utcToTunis } from "@/core/domain/time";
 import { getI18n } from "@/i18n/server";
@@ -16,7 +17,8 @@ export default async function OutboxPage() {
   const m = t.manage.admin;
   return (
     <div className="space-y-5">
-      <ManageHeader title={m.outboxTitle} description={m.outboxDescription} />
+      <ManageHeader title={m.outboxTitle} description={m.outboxDescription} action={<RunJobsButton />} />
+      <p className="text-sm text-muted-foreground">{m.runJobsHint}</p>
       {messages.length === 0 ? (
         <p className="rounded-3xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">{m.noOutbox}</p>
       ) : (
