@@ -4,6 +4,7 @@
  */
 import { systemClock, type Clock } from "@/core/domain/clock";
 import { eventBus } from "@/infrastructure/event-bus";
+import { offPeakHoursFor } from "@/modules/affluence";
 import { canManageSalon } from "@/modules/identity";
 import { createPromotionsModule } from "@/modules/promotions";
 import { makeBooking } from "./application/use-cases";
@@ -12,7 +13,14 @@ import { mongoBookingRepository } from "./infrastructure/mongo-booking-repositor
 /** Instance avec une autre horloge (tests d'annulation tardive, par exemple) */
 export const createBookingModule = (overrides: { clock?: Clock } = {}) => {
   const clock = overrides.clock ?? systemClock;
-  return makeBooking({ bookings: mongoBookingRepository, access: { canManageSalon }, promotions: createPromotionsModule({ clock }), events: eventBus, clock });
+  return makeBooking({
+    bookings: mongoBookingRepository,
+    access: { canManageSalon },
+    promotions: createPromotionsModule({ clock }),
+    offPeak: { hours: offPeakHoursFor },
+    events: eventBus,
+    clock,
+  });
 };
 
 export const { resolveServices, getAvailability, availabilityForSalon, quoteBooking, createBooking, cancelBooking, rescheduleBooking, setBookingStatus } = createBookingModule();

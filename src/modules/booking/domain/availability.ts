@@ -40,12 +40,12 @@ export const freeEmployees = (day: DaySchedule, minutes: number, durationMin: nu
   day.employees.filter((e) => isFree(day, e, minutes, durationMin));
 
 /** Créneaux de la journée (pas de 30 min) avec, pour chacun, les employés libres (clés). */
-export function computeSlots(day: DaySchedule, durationMin: number, now: Date): { date: string; closed: boolean; slots: Slot[] } {
+export function computeSlots(day: DaySchedule, durationMin: number, now: Date, offPeakHours?: number[] | null): { date: string; closed: boolean; slots: Slot[] } {
   if (!day.opening) return { date: day.date, closed: true, slots: [] };
   const slots: Slot[] = [];
   for (let m = toMinutes(day.opening.opensAt); m + durationMin <= toMinutes(day.opening.closesAt); m += SLOT_STEP_MIN) {
     if (startsTooSoon(tunisToUtc(day.date, fromMinutes(m)), now)) continue;
-    slots.push({ time: fromMinutes(m), employees: freeEmployees(day, m, durationMin).map((e) => e.key), offPeak: isOffPeak(day.weekday, m) });
+    slots.push({ time: fromMinutes(m), employees: freeEmployees(day, m, durationMin).map((e) => e.key), offPeak: isOffPeak(day.weekday, m, offPeakHours) });
   }
   return { date: day.date, closed: false, slots };
 }

@@ -5,17 +5,19 @@ import type { EventPublisher } from "@/core/domain/events";
 import { toMinutes, tunisToUtc, weekdayOf } from "@/core/domain/time";
 import { computeSlots, freeEmployees, isFree } from "../domain/availability";
 import { depositFor, isActive, isOffPeak, isWithinCancellationWindow, nextStatus, startsTooSoon, type StaffAction } from "../domain/policy";
-import type { BookingRepository, PromotionPort, SalonAccessPort } from "./ports";
+import type { BookingRepository, OffPeakPort, PromotionPort, SalonAccessPort } from "./ports";
 import type { AvailabilityQuery, BookingQuoteInput, CreateBookingInput } from "./schemas";
 
-export type BookingDeps = { bookings: BookingRepository; access: SalonAccessPort; promotions: PromotionPort; events: EventPublisher; clock: Clock };
+export type BookingDeps = { bookings: BookingRepository; access: SalonAccessPort; promotions: PromotionPort; events: EventPublisher; clock: Clock; offPeak?: OffPeakPort };
 
 /**
  * Réservation (P3, RES-03 à RES-05).
  * Anti double réservation (RES-04) : chaque réservation verrouille en base les tranches de 5 min de l'employé
  * (index unique) ; deux demandes simultanées pour le même créneau → une seule réussit, l'autre reçoit SLOT_TAKEN.
  */
-export function makeBooking({ bookings, access, promotions, events, clock }: BookingDeps) {
+export function makeBooking({ bookings, access, promotions, events, clock, offPeak }: BookingDeps) {
+  const offPeakHours = async (salonId: string, date: string) => (offPeak ? offPeak.hours(salonId, date).catch(() => null) : null);
+
   async function resolveServices(salonId: string, keys: string[]) {
     const unique = [...new Set(keys)];
     const services = await bookings.activeServices(salonId, unique);
@@ -24,9 +26,9 @@ export function makeBooking({ bookings, access, promotions, events, clock }: Boo
   }
 
   /** Créneaux d'une journée pour une durée donnée (pas de 30 min), avec les employés libres */
-  async function getAvailability(params: { salonId: string; date: string; durationMin: number; employeeKey?: string }) {
-    const day = await bookings.daySchedule(params.salonId, params.date, { employeeKey: params.employeeKey });
-    return computeSlots(day, params.durationMin, clock.now());
+  async function getAvailability(params: { salonId: string; date: string; durationMin: number; employeeKey?: string; withForecast?: boolean }) {
+    const [day, hours] = await Promise.all([bookings.daySchedule(params.salonId, params.date, { employeeKey: params.employeeKey }), params.withForecast ? offPeakHours(params.salonId, params.date) : null]);
+    return computeSlots(day, params.durationMin, clock.now(), hours);
   }
 
   /** GET /api/salons/:slug/availability : prestations choisies → durée → créneaux */
@@ -36,7 +38,7 @@ export function makeBooking({ bookings, access, promotions, events, clock }: Boo
     const keys = query.services?.split(",").filter(Boolean) ?? [];
     const durationMin = keys.length ? (await resolveServices(salon.id, keys)).durationMin : 30;
     const employeeKey = query.employee && query.employee !== "any" ? query.employee : undefined;
-    return getAvailability({ salonId: salon.id, date: query.date, durationMin, employeeKey });
+    return getAvailability({ salonId: salon.id, date: query.date, durationMin, employeeKey, withForecast: true });
   }
 
   /** SAL-10 : prix affiché avant confirmation (sous-total, remise, total, acompte) */
@@ -72,6 +74,7 @@ export function makeBooking({ bookings, access, promotions, events, clock }: Boo
     const price = total - discount;
 
     const minutes = toMinutes(input.time);
+    const forecastHours = await offPeakHours(salon.id, input.date);
     for (const employee of freeEmployees(day, minutes, durationMin)) {
       const booking = await bookings.insertIfFree({
         clientId,
@@ -84,7 +87,7 @@ export function makeBooking({ bookings, access, promotions, events, clock }: Boo
         deposit: depositFor(price, input.paymentMethod, salon.depositPercent),
         paymentMethod: input.paymentMethod,
         note: input.note || null,
-        offPeak: isOffPeak(day.weekday, minutes),
+        offPeak: isOffPeak(day.weekday, minutes, forecastHours),
         items: services,
         promo: promo ? { promotionId: promo.promotionId, code: promo.code, label: promo.label } : null,
       });
@@ -141,7 +144,7 @@ export function makeBooking({ bookings, access, promotions, events, clock }: Boo
     const employee = day.employees[0];
     if (!employee || !isFree(day, employee, toMinutes(time), durationMin)) throw conflict("SLOT_TAKEN", "Ce créneau n'est pas disponible.");
 
-    const moved = await bookings.moveIfFree(booking.id, startsAt, endsAt, isOffPeak(weekdayOf(date), toMinutes(time)));
+    const moved = await bookings.moveIfFree(booking.id, startsAt, endsAt, isOffPeak(weekdayOf(date), toMinutes(time), await offPeakHours(booking.salonId, date)));
     if (!moved) throw conflict("SLOT_TAKEN", "Ce créneau n'est pas disponible.");
     return moved;
   }

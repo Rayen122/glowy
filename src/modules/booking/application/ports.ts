@@ -59,3 +59,8 @@ export interface PromotionPort {
   consume(promotionId: string): Promise<boolean>;
   release(promotionId: string): Promise<void>;
 }
+
+/** Heures creuses prévues d'un salon pour une date (IA P2) ; null = pas assez d'historique, règle de repli */
+export interface OffPeakPort {
+  hours(salonId: string, date: string): Promise<number[] | null>;
+}
