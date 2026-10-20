@@ -13,7 +13,7 @@ import { mongoAccountRepository } from "./infrastructure/mongo-account-repositor
 import { mongoStaffDirectory } from "./infrastructure/mongo-staff-directory";
 
 export const { staffSalonId, canManageSalon } = makeAccess(mongoStaffDirectory);
-export const { register, authenticate, demoAccount, sessionUser, createStaffAccount, requestPasswordReset, resetPassword, sendEmailVerification, verifyEmail, changePassword } = makeIdentity({
+export const { register, authenticate, demoAccount, sessionUser, createStaffAccount, requestPasswordReset, resetPassword, sendEmailVerification, verifyEmail, changePassword, oauthSignIn } = makeIdentity({
   accounts: mongoAccountRepository,
   hasher: bcryptPasswordHasher,
   events: eventBus,

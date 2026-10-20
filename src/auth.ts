@@ -1,8 +1,9 @@
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 import { z } from "zod";
 import { ROLES } from "@/core/domain/actor";
-import { authenticate, credentialsInput, demoAccount, type UserAccount } from "@/modules/identity";
+import { authenticate, credentialsInput, demoAccount, oauthSignIn, type UserAccount } from "@/modules/identity";
 import { authConfig } from "./auth.config";
 
 /**
@@ -39,9 +40,40 @@ const DEMO_ACCOUNTS = {
 
 export const demoLoginEnabled = process.env.DEMO_LOGIN === "true";
 
+/** AUTH-08 (bonus) : connexion Google, active seulement si l'application OAuth est configurée */
+export const googleLoginEnabled = Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
+
+type GoogleProfile = { email?: string; email_verified?: boolean; given_name?: string; family_name?: string; locale?: string };
+const googleAccount = (profile: GoogleProfile) =>
+  oauthSignIn({
+    email: profile.email ?? "",
+    emailVerified: profile.email_verified === true,
+    firstName: profile.given_name ?? "",
+    lastName: profile.family_name ?? "",
+    locale: profile.locale?.startsWith("ar") ? "ar" : profile.locale?.startsWith("en") ? "en" : "fr",
+  });
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  callbacks: {
+    ...authConfig.callbacks,
+    /** Google : refus si l'adresse n'est pas vérifiée ou si le compte est bloqué */
+    async signIn({ account, profile }) {
+      if (account?.provider !== "google") return true;
+      return Boolean(profile && (await googleAccount(profile as GoogleProfile)));
+    },
+    async jwt(params) {
+      const { token, account, profile } = params;
+      if (account?.provider === "google" && profile) {
+        const user = await googleAccount(profile as GoogleProfile);
+        if (user) Object.assign(token, { id: user.id, role: user.role, firstName: user.firstName, name: `${user.firstName} ${user.lastName}`.trim() });
+        return token;
+      }
+      return authConfig.callbacks.jwt(params);
+    },
+  },
   providers: [
+    ...(googleLoginEnabled ? [Google] : []),
     Credentials({
       id: "credentials",
       credentials: { email: {}, password: {} },
