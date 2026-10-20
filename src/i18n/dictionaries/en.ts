@@ -1118,6 +1118,8 @@ export const en: Dictionary = {
         "review.keep": "kept a reported review",
         "user.passwordReset": "sent a password reset link to {target}",
         "loyalty.rule": "changed the points rule {target}",
+        "platform.settings": "changed the platform settings ({target})",
+        "platform.announcement": "sent the announcement “{target}”",
         "loyalty.campaign": "started the campaign {target}",
         "loyalty.campaignOff": "stopped the campaign {target}",
       },

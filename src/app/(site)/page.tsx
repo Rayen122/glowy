@@ -28,14 +28,15 @@ import { SectionHeading } from "@/components/site/section-heading";
 import type { I18n } from "@/i18n/format";
 import { auth } from "@/auth";
 import { getI18n } from "@/i18n/server";
-import { CATEGORIES, CITIES, IMAGES, TIERS, TODAY_FORECAST } from "@/lib/data";
+import { CATEGORIES, IMAGES, TIERS, TODAY_FORECAST } from "@/lib/data";
+import { activeCities, getPlatformSettings } from "@/modules/platform";
 import { recommendedSalons } from "@/modules/catalog";
 import { cn } from "@/lib/utils";
 
 const POPULAR = ["Brushing", "Balayage", "Manucure semi-permanent", "Hammam", "Taille de barbe"];
 
 export default async function HomePage() {
-  const i18n = await getI18n();
+  const [i18n, settings, cities] = await Promise.all([getI18n(), getPlatformSettings(), activeCities()]);
   const { t, f, nf } = i18n;
   const h = t.home;
   const session = await auth();
@@ -53,7 +54,7 @@ export default async function HomePage() {
           action={{ href: "/salons", label: h.categories.action }}
         />
         <ul className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6" data-animate="stagger" data-stagger="0.07">
-          {CATEGORIES.map((c) => (
+          {CATEGORIES.filter((c) => settings.categories.find((x) => x.id === c.id)?.active !== false).map((c) => (
             <li key={c.id}>
               <Link
                 href={`/salons?categorie=${c.id}`}
@@ -106,7 +107,7 @@ export default async function HomePage() {
       <section className="container-page py-16 lg:py-24" aria-labelledby="villes-title">
         <SectionHeading eyebrow={h.cities.eyebrow} title={<span id="villes-title">{h.cities.title}</span>} />
         <ul className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4" data-animate="stagger" data-stagger="0.05">
-          {CITIES.map((c) => (
+          {cities.map((c) => (
             <li key={c.name}>
               <Link
                 href={`/salons?ville=${encodeURIComponent(c.name)}`}

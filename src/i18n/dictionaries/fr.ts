@@ -1124,6 +1124,8 @@ export const fr = {
         "review.keep": "a conservé un avis signalé",
         "user.passwordReset": "a envoyé un lien de réinitialisation du mot de passe à {target}",
         "loyalty.rule": "a modifié le barème : {target}",
+        "platform.settings": "a modifié les paramètres de la plateforme ({target})",
+        "platform.announcement": "a envoyé l'annonce « {target} »",
         "loyalty.campaign": "a lancé la campagne {target}",
         "loyalty.campaignOff": "a arrêté la campagne {target}",
       },
