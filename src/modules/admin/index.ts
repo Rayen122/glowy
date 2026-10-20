@@ -12,3 +12,4 @@ export { salonActionInput, userActionInput } from "./application/schemas";
 export { adminOverview, adminQueues, type PendingSalonRow } from "./infrastructure/queries";
 export type { FlaggedReviewRow } from "./domain/policy";
 export { auditTrail, bookingsByCity, listSalonsForAdmin, listUsersForAdmin, moderationHistory, PAGE_SIZE, platformGrowth, salonExists, sendPasswordResetFor, type AdminSalonRow, type AdminUserRow } from "./infrastructure/manage";
+export { platformReportCsv, platformReports, REPORT_KINDS, REPORT_PERIODS, type PlatformReports, type ReportKind, type ReportPeriod } from "./infrastructure/reports";

@@ -88,3 +88,12 @@ describe("Caisse et factures (SAL-09)", () => {
     assert.equal(checkoutInput.safeParse({ lines: line, method: "CASH" }).success, false, "vente libre sans nom refusée");
   });
 });
+
+describe("Export CSV pour Excel (SAL-11, ADM-08)", () => {
+  test("BOM, séparateur « ; », virgule décimale, formules neutralisées, nombres négatifs intacts", async () => {
+    const { toCsv } = await import("@/core/domain/csv");
+    const csv = toCsv(["Nom", "Taux"], [["=SOMME(A1)", 5.4], ["Lina; « VIP »", -20]]);
+    assert.ok(csv.startsWith("﻿"));
+    assert.deepEqual(csv.slice(1).trim().split("\r\n"), ["Nom;Taux", "'=SOMME(A1);5,4", '"Lina; « VIP »";-20']);
+  });
+});
