@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CircleCheck, MailCheck } from "lucide-react";
+import { CircleCheck, KeyRound, MailCheck } from "lucide-react";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useI18n } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import { api, Field, FIELD, FormError, PRIMARY_BUTTON, SECONDARY_BUTTON, useAction } from "./kit";
@@ -166,5 +167,27 @@ export function ResendVerificationButton() {
     >
       {m.resendVerification}
     </button>
+  );
+}
+
+/** Accès au changement de mot de passe depuis le dashboard (équipe des salons, Super Admin) */
+export function ChangePasswordButton({ className }: { className?: string }) {
+  const { t } = useI18n();
+  const m = t.manage.password;
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} aria-label={m.changeTitle} title={m.changeTitle} className={className}>
+        <KeyRound className="size-[18px]" aria-hidden />
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{m.changeTitle}</DialogTitle>
+          </DialogHeader>
+          <ChangePasswordForm onDone={() => setOpen(false)} />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
