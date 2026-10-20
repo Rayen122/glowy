@@ -37,8 +37,12 @@ export const mongoReviewRepository: ReviewRepository = {
       text: data.text,
       photoUrl: data.photoUrl ?? null,
       lang: data.lang,
+      sentiment: data.analysis.sentiment,
+      suspicion: data.analysis.suspicion,
+      aspects: data.analysis.aspects,
+      analyzedAt: new Date(),
     });
-    return toRecord(review.toObject());
+    return toRecord(review.toObject() as unknown as ReviewDoc);
   },
 
   async findById(id) {

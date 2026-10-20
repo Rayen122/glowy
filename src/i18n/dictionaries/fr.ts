@@ -161,6 +161,32 @@ export const fr = {
     noWait: "sans attente",
   },
 
+  insights: {
+    aspects: {
+      accueil: "l'accueil",
+      resultat: "le résultat",
+      attente: "l'attente",
+      prix: "les prix",
+      proprete: "la propreté",
+      conseil: "les conseils",
+      ponctualite: "la ponctualité",
+    },
+    aspectTitles: {
+      accueil: "Accueil",
+      resultat: "Résultat",
+      attente: "Attente",
+      prix: "Prix",
+      proprete: "Propreté",
+      conseil: "Conseils",
+      ponctualite: "Ponctualité",
+    },
+    praised: "Les clientes saluent surtout {list}.",
+    watch: "Les remarques négatives portent sur {list}.",
+    noWeakness: "Aucun point faible récurrent dans les avis récents.",
+    notEnough: "Pas encore assez d'avis pour une synthèse fiable.",
+    basedOn: "Analyse automatique de {n} avis vérifiés",
+    and: " et ",
+  },
   favorites: {
     addAria: "Ajouter {name} aux favoris",
     removeAria: "Retirer {name} des favoris",

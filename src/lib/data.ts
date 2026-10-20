@@ -503,21 +503,6 @@ export const REVIEWS: Review[] = [
   },
 ];
 
-export const REVIEW_SUMMARY = {
-  sentiment: { positif: 86, neutre: 10, negatif: 4 },
-  strengths: ["Chignons qui tiennent toute la journée", "Accueil chaleureux", "Grande ponctualité"],
-  weaknesses: ["Attente le samedi après-midi", "Stationnement difficile"],
-  summary:
-    "Les clientes saluent surtout la tenue des coiffures de mariée et le conseil personnalisé. Les rares remarques négatives concernent l'attente le samedi et le parking.",
-  distribution: [
-    { stars: 5, count: 201 },
-    { stars: 4, count: 27 },
-    { stars: 3, count: 6 },
-    { stars: 2, count: 3 },
-    { stars: 1, count: 1 },
-  ],
-};
-
 export const AMENITIES = ["Wi-Fi", "Paiement par carte", "Accès PMR", "Boissons offertes", "Climatisation"];
 
 /* ---------- Espace client ---------- */

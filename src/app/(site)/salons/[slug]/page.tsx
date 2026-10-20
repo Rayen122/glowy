@@ -31,7 +31,8 @@ import { LiveQueue } from "@/components/salon/live-queue";
 import { liveAffluence, myQueueStatus, salonForecast, salonOpenNow } from "@/modules/affluence";
 import { getSalonDetail } from "@/modules/catalog";
 import { listSalonRewards, publicOffers } from "@/modules/promotions";
-import { REVIEW_SUMMARY, weekdayIso } from "@/lib/data";
+import { weekdayIso } from "@/lib/data";
+import { salonReviewInsights } from "@/modules/reviews";
 import { cn } from "@/lib/utils";
 
 export async function generateMetadata({ params }: PageProps<"/salons/[slug]">): Promise<Metadata> {
@@ -76,8 +77,14 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
   const s = t.salon;
   const totalReviews = Math.max(1, detail.distribution.reduce((a, d) => a + d.count, 0));
   const { positif, neutre, negatif } = detail.sentiment;
-  // Résumé textuel produit par l'IA d'analyse des avis (P4) : démo disponible pour le Salon Yasmine
-  const aiSummary = salon.slug === "salon-yasmine-la-marsa" ? REVIEW_SUMMARY : null;
+  // IA P4 : synthèse des avis analysés (sentiments, points forts, points à améliorer)
+  const insights = await salonReviewInsights(detail.id);
+  const ins = t.insights;
+  const list = (aspects: (keyof typeof ins.aspects)[]) => {
+    const words = aspects.map((a) => ins.aspects[a]);
+    return words.length > 1 ? `${words.slice(0, -1).join(", ")}${ins.and}${words[words.length - 1]}` : (words[0] ?? "");
+  };
+  const aiSummary = insights.analysed >= 3 ? insights : null;
 
   return (
     <div className="container-page pt-4 pb-12 lg:pb-20">
@@ -291,25 +298,30 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
                   <Sparkles className="size-4" aria-hidden />
                   {s.aiSummary}
                 </p>
-                {aiSummary && <p className="mt-3 leading-relaxed text-foreground">{tc(aiSummary.summary)}</p>}
-                {aiSummary && (
+                <p className="mt-3 leading-relaxed text-foreground">
+                  {!aiSummary
+                    ? ins.notEnough
+                    : `${aiSummary.strengths.length ? f(ins.praised, { list: list(aiSummary.strengths) }) : ""} ${aiSummary.weaknesses.length ? f(ins.watch, { list: list(aiSummary.weaknesses) }) : ins.noWeakness}`.trim()}
+                </p>
+                {aiSummary && <p className="mt-1 text-xs text-muted-foreground">{f(ins.basedOn, { n: aiSummary.analysed })}</p>}
+                {aiSummary && (aiSummary.strengths.length > 0 || aiSummary.weaknesses.length > 0) && (
                 <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{s.strengths}</p>
                     <ul className="mt-2 space-y-1.5">
                       {aiSummary.strengths.map((x) => (
                         <li key={x} className="flex items-start gap-2 text-sm">
-                          <ThumbsUp className="mt-0.5 size-3.5 shrink-0 text-success" aria-hidden /> {tc(x)}
+                          <ThumbsUp className="mt-0.5 size-3.5 shrink-0 text-success" aria-hidden /> {ins.aspectTitles[x]}
                         </li>
                       ))}
                     </ul>
                   </div>
-                  <div>
+                  <div hidden={aiSummary.weaknesses.length === 0}>
                     <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{s.weaknesses}</p>
                     <ul className="mt-2 space-y-1.5">
                       {aiSummary.weaknesses.map((x) => (
                         <li key={x} className="flex items-start gap-2 text-sm">
-                          <Flag className="mt-0.5 size-3.5 shrink-0 text-warning" aria-hidden /> {tc(x)}
+                          <Flag className="mt-0.5 size-3.5 shrink-0 text-warning" aria-hidden /> {ins.aspectTitles[x]}
                         </li>
                       ))}
                     </ul>
