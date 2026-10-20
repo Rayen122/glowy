@@ -1,6 +1,6 @@
 import { addDays, toMinutes, tunisDayRange, tunisToday, utcToTunis, weekdayOf } from "@/core/domain/time";
 import { Booking, Employee, objectId, QueueEntry, Salon } from "@/infrastructure/db";
-import { bestWindow, forecastDay, liveStatus, waitFor, WEEKS } from "../domain/forecast";
+import { bestWindow, forecastDay, liveStatus, offPeakHours, waitFor, WEEKS } from "../domain/forecast";
 
 const ACTIVE = ["CONFIRMED", "IN_PROGRESS"] as const;
 const local = (d: Date) => toMinutes(utcToTunis(d).time);
@@ -67,4 +67,17 @@ export async function waitContext(salonId: string, now = new Date()) {
   ]);
   const ctx = { capacity, busyUntil: busy.map((b) => (b.endsAt.getTime() - now.getTime()) / 60_000), avgServiceMin: avgDuration(doc?.services ?? []) };
   return { ...ctx, waitAt: (position: number) => waitFor(position, ctx) };
+}
+
+/** IA P2 → points « heure creuse » : heures calmes prévues, gardées 10 min par salon et par date (null = repli) */
+const offPeakMemo = new Map<string, { at: number; hours: number[] | null }>();
+export async function offPeakHoursFor(salonId: string, date: string) {
+  const key = `${salonId}:${date}`;
+  const hit = offPeakMemo.get(key);
+  if (hit && Date.now() - hit.at < 10 * 60_000) return hit.hours;
+  const forecast = await salonForecast(salonId, date);
+  const hours = forecast.source === "history" ? offPeakHours(forecast.points) : null;
+  if (offPeakMemo.size > 500) offPeakMemo.clear();
+  offPeakMemo.set(key, { at: Date.now(), hours });
+  return hours;
 }

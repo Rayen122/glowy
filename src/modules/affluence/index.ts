@@ -9,7 +9,7 @@ import { queueAction as applyQueueAction } from "./infrastructure/queue";
 
 export const queueAction = (actor: Actor, salonId: string, entryId: string, action: QueueAction) => applyQueueAction(actor, salonId, entryId, action, notify);
 
-export { liveAffluence, salonForecast, type SalonForecast } from "./infrastructure/mongo-affluence";
+export { liveAffluence, offPeakHoursFor, salonForecast, type SalonForecast } from "./infrastructure/mongo-affluence";
 export { addWalkIn, joinQueue, leaveQueue, myQueueStatus, salonOpenNow, salonQueue, type SalonQueue } from "./infrastructure/queue";
 export { joinQueueInput, queueActionInput, walkInInput, type QueueAction } from "./application/schemas";
 export { bestWindow, forecastDay, levelFor, liveStatus, offPeakHours, waitFor, type Affluence, type ForecastPoint } from "./domain/forecast";
