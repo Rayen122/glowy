@@ -43,3 +43,6 @@ export const bookingActionInput = z.discriminatedUnion("action", [
 export type AvailabilityQuery = z.infer<typeof availabilityQuery>;
 export type CreateBookingInput = z.infer<typeof createBookingInput>;
 export type BookingQuoteInput = z.infer<typeof bookingQuoteInput>;
+
+/** RES-09 : liste d'attente d'un jour complet */
+export const waitlistInput = z.object({ date: DATE, serviceKeys: z.array(z.string().min(1)).min(1).max(6) });
