@@ -2,7 +2,9 @@ import mongoose, { Schema, type InferSchemaType, type Types } from "mongoose";
 import { ROLES } from "@/core/domain/actor";
 import {
   BOOKING_STATUSES,
+  CASH_METHODS,
   CATEGORIES,
+  INVOICE_STATUSES,
   LOCALES,
   PAYMENT_METHODS,
   PAYMENT_STATUSES,
@@ -200,6 +202,42 @@ const bookingSchema = new Schema(
 bookingSchema.index({ employee: 1, startsAt: 1 });
 bookingSchema.index({ client: 1, startsAt: -1 });
 bookingSchema.index({ salon: 1, startsAt: 1 });
+
+// ── Caisse et factures (SAL-09) ─────────────────────────────
+/** Compteurs de numérotation (factures : une suite par salon et par année, sans trou) */
+const counterSchema = new Schema({ _id: { type: String, required: true }, seq: { type: Number, default: 0 } });
+
+/** Facture : copie figée des lignes et de la cliente au moment de l'encaissement ; annulée, jamais supprimée */
+const invoiceSchema = new Schema(
+  {
+    salon: { type: ObjectId, ref: "Salon", required: true },
+    number: { type: String, required: true },
+    booking: { type: ObjectId, ref: "Booking", default: null },
+    client: { type: ObjectId, ref: "User", default: null },
+    clientName: { type: String, required: true },
+    clientEmail: optional(String),
+    clientPhone: optional(String),
+    lines: { type: [{ _id: false, label: String, quantity: Number, unitPrice: Number }], default: [] },
+    subtotal: { type: Number, required: true },
+    discount: { type: Number, default: 0 },
+    /** Acompte déjà payé en ligne, déduit du reste à payer */
+    deposit: { type: Number, default: 0 },
+    total: { type: Number, required: true },
+    /** Encaissé au comptoir */
+    due: { type: Number, required: true },
+    method: { type: String, enum: CASH_METHODS, required: true },
+    status: { type: String, enum: INVOICE_STATUSES, default: "PAID" },
+    issuedBy: { type: ObjectId, ref: "User", required: true },
+    voidedAt: optional(Date),
+    voidReason: optional(String),
+  },
+  { timestamps: true }
+);
+invoiceSchema.index({ salon: 1, number: 1 }, { unique: true });
+invoiceSchema.index({ salon: 1, createdAt: -1 });
+invoiceSchema.index({ client: 1, createdAt: -1 });
+/** Une seule facture payée par réservation (une facture annulée libère la réservation) */
+invoiceSchema.index({ booking: 1 }, { unique: true, partialFilterExpression: { booking: { $type: "objectId" }, status: "PAID" } });
 
 // ── Abonnements des salons (ADM-05) ─────────────────────────
 /** Demande de paiement d'un plan : encaissée hors ligne, acceptée ou refusée par le Super Admin */
@@ -419,6 +457,8 @@ export const ReviewReport = defineModel("ReviewReport", reviewReportSchema);
 export const PhotoAnalysis = defineModel("PhotoAnalysis", photoAnalysisSchema);
 export const AuditLog = defineModel("AuditLog", auditLogSchema);
 export const ClientNote = defineModel("ClientNote", clientNoteSchema);
+export const Counter = defineModel("Counter", counterSchema);
+export const Invoice = defineModel("Invoice", invoiceSchema);
 
 /** Document lu avec .lean() : champs du schéma + _id (+ dates automatiques) */
 type Lean<S extends Schema> = InferSchemaType<S> & { _id: Types.ObjectId; createdAt: Date; updatedAt: Date };
@@ -433,7 +473,7 @@ export type ReviewDoc = Lean<typeof reviewSchema>;
 export type PointTransactionDoc = Omit<Lean<typeof pointTransactionSchema>, "updatedAt">;
 
 /** Toutes les collections, pour vider la base (seed, tests) */
-export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog, ClientNote];
+export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog, ClientNote, Counter, Invoice];
 
 /** Vide toutes les collections et recrée les index, dont les index uniques (seed, tests) */
 export async function resetAll() {

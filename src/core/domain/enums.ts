@@ -39,6 +39,13 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 export const PAYMENT_STATUSES = ["PENDING", "PAID", "REFUNDED", "FAILED"] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
+/** Moyens d'encaissement en caisse (SAL-09) */
+export const CASH_METHODS = ["CASH", "CARD", "D17", "CHEQUE"] as const;
+export type CashMethod = (typeof CASH_METHODS)[number];
+
+export const INVOICE_STATUSES = ["PAID", "VOID"] as const;
+export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
+
 export const POINT_REASONS = [
   "BOOKING_COMPLETED",
   "NEW_SALON",

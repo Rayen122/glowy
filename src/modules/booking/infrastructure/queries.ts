@@ -1,6 +1,6 @@
 import { shortName } from "@/core/domain/text";
 import { tunisDayRange, utcToTunis, weekdayOf } from "@/core/domain/time";
-import { Booking, Employee, idOf, objectId, Review, Salon, TimeOff, User } from "@/infrastructure/db";
+import { Booking, Employee, idOf, Invoice, objectId, Review, Salon, TimeOff, User } from "@/infrastructure/db";
 import { toBookingRecord } from "./mongo-booking-repository";
 
 /** Lectures pour l'interface (pas de règle métier) */
@@ -10,14 +10,16 @@ export async function listClientBookings(clientId: string) {
   const client = objectId(clientId);
   if (!client) return [];
   const bookings = await Booking.find({ client }).sort({ startsAt: -1 }).lean();
-  const [salons, employees, reviews] = await Promise.all([
+  const [salons, employees, reviews, invoices] = await Promise.all([
     Salon.find({ _id: { $in: [...new Set(bookings.map((b) => b.salon.toString()))] } }, { slug: 1, name: 1, city: 1, address: 1, coverUrl: 1, lat: 1, lng: 1, cancellationHours: 1 }).lean(),
     Employee.find({ _id: { $in: [...new Set(bookings.map((b) => b.employee.toString()))] } }, { name: 1, key: 1, active: 1 }).lean(),
     Review.find({ booking: { $in: bookings.map((b) => b._id) } }, { booking: 1 }).lean(),
+    Invoice.find({ booking: { $in: bookings.map((b) => b._id) }, status: "PAID" }, { booking: 1 }).lean(),
   ]);
   const salonById = new Map(salons.map((s) => [idOf(s), s]));
   const employeeById = new Map(employees.map((e) => [idOf(e), e]));
   const reviewByBooking = new Map(reviews.map((r) => [r.booking.toString(), idOf(r)]));
+  const invoiceByBooking = new Map(invoices.map((i) => [String(i.booking), idOf(i)]));
 
   return bookings.map((b) => {
     const salon = salonById.get(b.salon.toString())!;
@@ -37,6 +39,8 @@ export async function listClientBookings(clientId: string) {
       employee: { name: employeeById.get(b.employee.toString())?.name ?? "", key: employeeById.get(b.employee.toString())?.active ? (employeeById.get(b.employee.toString())?.key ?? null) : null },
       items: b.items.map((i) => ({ name: i.name ?? "", price: i.price ?? 0, serviceKey: i.serviceKey ?? null })),
       review: reviewId ? { id: reviewId } : null,
+      /** Facture du salon (SAL-09), consultable et imprimable par la cliente */
+      invoiceId: invoiceByBooking.get(idOf(b)) ?? null,
       local: utcToTunis(b.startsAt),
     };
   });
