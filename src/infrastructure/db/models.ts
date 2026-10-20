@@ -270,6 +270,35 @@ const salonPointEntrySchema = new Schema(
 salonPointEntrySchema.index({ user: 1, salon: 1, createdAt: -1 });
 salonPointEntrySchema.index({ booking: 1 }, { unique: true, partialFilterExpression: { reason: "VISIT", booking: { $type: "objectId" } } });
 
+// ── Paramètres de la plateforme (ADM-05, ADM-06) et annonces (ADM-10) ──
+/** Document unique (_id « platform ») : catalogue global, langues, commissions ; défauts appliqués en lecture */
+const platformSettingSchema = new Schema(
+  {
+    _id: { type: String, required: true },
+    cities: { type: [{ _id: false, name: String, active: { type: Boolean, default: true } }], default: undefined },
+    categories: { type: [{ _id: false, id: { type: String, enum: CATEGORIES }, active: { type: Boolean, default: true } }], default: undefined },
+    /** Catégories de prestations proposées aux salons (suggestions du catalogue de services) */
+    serviceGroups: { type: [String], default: undefined },
+    locales: { type: [{ type: String, enum: LOCALES }], default: undefined },
+    /** Commission Glowy en % des acomptes payés en ligne, selon le plan du salon */
+    commissions: { type: new Schema({ gratuit: Number, pro: Number, premium: Number }, { _id: false }), default: undefined },
+  },
+  { timestamps: true }
+);
+
+const announcementSchema = new Schema(
+  {
+    title: { type: String, required: true },
+    body: { type: String, required: true },
+    audience: { type: String, enum: ["ALL", "CLIENTS", "SALONS"], required: true },
+    link: optional(String),
+    recipients: { type: Number, default: 0 },
+    createdBy: { type: ObjectId, ref: "User", required: true },
+  },
+  { timestamps: { createdAt: true, updatedAt: false } }
+);
+announcementSchema.index({ createdAt: -1 });
+
 // ── Caisse et factures (SAL-09) ─────────────────────────────
 /** Compteurs de numérotation (factures : une suite par salon et par année, sans trou) */
 const counterSchema = new Schema({ _id: { type: String, required: true }, seq: { type: Number, default: 0 } });
@@ -546,6 +575,8 @@ export const ClientNote = defineModel("ClientNote", clientNoteSchema);
 export const Promotion = defineModel("Promotion", promotionSchema);
 export const SalonWallet = defineModel("SalonWallet", salonWalletSchema);
 export const SalonPointEntry = defineModel("SalonPointEntry", salonPointEntrySchema);
+export const PlatformSetting = defineModel("PlatformSetting", platformSettingSchema);
+export const Announcement = defineModel("Announcement", announcementSchema);
 export const Counter = defineModel("Counter", counterSchema);
 export const Invoice = defineModel("Invoice", invoiceSchema);
 
@@ -563,7 +594,7 @@ export type PromotionDoc = Lean<typeof promotionSchema>;
 export type PointTransactionDoc = Omit<Lean<typeof pointTransactionSchema>, "updatedAt">;
 
 /** Toutes les collections, pour vider la base (seed, tests) */
-export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, PointCampaign, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog, ClientNote, Promotion, SalonWallet, SalonPointEntry, Counter, Invoice];
+export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, PointCampaign, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog, ClientNote, Promotion, SalonWallet, SalonPointEntry, PlatformSetting, Announcement, Counter, Invoice];
 
 /** Vide toutes les collections et recrée les index, dont les index uniques (seed, tests) */
 export async function resetAll() {

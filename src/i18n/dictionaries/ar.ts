@@ -1117,6 +1117,8 @@ export const ar: Dictionary = {
         "review.keep": "أبقى على تقييم مُبلغ عنه",
         "user.passwordReset": "أرسل رابط إعادة تعيين كلمة المرور إلى {target}",
         "loyalty.rule": "عدّل جدول النقاط: {target}",
+        "platform.settings": "عدّل إعدادات المنصة ({target})",
+        "platform.announcement": "أرسل الإعلان «{target}»",
         "loyalty.campaign": "أطلق الحملة {target}",
         "loyalty.campaignOff": "أوقف الحملة {target}",
       },
