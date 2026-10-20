@@ -77,3 +77,30 @@ export const reviewReceived = (rating: number, text: string): Message => ({
 export const pointsEarned = (points: number, body: string): Message => ({ type: "points", title: `+${points} points`, body, link: "/compte/fidelite" });
 
 export const pushTest = (): Message => ({ type: "push.test", title: "Glowy", body: "Les notifications sont activées sur cet appareil.", link: "/compte" });
+
+const longDate = (at: Date) => new Intl.DateTimeFormat("fr-TN", { timeZone: "Africa/Tunis", day: "numeric", month: "long", year: "numeric" }).format(at);
+
+/** FID-07 : préavis un mois avant l'expiration des points */
+export const pointsExpiring = (balance: number, expiresAt: Date): Message => ({
+  type: "points.expiring",
+  title: "Vos points vont expirer",
+  body: `Vos ${balance} points Glowy expirent le ${longDate(expiresAt)}. Un rendez-vous ou un avis suffit à les garder.`,
+  link: "/compte/fidelite",
+});
+
+export const pointsExpired = (points: number): Message => ({
+  type: "points.expired",
+  title: "Points expirés",
+  body: `${points} points Glowy ont expiré après 12 mois sans activité.`,
+  link: "/compte/fidelite",
+});
+
+const REMINDER_TITLE = { soon: "Rendez-vous dans moins de 2 heures", today: "Rendez-vous aujourd'hui", tomorrow: "Rendez-vous demain" } as const;
+
+/** RES-07 : rappel la veille (ou le jour même) et moins de 2 h avant le rendez-vous */
+export const bookingReminder = (salonName: string, date: string, time: string, when: keyof typeof REMINDER_TITLE): Message => ({
+  type: "booking.reminder",
+  title: REMINDER_TITLE[when],
+  body: `${salonName}, le ${date} à ${time}. Besoin d'annuler ? Faites-le depuis votre espace.`,
+  link: "/compte/rendez-vous",
+});
