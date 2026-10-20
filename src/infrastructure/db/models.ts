@@ -363,6 +363,25 @@ const waitlistEntrySchema = new Schema(
 waitlistEntrySchema.index({ salon: 1, date: 1, status: 1, createdAt: 1 });
 waitlistEntrySchema.index({ salon: 1, client: 1, date: 1 }, { unique: true, partialFilterExpression: { status: "ACTIVE" } });
 
+// ── Support (AVI-07) ─────────────────────────────────────────
+/** Ticket d'une cliente ou d'un salon, conversation avec l'équipe Glowy (Super Admin) */
+const supportTicketSchema = new Schema(
+  {
+    author: { type: ObjectId, ref: "User", required: true },
+    salon: { type: ObjectId, ref: "Salon", default: null },
+    subject: { type: String, required: true },
+    category: { type: String, enum: ["booking", "payment", "account", "review", "other"], default: "other" },
+    status: { type: String, enum: ["OPEN", "ANSWERED", "CLOSED"], default: "OPEN" },
+    /** Niveau Platine ou salon Premium : support prioritaire (cahier §3.7) */
+    priority: { type: Boolean, default: false },
+    messages: { type: [{ author: { type: ObjectId, ref: "User" }, fromSupport: Boolean, text: String, at: { type: Date, default: Date.now } }], default: [] },
+    lastMessageAt: { type: Date, default: Date.now },
+  },
+  { timestamps: true }
+);
+supportTicketSchema.index({ author: 1, lastMessageAt: -1 });
+supportTicketSchema.index({ status: 1, priority: -1, lastMessageAt: 1 });
+
 // ── Caisse et factures (SAL-09) ─────────────────────────────
 /** Compteurs de numérotation (factures : une suite par salon et par année, sans trou) */
 const counterSchema = new Schema({ _id: { type: String, required: true }, seq: { type: Number, default: 0 } });
@@ -647,6 +666,7 @@ export const QueueEntry = defineModel("QueueEntry", queueEntrySchema);
 export const Product = defineModel("Product", productSchema);
 export const StockMovement = defineModel("StockMovement", stockMovementSchema);
 export const WaitlistEntry = defineModel("WaitlistEntry", waitlistEntrySchema);
+export const SupportTicket = defineModel("SupportTicket", supportTicketSchema);
 export const Counter = defineModel("Counter", counterSchema);
 export const Invoice = defineModel("Invoice", invoiceSchema);
 
@@ -664,7 +684,7 @@ export type PromotionDoc = Lean<typeof promotionSchema>;
 export type PointTransactionDoc = Omit<Lean<typeof pointTransactionSchema>, "updatedAt">;
 
 /** Toutes les collections, pour vider la base (seed, tests) */
-export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, PointCampaign, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog, ClientNote, Promotion, SalonWallet, SalonPointEntry, PlatformSetting, Announcement, QueueEntry, Product, StockMovement, WaitlistEntry, Counter, Invoice];
+export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, PointCampaign, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog, ClientNote, Promotion, SalonWallet, SalonPointEntry, PlatformSetting, Announcement, QueueEntry, Product, StockMovement, WaitlistEntry, SupportTicket, Counter, Invoice];
 
 /** Vide toutes les collections et recrée les index, dont les index uniques (seed, tests) */
 export async function resetAll() {
