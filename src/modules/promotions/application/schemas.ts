@@ -33,10 +33,15 @@ export type PromotionInput = z.infer<typeof promotionInput>;
 /** FID-06 : récompense propre au salon, échangée contre des points */
 export const salonRewardInput = z.object({
   label: z.string().trim().min(3, "3 caractères minimum").max(80),
-  cost: z.coerce.number().int().min(50, "50 points minimum").max(100_000),
+  cost: z.coerce.number().int().min(10, "10 points minimum").max(100_000),
   active: z.boolean().default(true),
 });
 export type SalonRewardInput = z.infer<typeof salonRewardInput>;
 
 /** Validation au comptoir du code de récompense présenté par la cliente */
 export const redemptionCodeInput = z.object({ code: z.string().trim().min(4).max(32) });
+
+/** Points salon crédités par visite terminée (0 = programme désactivé) */
+export const salonPointsInput = z.object({ perVisit: z.coerce.number().int().min(0).max(500) });
+
+export const salonRewardRedeemInput = z.object({ rewardId: z.string().regex(/^[a-f\d]{24}$/i, "Identifiant invalide") });

@@ -48,7 +48,8 @@ export const mongoLoyaltyRepository: LoyaltyRepository = {
 
   async reward(id) {
     const _id = objectId(id);
-    const reward = _id ? await Reward.findById(_id).lean() : null;
+    // Catalogue Glowy seulement : les récompenses d'un salon s'échangent contre ses points salon (FID-06)
+    const reward = _id ? await Reward.findOne({ _id, salon: null }).lean() : null;
     return reward ? { id: idOf(reward), label: reward.label, cost: reward.cost, active: reward.active } : null;
   },
 

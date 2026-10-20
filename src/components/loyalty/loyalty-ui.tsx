@@ -38,7 +38,20 @@ export function CopyCode({ code }: { code: string }) {
 }
 
 /** Échange de points (FID-04) : POST /api/me/loyalty/redeem, le code s'affiche dans la notification */
-export function RedeemButton({ rewardId, label, cost, balance }: { rewardId: string; label: string; cost: number; balance: number }) {
+/** Échange de points : Glowy (catalogue global) ou points salon (endpoint="/api/me/salon-points/redeem", FID-06) */
+export function RedeemButton({
+  rewardId,
+  label,
+  cost,
+  balance,
+  endpoint = "/api/me/loyalty/redeem",
+}: {
+  rewardId: string;
+  label: string;
+  cost: number;
+  balance: number;
+  endpoint?: string;
+}) {
   const { t, f, nf } = useI18n();
   const l = t.loyalty;
   const router = useRouter();
@@ -49,7 +62,7 @@ export function RedeemButton({ rewardId, label, cost, balance }: { rewardId: str
   const redeem = async () => {
     setPending(true);
     try {
-      const { code } = await api<{ code: string }>("/api/me/loyalty/redeem", { method: "POST", body: { rewardId } });
+      const { code } = await api<{ code: string }>(endpoint, { method: "POST", body: { rewardId } });
       setRedeemed(true);
       toast.success(l.redeemedToast, { description: `${f(l.redeemedToastDesc, { label, cost: nf(cost) })} ${f(l.redeemCode, { code })}`, duration: 10_000 });
       router.refresh();
