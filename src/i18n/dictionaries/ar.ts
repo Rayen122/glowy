@@ -254,7 +254,8 @@ export const ar: Dictionary = {
     noDeposit: "لا عربون: تدفع في الصالون",
     freeCancel: "إلغاء مجاني حتى {hours} ساعة قبل الموعد",
     lastMinuteOffer: "{value} على المواعيد خلال الساعات {hours} القادمة",
-    salonReward: "{label} مقابل {points} نقطة وفاء",
+    salonReward: "{label} مقابل {points} نقطة صالون",
+    earnSalonPoints: "+{n} نقطة صالون في كل زيارة",
   },
 
   loyalty: {
@@ -355,7 +356,12 @@ export const ar: Dictionary = {
       expiry: "تنتهي صلاحية نقاطك بعد 12 شهرًا دون نشاط. سنُنبّهك قبل ذلك.",
       perksTitle: "المزايا حسب المستوى",
       rewardsTitle: "كتالوج المكافآت",
-      atSalon: "في {salon}",
+      salonPointsTitle: "نقاط الصالونات",
+      salonPointsHint: "لكل صالون برنامجه الخاص: تُستبدل نقاطه بمكافآته.",
+      salonBalance: "{n} نقطة صالون",
+      perVisitInfo: "+{n} نقطة في كل زيارة",
+      noSalonPoints: "ستظهر نقاط الصالونات هنا بعد أول زيارة لصالون شريك.",
+      noSalonRewards: "لا مكافآت لهذا الصالون بعد.",
       earnTitle: "كيف تكسب النقاط",
       earnCaption: "جدول النقاط",
       antiFraud: "تُحتسب النقاط فقط بعد موعد مؤكَّد أنهاه الصالون. الغياب أو الإلغاء المتأخر: −20 نقطة.",

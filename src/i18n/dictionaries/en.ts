@@ -255,7 +255,8 @@ export const en: Dictionary = {
     noDeposit: "No deposit: you pay at the salon",
     freeCancel: "Free cancellation up to {hours} hours before",
     lastMinuteOffer: "{value} on slots in the next {hours} hours",
-    salonReward: "{label} for {points} loyalty points",
+    salonReward: "{label} for {points} salon points",
+    earnSalonPoints: "+{n} salon points per visit",
   },
 
   loyalty: {
@@ -356,7 +357,12 @@ export const en: Dictionary = {
       expiry: "Your points expire after 12 months without activity. We'll remind you first.",
       perksTitle: "Perks by tier",
       rewardsTitle: "Rewards catalogue",
-      atSalon: "At {salon}",
+      salonPointsTitle: "My salon points",
+      salonPointsHint: "Each salon runs its own programme: its points are exchanged for its rewards.",
+      salonBalance: "{n} salon points",
+      perVisitInfo: "+{n} points per visit",
+      noSalonPoints: "Your salon points will appear here after your first visit to a partner salon.",
+      noSalonRewards: "This salon has no rewards yet.",
       earnTitle: "How to earn points",
       earnCaption: "Points table",
       antiFraud: "Points are only credited after a confirmed appointment marked as completed by the salon. No-show or late cancellation: −20 pts.",
