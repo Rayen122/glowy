@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { I18nProvider } from "@/i18n/client";
 import { LOCALE_META } from "@/i18n/config";
-import { getDictionary, getI18n, getLocale } from "@/i18n/server";
+import { getDictionary, getEnabledLocales, getI18n, getLocale } from "@/i18n/server";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -43,7 +43,7 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const locale = await getLocale();
+  const [locale, locales] = await Promise.all([getLocale(), getEnabledLocales()]);
   const dict = await getDictionary(locale);
 
   return (
@@ -61,7 +61,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             }}
           />
         </noscript>
-        <I18nProvider locale={locale} dict={dict}>
+        <I18nProvider locale={locale} dict={dict} locales={locales}>
           <TooltipProvider>{children}</TooltipProvider>
           <PwaRegister />
           <Toaster theme="light" position="top-center" dir={LOCALE_META[locale].dir} richColors={false} />
