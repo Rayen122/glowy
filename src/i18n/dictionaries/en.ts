@@ -396,6 +396,11 @@ export const en: Dictionary = {
     favorites: {
       title: "Favourites",
       subtitle: "{n} saved salons. We'll let you know about last-minute slots.",
+      salonsTitle: "Salons",
+      prosTitle: "Professionals",
+      prosEmpty: "Tap the heart on a professional on a salon page to find them here.",
+      bookWith: "Book with {name}",
+      unavailable: "No longer works at this salon",
     },
   },
 

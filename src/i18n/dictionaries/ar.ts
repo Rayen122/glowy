@@ -395,6 +395,11 @@ export const ar: Dictionary = {
     favorites: {
       title: "المفضلة",
       subtitle: "{n} صالونات محفوظة. سنُعلمك بالمواعيد المتاحة في آخر لحظة.",
+      salonsTitle: "الصالونات",
+      prosTitle: "المختصّون",
+      prosEmpty: "اضغطي على قلب أحد المختصّين في صفحة الصالون لتجديه هنا.",
+      bookWith: "احجزي مع {name}",
+      unavailable: "لم يعد يعمل في هذا الصالون",
     },
   },
 
