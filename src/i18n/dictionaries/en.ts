@@ -156,6 +156,15 @@ export const en: Dictionary = {
     noWait: "no wait",
   },
 
+  reco: {
+    category: "You like the {category} category.",
+    service: "Offers “{service}”, which you've booked before.",
+    rating: "Highly rated: {rating}/5 from {reviews} verified reviews.",
+    city: "Close to you, in {city}.",
+    price: "Within your usual budget, from {price} DT.",
+    available: "{slots} slots still free today.",
+    popular: "One of Glowy clients' favourite salons.",
+  },
   insights: {
     aspects: {
       accueil: "the welcome",

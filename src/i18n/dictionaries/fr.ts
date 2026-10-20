@@ -161,6 +161,15 @@ export const fr = {
     noWait: "sans attente",
   },
 
+  reco: {
+    category: "Vous aimez la catégorie {category}.",
+    service: "Propose « {service} », que vous avez déjà réservé.",
+    rating: "Très bien noté : {rating}/5 sur {reviews} avis vérifiés.",
+    city: "Près de chez vous, à {city}.",
+    price: "Dans vos prix habituels, dès {price} DT.",
+    available: "{slots} créneaux encore libres aujourd'hui.",
+    popular: "Parmi les salons préférés des clientes Glowy.",
+  },
   insights: {
     aspects: {
       accueil: "l'accueil",
