@@ -91,6 +91,8 @@ export const manageEn: ManageDictionary = {
     depositHint: "Between 10 and 30 TND per booking; 0 = no deposit.",
   },
   team: {
+    commission: "Commission (%)",
+    commissionHint: "Share of the revenue from their completed appointments (SAL-13).",
     title: "Team",
     description: "Salon professionals, working hours, time off and schedule access (SAL-05, AUTH-07).",
     add: "New professional",
@@ -165,6 +167,7 @@ export const manageEn: ManageDictionary = {
     colBookings: "Completed",
     colRevenue: "Revenue",
     colNoShows: "No-shows",
+    colCommission: "Commission",
     empty: "No appointments in this period yet.",
     exportHint: "Export: every appointment in the period",
   },
