@@ -137,6 +137,8 @@ const employeeSchema = new Schema(
     avatarUrl: optional(String),
     rating: { type: Number, default: 0 },
     active: { type: Boolean, default: true },
+    /** Commission du professionnel en % du chiffre d'affaires de ses rendez-vous terminés (SAL-13) */
+    commissionRate: { type: Number, default: 0 },
     /** Horaires propres d'un jour (sinon ceux du salon) ; `off` = jour de repos */
     workingHours: { type: [{ _id: false, weekday: Number, startsAt: String, endsAt: String, off: { type: Boolean, default: false } }], default: [] },
   },

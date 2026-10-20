@@ -91,6 +91,8 @@ export const manageAr: ManageDictionary = {
     depositHint: "بين 10 و30 د.ت للحجز؛ 0 = بدون عربون.",
   },
   team: {
+    commission: "العمولة (٪)",
+    commissionHint: "حصة من رقم معاملات مواعيده المنتهية (SAL-13).",
     title: "الفريق",
     description: "مهنيو الصالون وأوقات العمل والعطل والنفاذ إلى الجدول (SAL-05، AUTH-07).",
     add: "مهني جديد",
@@ -165,6 +167,7 @@ export const manageAr: ManageDictionary = {
     colBookings: "مواعيد منتهية",
     colRevenue: "رقم المعاملات",
     colNoShows: "غيابات",
+    colCommission: "العمولة",
     empty: "لا توجد مواعيد في هذه الفترة بعد.",
     exportHint: "التصدير: كل مواعيد الفترة",
   },

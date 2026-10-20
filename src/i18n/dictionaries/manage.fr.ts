@@ -93,6 +93,8 @@ export const manageFr = {
     depositHint: "Entre 10 et 30 DT par réservation ; 0 = pas d'acompte.",
   },
   team: {
+    commission: "Commission (%)",
+    commissionHint: "Part du chiffre d'affaires de ses rendez-vous terminés (SAL-13).",
     title: "Équipe",
     description: "Professionnels du salon, horaires de travail, congés et accès au planning (SAL-05, AUTH-07).",
     add: "Nouveau professionnel",
@@ -167,6 +169,7 @@ export const manageFr = {
     colBookings: "RDV terminés",
     colRevenue: "CA",
     colNoShows: "Absences",
+    colCommission: "Commission",
     empty: "Pas encore de rendez-vous sur cette période.",
     exportHint: "Export : tous les rendez-vous de la période",
   },

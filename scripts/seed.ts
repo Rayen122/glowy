@@ -538,6 +538,11 @@ async function main() {
     { user: sarra._id, type: "points", title: "+40 points", body: "Merci pour votre visite chez Maison Elyssa.", link: "/compte/fidelite", readAt: new Date() },
   ]);
 
+  // ── Commissions des professionnelles du Salon Yasmine (SAL-13) ──
+  for (const [key, rate] of [["amira", 30], ["nour", 25], ["ines", 25], ["sami", 20]] as const) {
+    await Employee.updateOne({ _id: employeeIds.get(`salon-yasmine-la-marsa:${key}`) }, { $set: { commissionRate: rate } });
+  }
+
   // ── Stocks du Salon Yasmine (SAL-12) ──
   await Product.insertMany([
     { salon: salonIds.get("salon-yasmine-la-marsa")!, name: "Shampoing kératine 1 L", usage: "salon", unit: "flacon", quantity: 6, threshold: 2 },

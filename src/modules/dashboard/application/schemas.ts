@@ -66,6 +66,8 @@ export const employeeInput = z.object({
   name: z.string().trim().min(2, "2 caractères minimum").max(60),
   title: z.string().trim().min(2, "Indiquez le métier").max(60),
   color: z.coerce.number().int().min(1).max(5).default(1),
+  /** SAL-13 : commission en % du chiffre d'affaires réalisé */
+  commissionRate: z.coerce.number().min(0, "Entre 0 et 80 %").max(80, "Entre 0 et 80 %").default(0),
   avatarUrl: IMAGE_URL.nullable().default(null),
   active: z.boolean().default(true),
   workingHours: z
