@@ -347,6 +347,22 @@ const stockMovementSchema = new Schema(
 );
 stockMovementSchema.index({ salon: 1, createdAt: -1 });
 
+// ── Liste d'attente d'un jour complet (RES-09) ──────────────
+const waitlistEntrySchema = new Schema(
+  {
+    salon: { type: ObjectId, ref: "Salon", required: true },
+    client: { type: ObjectId, ref: "User", required: true },
+    /** Jour souhaité (date de Tunis) et prestations (clés) */
+    date: { type: String, required: true },
+    serviceKeys: { type: [String], default: [] },
+    status: { type: String, enum: ["ACTIVE", "NOTIFIED", "CANCELLED", "EXPIRED"], default: "ACTIVE" },
+    notifiedAt: optional(Date),
+  },
+  { timestamps: true }
+);
+waitlistEntrySchema.index({ salon: 1, date: 1, status: 1, createdAt: 1 });
+waitlistEntrySchema.index({ salon: 1, client: 1, date: 1 }, { unique: true, partialFilterExpression: { status: "ACTIVE" } });
+
 // ── Caisse et factures (SAL-09) ─────────────────────────────
 /** Compteurs de numérotation (factures : une suite par salon et par année, sans trou) */
 const counterSchema = new Schema({ _id: { type: String, required: true }, seq: { type: Number, default: 0 } });
@@ -630,6 +646,7 @@ export const Announcement = defineModel("Announcement", announcementSchema);
 export const QueueEntry = defineModel("QueueEntry", queueEntrySchema);
 export const Product = defineModel("Product", productSchema);
 export const StockMovement = defineModel("StockMovement", stockMovementSchema);
+export const WaitlistEntry = defineModel("WaitlistEntry", waitlistEntrySchema);
 export const Counter = defineModel("Counter", counterSchema);
 export const Invoice = defineModel("Invoice", invoiceSchema);
 
@@ -647,7 +664,7 @@ export type PromotionDoc = Lean<typeof promotionSchema>;
 export type PointTransactionDoc = Omit<Lean<typeof pointTransactionSchema>, "updatedAt">;
 
 /** Toutes les collections, pour vider la base (seed, tests) */
-export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, PointCampaign, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog, ClientNote, Promotion, SalonWallet, SalonPointEntry, PlatformSetting, Announcement, QueueEntry, Product, StockMovement, Counter, Invoice];
+export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, PointCampaign, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog, ClientNote, Promotion, SalonWallet, SalonPointEntry, PlatformSetting, Announcement, QueueEntry, Product, StockMovement, WaitlistEntry, Counter, Invoice];
 
 /** Vide toutes les collections et recrée les index, dont les index uniques (seed, tests) */
 export async function resetAll() {

@@ -38,6 +38,7 @@ export default async function ReserverPage({ params, searchParams }: PageProps<"
         initialTime={heure}
         depositPercent={detail.depositAmount}
         initialEmployee={one(sp.pro)}
+        initialDate={one(sp.date)}
       />
     </div>
   );

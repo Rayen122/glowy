@@ -4,7 +4,8 @@ import Link from "next/link";
 import { CalendarX, CircleCheck, Clock, Hourglass, Receipt, Repeat, UserX } from "lucide-react";
 import { rebookHref } from "@/lib/rebook";
 import { addDays, tunisToday } from "@/core/domain/time";
-import { CancelBookingButton, RescheduleButton, ReviewDialog } from "@/components/account/booking-actions";
+import { CancelBookingButton, LeaveWaitlistButton, RescheduleButton, ReviewDialog } from "@/components/account/booking-actions";
+import { myWaitlist } from "@/modules/booking";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { BookingStatus } from "@/core/domain/enums";
 import type { I18n } from "@/i18n/format";
@@ -110,7 +111,7 @@ function BookingList({ bookings, i18n }: { bookings: AccountBooking[]; i18n: I18
 
 export default async function RendezVousPage() {
   const user = await requirePageUser();
-  const [i18n, { upcoming, past, cancelled }] = await Promise.all([getI18n(), getAccountSummary(user.id)]);
+  const [i18n, { upcoming, past, cancelled }, waitlist] = await Promise.all([getI18n(), getAccountSummary(user.id), myWaitlist(user.id)]);
   const bk = i18n.t.account.bookings;
 
   return (
@@ -118,6 +119,31 @@ export default async function RendezVousPage() {
       <h1 data-animate="split" className="display text-4xl text-ink">
         {bk.title}
       </h1>
+      {waitlist.length > 0 && (
+        <section aria-labelledby="waitlist-title" className="mt-6 rounded-3xl bg-card p-5 ring-1 ring-border">
+          <h2 id="waitlist-title" className="font-semibold">
+            {bk.waitlistTitle}
+          </h2>
+          <ul className="mt-3 divide-y divide-border">
+            {waitlist.map((w) => (
+              <li key={w.id} className="flex flex-wrap items-center gap-3 py-3">
+                <div className="min-w-48 flex-1">
+                  <p className="font-medium">
+                    {w.salon.name} · {i18n.df(w.date, { weekday: "long", day: "numeric", month: "long" })}
+                  </p>
+                  <p className={cn("text-sm", w.status === "NOTIFIED" ? "font-semibold text-success" : "text-muted-foreground")}>
+                    {w.services.map((s) => i18n.tc(s)).join(" + ")} — {w.status === "NOTIFIED" ? bk.waitlistNotified : bk.waitlistActive}
+                  </p>
+                </div>
+                <Link href={`/salons/${w.salon.slug}/reserver?service=${w.serviceKeys[0]}&date=${w.date}`} className="inline-flex h-10 items-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-plum-800">
+                  {bk.waitlistBook}
+                </Link>
+                <LeaveWaitlistButton entryId={w.id} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <Tabs defaultValue="avenir" className="mt-6">
         <TabsList className="no-scrollbar group-data-horizontal/tabs:h-auto [&>button]:min-h-11 max-w-full justify-start overflow-x-auto rounded-full p-1">
           <TabsTrigger value="avenir" className="rounded-full px-4">

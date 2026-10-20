@@ -255,3 +255,29 @@ export function RescheduleButton({
     </Dialog>
   );
 }
+
+/** RES-09 : quitter une liste d'attente */
+export function LeaveWaitlistButton({ entryId }: { entryId: string }) {
+  const { t } = useI18n();
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={pending}
+      onClick={async () => {
+        setPending(true);
+        try {
+          await api(`/api/me/waitlist/${entryId}`, { method: "DELETE" });
+          router.refresh();
+        } catch {
+          toast.error(t.errors.generic);
+          setPending(false);
+        }
+      }}
+      className="inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold text-muted-foreground hover:bg-muted disabled:opacity-60"
+    >
+      {t.account.bookings.waitlistLeave}
+    </button>
+  );
+}
