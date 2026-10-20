@@ -165,6 +165,7 @@ export const getSalonDetail = cache(async (salonSlug: string, userId?: string) =
     amenities: row.amenities,
     depositAmount: row.depositAmount,
     cancellationHours: row.cancellationHours,
+    salonPointsPerVisit: row.salonPointsPerVisit ?? 0,
     favorite: favorites.has(id),
     serviceGroups: groups,
     employees: employees.map((e) => ({ id: e.key, name: e.name, role: e.title, rating: e.rating, avatar: e.avatarUrl ?? undefined, color: e.color as 1 | 2 | 3 | 4 | 5 })),

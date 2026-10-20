@@ -502,6 +502,12 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
                   {f(s.lastMinuteOffer, { value: o.percent != null ? `−${nf(o.percent)} %` : `−${money(o.amount ?? 0)}`, hours: nf(o.withinHours) })}
                 </li>
               ))}
+              {detail.salonPointsPerVisit > 0 && (
+                <li className="flex gap-2">
+                  <Gift className="mt-0.5 size-4 shrink-0 text-gold" aria-hidden />
+                  {f(s.earnSalonPoints, { n: nf(detail.salonPointsPerVisit) })}
+                </li>
+              )}
               {rewards
                 .filter((r) => r.active)
                 .map((r) => (

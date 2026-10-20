@@ -30,6 +30,8 @@ import {
   ReviewReport,
   Promotion,
   Reward,
+  SalonPointEntry,
+  SalonWallet,
   Salon,
   TimeOff,
   User,
@@ -541,9 +543,18 @@ async function main() {
     { salon: yasmineSalon, kind: "LAST_MINUTE", label: "Dernière minute : −20 %", percent: 20, withinHours: 3 },
   ]);
   await Reward.insertMany([
-    { salon: yasmineSalon, label: "Brushing offert au Salon Yasmine", cost: 300 },
-    { salon: yasmineSalon, label: "Soin hydratant offert", cost: 600 },
+    { salon: yasmineSalon, label: "Brushing offert au Salon Yasmine", cost: 100 },
+    { salon: yasmineSalon, label: "Soin hydratant offert", cost: 200 },
   ]);
+  // Points salon : 10 par visite terminée (réglage par défaut), un portefeuille par cliente et par salon
+  const visits = await Booking.find({ status: "COMPLETED" }, { client: 1, salon: 1, startsAt: 1 }).lean();
+  await SalonPointEntry.insertMany(visits.map((b) => ({ salon: b.salon, user: b.client, points: 10, reason: "VISIT", booking: b._id, label: "Visite", createdAt: b.startsAt })));
+  const wallets = new Map<string, { salon: Types.ObjectId; user: Types.ObjectId; points: number }>();
+  for (const b of visits) {
+    const key = `${b.salon}:${b.client}`;
+    wallets.set(key, { salon: b.salon, user: b.client, points: (wallets.get(key)?.points ?? 0) + 10 });
+  }
+  await SalonWallet.insertMany([...wallets.values()].map((w) => ({ salon: w.salon, user: w.user, balance: w.points, lifetime: w.points })));
 
   const counts = await Promise.all([User.countDocuments(), Salon.countDocuments(), Booking.countDocuments(), Review.countDocuments()]);
   console.info(`Seed terminé (${TODAY}) : ${counts[0]} utilisateurs, ${counts[1]} salons, ${counts[2]} réservations, ${counts[3]} avis.`);
