@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { csvResponse } from "@/core/domain/csv";
 import { route } from "@/infrastructure/http";
 import { requireUser } from "@/infrastructure/session";
 import { salonBookingsCsv, staffSalon } from "@/modules/dashboard";
@@ -10,11 +11,5 @@ export const GET = route(async (request) => {
   const actor = await requireUser("MANAGER", "ADMIN");
   const { days } = query.parse(Object.fromEntries(new URL(request.url).searchParams));
   const salon = await staffSalon(actor);
-  return new Response(await salonBookingsCsv(salon.id, days), {
-    headers: {
-      "content-type": "text/csv; charset=utf-8",
-      "content-disposition": `attachment; filename="glowy-${salon.slug}-${days}j.csv"`,
-      "cache-control": "no-store",
-    },
-  });
+  return csvResponse(await salonBookingsCsv(salon.id, days), `glowy-${salon.slug}-${days}j.csv`);
 });
