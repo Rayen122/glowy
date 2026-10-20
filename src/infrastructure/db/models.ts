@@ -317,6 +317,36 @@ queueEntrySchema.index({ salon: 1, status: 1, createdAt: 1 });
 /** Une seule place active par cliente et par salon */
 queueEntrySchema.index({ salon: 1, client: 1 }, { unique: true, partialFilterExpression: { status: { $in: ["WAITING", "CALLED"] }, client: { $type: "objectId" } } });
 
+// ── Stocks (SAL-12) ─────────────────────────────────────────
+/** Produit utilisé en prestation ou vendu ; alerte quand la quantité passe sous le seuil */
+const productSchema = new Schema(
+  {
+    salon: { type: ObjectId, ref: "Salon", required: true },
+    name: { type: String, required: true },
+    usage: { type: String, enum: ["salon", "vente"], default: "salon" },
+    unit: { type: String, default: "pcs" },
+    quantity: { type: Number, default: 0, min: 0 },
+    threshold: { type: Number, default: 2 },
+    price: optional(Number),
+    active: { type: Boolean, default: true },
+  },
+  { timestamps: true }
+);
+productSchema.index({ salon: 1, name: 1 }, { unique: true });
+
+const stockMovementSchema = new Schema(
+  {
+    salon: { type: ObjectId, ref: "Salon", required: true },
+    product: { type: ObjectId, ref: "Product", required: true },
+    delta: { type: Number, required: true },
+    reason: { type: String, enum: ["IN", "OUT", "SALE", "ADJUST"], required: true },
+    note: optional(String),
+    by: { type: ObjectId, ref: "User", default: null },
+  },
+  { timestamps: { createdAt: true, updatedAt: false } }
+);
+stockMovementSchema.index({ salon: 1, createdAt: -1 });
+
 // ── Caisse et factures (SAL-09) ─────────────────────────────
 /** Compteurs de numérotation (factures : une suite par salon et par année, sans trou) */
 const counterSchema = new Schema({ _id: { type: String, required: true }, seq: { type: Number, default: 0 } });
@@ -598,6 +628,8 @@ export const SalonPointEntry = defineModel("SalonPointEntry", salonPointEntrySch
 export const PlatformSetting = defineModel("PlatformSetting", platformSettingSchema);
 export const Announcement = defineModel("Announcement", announcementSchema);
 export const QueueEntry = defineModel("QueueEntry", queueEntrySchema);
+export const Product = defineModel("Product", productSchema);
+export const StockMovement = defineModel("StockMovement", stockMovementSchema);
 export const Counter = defineModel("Counter", counterSchema);
 export const Invoice = defineModel("Invoice", invoiceSchema);
 
@@ -615,7 +647,7 @@ export type PromotionDoc = Lean<typeof promotionSchema>;
 export type PointTransactionDoc = Omit<Lean<typeof pointTransactionSchema>, "updatedAt">;
 
 /** Toutes les collections, pour vider la base (seed, tests) */
-export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, PointCampaign, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog, ClientNote, Promotion, SalonWallet, SalonPointEntry, PlatformSetting, Announcement, QueueEntry, Counter, Invoice];
+export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, PointCampaign, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog, ClientNote, Promotion, SalonWallet, SalonPointEntry, PlatformSetting, Announcement, QueueEntry, Product, StockMovement, Counter, Invoice];
 
 /** Vide toutes les collections et recrée les index, dont les index uniques (seed, tests) */
 export async function resetAll() {
