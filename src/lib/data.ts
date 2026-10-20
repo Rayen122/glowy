@@ -66,6 +66,8 @@ export type Salon = {
   offPeak?: string;
   aiReason: string;
   matchScore: number;
+  /** IA P1 : raison de la recommandation (clé du dictionnaire t.reco + paramètres) */
+  reason?: { key: string; params: Record<string, string | number> };
   topServices: { name: string; price: number; duration: number }[];
   /** Salon en favori pour l'utilisatrice connectée (fourni par l'API) */
   favorite?: boolean;
