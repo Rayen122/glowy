@@ -43,6 +43,9 @@ export async function cashierDay(salonId: string, date: string) {
         employee: employees.find((e) => e._id.equals(b.employee))?.name ?? "",
         items: b.items.map((i) => ({ label: i.name ?? "", unitPrice: i.price ?? 0 })),
         total: b.totalPrice,
+        /** Remise de la promotion utilisée à la réservation (SAL-10), reprise sur la facture */
+        discount: b.discount ?? 0,
+        promo: b.promo?.label ?? null,
         deposit: paidDeposit(b),
       };
     }),

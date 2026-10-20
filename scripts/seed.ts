@@ -28,6 +28,7 @@ import {
   resetAll,
   Review,
   ReviewReport,
+  Promotion,
   Reward,
   Salon,
   TimeOff,
@@ -530,6 +531,18 @@ async function main() {
   await Notification.insertMany([
     { user: sarra._id, type: "booking.reminder", title: "Rappel", body: "Votre balayage au Salon Yasmine approche.", link: "/compte/rendez-vous" },
     { user: sarra._id, type: "points", title: "+40 points", body: "Merci pour votre visite chez Maison Elyssa.", link: "/compte/fidelite", readAt: new Date() },
+  ]);
+
+  // ── Promotions et récompenses du salon (SAL-10, FID-06) ──
+  const yasmineSalon = salonIds.get("salon-yasmine-la-marsa")!;
+  await Promotion.insertMany([
+    { salon: yasmineSalon, kind: "CODE", code: "BIENVENUE10", label: "−10 % pour votre première visite", percent: 10, maxUses: 200, uses: 37 },
+    { salon: yasmineSalon, kind: "CODE", code: "ETE2026", label: "Offre d'été : −15 DT dès 80 DT", amount: 15, minTotal: 80, endsOn: "2026-09-30", active: false, uses: 52 },
+    { salon: yasmineSalon, kind: "LAST_MINUTE", label: "Dernière minute : −20 %", percent: 20, withinHours: 3 },
+  ]);
+  await Reward.insertMany([
+    { salon: yasmineSalon, label: "Brushing offert au Salon Yasmine", cost: 300 },
+    { salon: yasmineSalon, label: "Soin hydratant offert", cost: 600 },
   ]);
 
   const counts = await Promise.all([User.countDocuments(), Salon.countDocuments(), Booking.countDocuments(), Review.countDocuments()]);

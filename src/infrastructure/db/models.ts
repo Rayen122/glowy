@@ -10,6 +10,7 @@ import {
   PAYMENT_STATUSES,
   PHOTO_KINDS,
   PLANS,
+  PROMOTION_KINDS,
   PLAN_PAYMENT_CHANNELS,
   PLAN_PAYMENT_STATUSES,
   POINT_REASONS,
@@ -178,6 +179,9 @@ const bookingSchema = new Schema(
     paymentMethod: { type: String, enum: PAYMENT_METHODS, default: "ONSITE" },
     note: optional(String),
     offPeak: { type: Boolean, default: false },
+    /** Remise de la promotion appliquée (SAL-10) ; totalPrice est le prix après remise */
+    discount: { type: Number, default: 0 },
+    promo: { type: new Schema({ promotion: { type: ObjectId, ref: "Promotion" }, code: optional(String), label: String }, { _id: false }), default: null },
     cancelledAt: optional(Date),
     completedAt: optional(Date),
     /** Prestations au prix du jour de la réservation */
@@ -202,6 +206,32 @@ const bookingSchema = new Schema(
 bookingSchema.index({ employee: 1, startsAt: 1 });
 bookingSchema.index({ client: 1, startsAt: -1 });
 bookingSchema.index({ salon: 1, startsAt: 1 });
+
+// ── Promotions (SAL-10) ─────────────────────────────────────
+/** Code promo ou offre de dernière minute : pourcentage ou montant fixe, période et nombre d'utilisations */
+const promotionSchema = new Schema(
+  {
+    salon: { type: ObjectId, ref: "Salon", required: true },
+    kind: { type: String, enum: PROMOTION_KINDS, required: true },
+    /** En majuscules ; absent pour une offre de dernière minute (appliquée automatiquement) */
+    code: optional(String),
+    label: { type: String, required: true },
+    percent: optional(Number),
+    amount: optional(Number),
+    minTotal: { type: Number, default: 0 },
+    /** Période de validité (dates de Tunis, incluses) */
+    startsOn: optional(String),
+    endsOn: optional(String),
+    /** Dernière minute : créneaux qui commencent dans moins de withinHours heures */
+    withinHours: optional(Number),
+    maxUses: optional(Number),
+    uses: { type: Number, default: 0 },
+    active: { type: Boolean, default: true },
+  },
+  { timestamps: true }
+);
+promotionSchema.index({ salon: 1, code: 1 }, { unique: true, partialFilterExpression: { code: { $type: "string" } } });
+promotionSchema.index({ salon: 1, kind: 1, active: 1 });
 
 // ── Caisse et factures (SAL-09) ─────────────────────────────
 /** Compteurs de numérotation (factures : une suite par salon et par année, sans trou) */
@@ -457,6 +487,7 @@ export const ReviewReport = defineModel("ReviewReport", reviewReportSchema);
 export const PhotoAnalysis = defineModel("PhotoAnalysis", photoAnalysisSchema);
 export const AuditLog = defineModel("AuditLog", auditLogSchema);
 export const ClientNote = defineModel("ClientNote", clientNoteSchema);
+export const Promotion = defineModel("Promotion", promotionSchema);
 export const Counter = defineModel("Counter", counterSchema);
 export const Invoice = defineModel("Invoice", invoiceSchema);
 
@@ -470,10 +501,11 @@ export type BookingDoc = Omit<Lean<typeof bookingSchema>, "items"> & {
 };
 export type PlanPaymentDoc = Lean<typeof planPaymentSchema>;
 export type ReviewDoc = Lean<typeof reviewSchema>;
+export type PromotionDoc = Lean<typeof promotionSchema>;
 export type PointTransactionDoc = Omit<Lean<typeof pointTransactionSchema>, "updatedAt">;
 
 /** Toutes les collections, pour vider la base (seed, tests) */
-export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog, ClientNote, Counter, Invoice];
+export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog, ClientNote, Promotion, Counter, Invoice];
 
 /** Vide toutes les collections et recrée les index, dont les index uniques (seed, tests) */
 export async function resetAll() {
