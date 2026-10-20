@@ -655,6 +655,43 @@ export const manageFr = {
     deactivated: "Produit déjà mouvementé : désactivé",
     by: "par {name}",
   },
+  support: {
+    title: "Support",
+    description: "Une question, un souci ? L'équipe Glowy vous répond en moins de 24 h (AVI-07).",
+    adminTitle: "Support",
+    adminDescription: "Tickets des clientes et des salons : prioritaires (Platine, Premium) puis plus anciens d'abord.",
+    newTicket: "Nouveau ticket",
+    subject: "Sujet",
+    category: "Catégorie",
+    categories: {
+      booking: "Rendez-vous",
+      payment: "Paiement",
+      account: "Compte",
+      review: "Avis",
+      other: "Autre",
+    },
+    message: "Votre message",
+    send: "Envoyer",
+    reply: "Répondre",
+    replyPlaceholder: "Votre réponse…",
+    empty: "Aucun ticket pour l'instant.",
+    choose: "Choisissez un ticket pour lire la conversation.",
+    statuses: {
+      OPEN: "Ouvert",
+      ANSWERED: "Répondu",
+      CLOSED: "Fermé",
+    },
+    priority: "Prioritaire",
+    close: "Fermer le ticket",
+    reopen: "Rouvrir",
+    support: "Support Glowy",
+    created: "Ticket envoyé",
+    messages: "{n} message(s)",
+    filters: {
+      open: "À traiter",
+      all: "Tous",
+    },
+  },
 };
 
 export type ManageDictionary = typeof manageFr;
