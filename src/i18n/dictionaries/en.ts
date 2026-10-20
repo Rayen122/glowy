@@ -1117,6 +1117,9 @@ export const en: Dictionary = {
         "review.hide": "hid a reported review",
         "review.keep": "kept a reported review",
         "user.passwordReset": "sent a password reset link to {target}",
+        "loyalty.rule": "changed the points rule {target}",
+        "loyalty.campaign": "started the campaign {target}",
+        "loyalty.campaignOff": "stopped the campaign {target}",
       },
     },
     queues: {

@@ -1123,6 +1123,9 @@ export const fr = {
         "review.hide": "a masqué un avis signalé",
         "review.keep": "a conservé un avis signalé",
         "user.passwordReset": "a envoyé un lien de réinitialisation du mot de passe à {target}",
+        "loyalty.rule": "a modifié le barème : {target}",
+        "loyalty.campaign": "a lancé la campagne {target}",
+        "loyalty.campaignOff": "a arrêté la campagne {target}",
       },
     },
     queues: {

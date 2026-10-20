@@ -23,6 +23,7 @@ import {
   Employee,
   Notification,
   PlanPayment,
+  PointCampaign,
   PointRule,
   PointTransaction,
   resetAll,
@@ -534,6 +535,9 @@ async function main() {
     { user: sarra._id, type: "booking.reminder", title: "Rappel", body: "Votre balayage au Salon Yasmine approche.", link: "/compte/rendez-vous" },
     { user: sarra._id, type: "points", title: "+40 points", body: "Merci pour votre visite chez Maison Elyssa.", link: "/compte/fidelite", readAt: new Date() },
   ]);
+
+  // ── Campagne « double points » passée (ADM-09) ──
+  await PointCampaign.create({ label: "Ramadan : points doublés", multiplier: 2, startsAt: new Date("2026-02-18T23:00:00Z"), endsAt: new Date("2026-03-19T23:00:00Z"), reasons: [], createdBy: admin._id });
 
   // ── Promotions et récompenses du salon (SAL-10, FID-06) ──
   const yasmineSalon = salonIds.get("salon-yasmine-la-marsa")!;

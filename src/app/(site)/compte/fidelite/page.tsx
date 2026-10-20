@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Award, Clock3, Compass, Crown, Gift, MessageSquareText, ShieldCheck, Store, Timer, Users } from "lucide-react";
+import { Award, Clock3, Compass, Crown, Gift, MessageSquareText, ShieldCheck, Store, Timer, Users, Zap } from "lucide-react";
 import { CopyCode, RedeemButton } from "@/components/loyalty/loyalty-ui";
 import { TierProgress } from "@/components/loyalty/tier-progress";
 import { getI18n } from "@/i18n/server";
 import { EARN_RULES, TIERS, tierFor } from "@/lib/data";
 import { getAccountSummary } from "@/modules/account";
-import { getLoyaltyPage, HISTORY_KEY } from "@/modules/loyalty";
+import { getLoyaltyPage, HISTORY_KEY, runningCampaign } from "@/modules/loyalty";
 import { salonWallets } from "@/modules/promotions";
 import { requirePageUser } from "@/infrastructure/session";
 import { utcToTunis } from "@/core/domain/time";
@@ -27,11 +27,12 @@ const BADGE_ICON: Record<string, typeof Award> = {
 
 export default async function FidelitePage() {
   const user = await requirePageUser();
-  const [{ t, tc, f, nf, df }, { account, history, rewards, badges }, { profile }, wallets] = await Promise.all([
+  const [{ t, tc, f, nf, df }, { account, history, rewards, badges }, { profile }, wallets, campaign] = await Promise.all([
     getI18n(),
     getLoyaltyPage(user.id),
     getAccountSummary(user.id),
     salonWallets(user.id),
+    runningCampaign(),
   ]);
   const l = t.account.loyalty;
   const tier = tierFor(account.lifetime);
@@ -45,6 +46,13 @@ export default async function FidelitePage() {
         </h1>
         <p className="mt-2 text-muted-foreground">{l.subtitle}</p>
       </header>
+
+      {campaign && (
+        <p role="status" className="flex items-center gap-3 rounded-2xl bg-gold-soft px-4 py-3 text-sm font-semibold text-foreground">
+          <Zap className="size-5 shrink-0 text-gold" aria-hidden />
+          {f(t.manage.loyaltyAdmin.runningBanner, { label: campaign.label, x: nf(campaign.multiplier), date: df(campaign.endsOn, { day: "numeric", month: "long" }) })}
+        </p>
+      )}
 
       {/* Solde */}
       <section data-animate="stagger" data-stagger="0.12" className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]" aria-label={l.balanceAria}>
