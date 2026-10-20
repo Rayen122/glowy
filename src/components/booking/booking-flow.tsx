@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, CalendarPlus, Check, Clock, CreditCard, Lock, MapPin, Store, TimerReset, Users } from "lucide-react";
+import { ArrowLeft, CalendarPlus, Check, Clock, CreditCard, Lock, MapPin, Store, Tag, TimerReset, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { depositFor } from "@/modules/booking/domain/policy";
 import { PointsBadge, Rating } from "@/components/salon/badges";
@@ -94,7 +94,6 @@ export function BookingFlow({
   const services = serviceIds.map((id) => allServices.find((s) => s.id === id)).filter(Boolean) as Service[];
   const total = services.reduce((a, s) => a + s.price, 0);
   const duration = services.reduce((a, s) => a + s.duration, 0);
-  const deposit = depositFor(total, "ONLINE", depositPercent);
   const emp = employees.find((e) => e.id === employee);
 
   // Disponibilités réelles du jour choisi ; `refresh` force un rechargement (créneau pris entre-temps)
@@ -115,6 +114,33 @@ export function BookingFlow({
   }, [needSlots, availabilityKey, DAYS, day, serviceIds, employee, salon.slug]);
   const slotsLoading = needSlots && availability?.key !== availabilityKey;
   const slots = availability?.key === availabilityKey ? availability.slots : [];
+  // SAL-10 : prix avec remise (code promo saisi, ou offre de dernière minute appliquée automatiquement)
+  const [codeInput, setCodeInput] = useState("");
+  const [promoCode, setPromoCode] = useState<string | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [quote, setQuote] = useState<{ key: string; discount: number; label: string | null; code: string | null } | null>(null);
+  const quoteKey = `${serviceIds.join(",")}|${DAYS[day].iso}|${time}|${promoCode ?? ""}`;
+  useEffect(() => {
+    if (!time || serviceIds.length === 0) return;
+    let cancelled = false;
+    const params = new URLSearchParams({ services: serviceIds.join(","), date: DAYS[day].iso, time, ...(promoCode ? { code: promoCode } : {}) });
+    api<{ discount: number; promo: { code: string | null; label: string } | null }>(`/api/salons/${salon.slug}/quote?${params}`)
+      .then((data) => !cancelled && setQuote({ key: quoteKey, discount: data.discount, label: data.promo?.label ?? null, code: data.promo?.code ?? null }))
+      .catch((error) => {
+        if (cancelled) return;
+        if (promoCode) {
+          setPromoError(error instanceof ApiError ? error.message : t.errors.generic);
+          setPromoCode(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [quoteKey, time, serviceIds, DAYS, day, promoCode, salon.slug, t.errors.generic]);
+  const applied = time && quote?.key === quoteKey && quote.discount > 0 ? quote : null;
+  const discount = applied?.discount ?? 0;
+  const net = total - discount;
+  const deposit = depositFor(net, "ONLINE", depositPercent);
   const offPeak = time ? (slots.find((s) => s.time === time)?.offPeak ?? false) : false;
   const points = 10 + (salon.visited ? 0 : 30) + (offPeak ? 10 : 0) + (payment === "online" ? 5 : 0);
   const dayLong = df(DAYS[day].iso, { weekday: "long", day: "numeric", month: "long" });
@@ -176,6 +202,7 @@ export function BookingFlow({
           time,
           paymentMethod: payment === "online" ? "ONLINE" : "ONSITE",
           note: note.trim() || undefined,
+          promoCode: promoCode ?? undefined,
         },
       });
       setDone(true);
@@ -187,6 +214,11 @@ export function BookingFlow({
         chooseTime(null);
         setRefresh((n) => n + 1);
         setStep(2);
+        return;
+      }
+      if (error instanceof ApiError && error.code.startsWith("PROMO_")) {
+        toast.error(error.message);
+        setPromoCode(null);
         return;
       }
       toast.error(error instanceof ApiError && error.status === 403 ? b.clientOnly : t.errors.generic);
@@ -201,7 +233,9 @@ export function BookingFlow({
       emp={emp?.name}
       when={time ? f(b.at, { date: dayLong, time }) : null}
       duration={duration}
-      total={total}
+      total={net}
+      subtotal={total}
+      discount={discount}
       deposit={payment === "online" ? deposit : 0}
       points={points}
     />
@@ -547,6 +581,51 @@ export function BookingFlow({
                 />
               </div>
 
+              <div className="rounded-2xl border border-border bg-card p-5">
+                <h2 className="flex items-center gap-2 font-semibold">
+                  <Tag className="size-4 text-plum-600" aria-hidden /> {b.promoTitle}
+                </h2>
+                {applied && !applied.code && <p className="mt-2 rounded-xl bg-success-soft px-3 py-2 text-sm font-medium text-success">{f(b.lastMinute, { label: applied.label ?? "" })}</p>}
+                {promoCode ? (
+                  <p className="mt-3 flex items-center gap-2 text-sm">
+                    <span className="rounded-full bg-plum-50 px-3 py-1 font-semibold text-plum-800 ring-1 ring-plum-200" dir="ltr">
+                      {promoCode}
+                    </span>
+                    {applied?.code && <span className="text-success">{f(b.promoApplied, { label: applied.label ?? "", amount: money(applied.discount) })}</span>}
+                    <button type="button" onClick={() => setPromoCode(null)} aria-label={b.promoRemove} className="ms-auto inline-flex size-9 items-center justify-center rounded-full hover:bg-muted">
+                      <X className="size-4" aria-hidden />
+                    </button>
+                  </p>
+                ) : (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      setPromoError(null);
+                      if (codeInput.trim()) setPromoCode(codeInput.trim().toUpperCase());
+                    }}
+                    className="mt-3 flex gap-2"
+                  >
+                    <input
+                      value={codeInput}
+                      onChange={(e) => setCodeInput(e.target.value)}
+                      placeholder={b.promoPlaceholder}
+                      aria-label={b.promoTitle}
+                      maxLength={20}
+                      autoCapitalize="characters"
+                      className="h-11 min-w-0 flex-1 rounded-xl border border-input bg-background px-3.5 text-base uppercase placeholder:normal-case placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 focus-visible:outline-none md:text-sm"
+                    />
+                    <button type="submit" disabled={!codeInput.trim()} className="inline-flex h-11 items-center rounded-full border border-border px-4 text-sm font-semibold hover:bg-muted disabled:opacity-50">
+                      {b.promoApply}
+                    </button>
+                  </form>
+                )}
+                {promoError && (
+                  <p role="alert" className="mt-2 text-sm text-destructive">
+                    {promoError}
+                  </p>
+                )}
+              </div>
+
               <fieldset className="rounded-2xl border border-border bg-card p-5">
                 <legend className="px-1 font-semibold">{b.payment}</legend>
                 <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -618,7 +697,7 @@ export function BookingFlow({
             </button>
           )}
           <div className="min-w-0 flex-1">
-            <p className="text-base font-semibold">{money(total)}</p>
+            <p className="text-base font-semibold">{money(net)}</p>
             <p className="truncate text-xs text-muted-foreground">
               {services.length ? `${f(services.length > 1 ? b.countOther : b.countOne, { n: services.length })} · ${dur(duration)}` : b.noService}
               {time ? ` · ${f(b.at, { date: df(DAYS[day].iso, { weekday: "short", day: "numeric" }), time })}` : ""}
@@ -665,6 +744,8 @@ function Summary({
   when,
   duration,
   total,
+  subtotal,
+  discount,
   deposit,
   points,
 }: {
@@ -673,6 +754,8 @@ function Summary({
   when: string | null;
   duration: number;
   total: number;
+  subtotal: number;
+  discount: number;
   deposit: number;
   points: number;
 }) {
@@ -707,6 +790,18 @@ function Summary({
         </div>
       </dl>
       <div className="space-y-2 border-t border-border pt-4">
+        {discount > 0 && (
+          <>
+            <div className="flex justify-between text-muted-foreground">
+              <span>{b.subtotal}</span>
+              <span>{money(subtotal)}</span>
+            </div>
+            <div className="flex justify-between font-medium text-success">
+              <span>{b.discount}</span>
+              <span>− {money(discount)}</span>
+            </div>
+          </>
+        )}
         <div className="flex justify-between text-base font-semibold">
           <span>{b.total}</span>
           <span>{money(total)}</span>

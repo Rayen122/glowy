@@ -90,7 +90,10 @@ export default async function FidelitePage() {
               <span className="flex size-10 items-center justify-center rounded-2xl bg-gold-soft text-gold">
                 <Gift className="size-5" aria-hidden />
               </span>
-              <p className="mt-4 flex-1 font-medium">{tc(r.label)}</p>
+              <p className="mt-4 flex-1 font-medium">
+                {tc(r.label)}
+                {r.salon && <span className="mt-0.5 block text-xs font-normal text-muted-foreground">{f(l.atSalon, { salon: r.salon.name })}</span>}
+              </p>
               <p className="mt-2 text-2xl font-semibold tracking-tight">
                 {nf(r.cost)} <span className="text-sm font-normal text-muted-foreground">{t.common.pts}</span>
               </p>
