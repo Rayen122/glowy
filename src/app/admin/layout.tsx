@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { ChartColumn, CreditCard, Gift, LayoutGrid, Mail, ScrollText, Settings, ShieldAlert, Store, Users } from "lucide-react";
+import { ChartColumn, CreditCard, Gift, Headset, LayoutGrid, Mail, ScrollText, Settings, ShieldAlert, Store, Users } from "lucide-react";
 import { AppShell, type NavGroup } from "@/components/app-shell/app-shell";
 import { getI18n } from "@/i18n/server";
 import { requirePageUser } from "@/infrastructure/session";
 import { adminCounts } from "@/modules/subscription";
+import { openTicketsCount } from "@/modules/support";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -12,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   await requirePageUser("ADMIN");
-  const [{ t }, counts] = await Promise.all([getI18n(), adminCounts()]);
+  const [{ t }, counts, openTickets] = await Promise.all([getI18n(), adminCounts(), openTicketsCount()]);
   const badge = (n: number) => (n > 0 ? String(n) : undefined);
   const a = t.admin;
   const m = t.modules.admin;
@@ -42,6 +43,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       items: [
         { href: "/admin/audit", label: m.audit.title, icon: <ScrollText /> },
         { href: "/admin/messages", label: t.manage.admin.outboxTitle, icon: <Mail /> },
+        { href: "/admin/support", label: t.manage.support.adminTitle, icon: <Headset />, badge: badge(openTickets) },
         { href: "/admin/parametres", label: a.nav.settings, icon: <Settings /> },
       ],
     },
