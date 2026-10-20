@@ -83,11 +83,13 @@ export async function salonStats(salonId: string, days: StatPeriod = 30, now = n
   const peakMax = Math.max(1, ...peaks.map((p) => p.count));
   const peakValues = peakDays.map((d) => peakHours.map((h) => Math.round((100 * (peaks.find((p) => p._id.d === d + 1 && p._id.h === h)?.count ?? 0)) / peakMax)));
 
-  const employees = await Employee.find({ _id: { $in: staff.map((s) => s._id) } }, { name: 1, color: 1 }).lean();
+  const employees = await Employee.find({ _id: { $in: staff.map((s) => s._id) } }, { name: 1, color: 1, commissionRate: 1 }).lean();
   const byEmployee = staff
     .map((s) => {
       const e = employees.find((x) => x._id.equals(s._id as never));
-      return { name: e?.name ?? "—", color: e?.color ?? 1, count: s.count, revenue: s.revenue, noShows: s.noShows };
+      const rate = e?.commissionRate ?? 0;
+      // SAL-13 : commission du professionnel sur le CA de ses rendez-vous terminés
+      return { name: e?.name ?? "—", color: e?.color ?? 1, count: s.count, revenue: s.revenue, noShows: s.noShows, rate, commission: Math.round(s.revenue * rate * 10) / 1000 };
     })
     .sort((a, b) => b.revenue - a.revenue);
 

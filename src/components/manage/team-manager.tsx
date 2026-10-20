@@ -148,6 +148,7 @@ function EmployeeDialog({ member, openingHours, onClose }: { member: TeamMember 
   const [name, setName] = useState(existing?.name ?? "");
   const [title, setTitle] = useState(existing?.title ?? "");
   const [color, setColor] = useState(existing?.color ?? 1);
+  const [commissionRate, setCommissionRate] = useState(String(existing?.commissionRate ?? 0));
   const [avatarUrl, setAvatarUrl] = useState<string | null>(existing?.avatarUrl ?? null);
   const [active, setActive] = useState(existing?.active ?? true);
   const [days, setDays] = useState(() =>
@@ -166,6 +167,7 @@ function EmployeeDialog({ member, openingHours, onClose }: { member: TeamMember 
       name,
       title,
       color,
+      commissionRate,
       avatarUrl,
       active,
       workingHours: days.filter((d) => d.mode !== "salon").map((d) => ({ weekday: d.weekday, startsAt: d.startsAt, endsAt: d.endsAt, off: d.mode === "off" })),
@@ -211,6 +213,9 @@ function EmployeeDialog({ member, openingHours, onClose }: { member: TeamMember 
               ))}
             </div>
           </fieldset>
+          <Field label={m.commission} hint={m.commissionHint}>
+            <input type="number" inputMode="decimal" min={0} max={80} step={0.5} value={commissionRate} onChange={(e) => setCommissionRate(e.target.value)} className={cn(FIELD, "max-w-32")} />
+          </Field>
           <label className="flex items-center justify-between gap-3 rounded-xl bg-muted/50 px-3 py-2.5 text-sm font-medium">
             {m.activeField}
             <Switch checked={active} onCheckedChange={setActive} />
