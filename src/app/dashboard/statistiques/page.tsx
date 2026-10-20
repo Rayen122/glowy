@@ -119,13 +119,14 @@ export default async function StatisticsPage({ searchParams }: PageProps<"/dashb
               {m.team}
             </h2>
             <div className="no-scrollbar -mx-1 overflow-x-auto px-1">
-              <table className="w-full min-w-[480px] text-sm">
+              <table className="w-full min-w-[560px] text-sm">
                 <thead>
                   <tr className="border-b border-border text-xs text-muted-foreground">
                     <th scope="col" className="py-2.5 pe-3 text-start font-medium">{m.colName}</th>
                     <th scope="col" className="px-3 py-2.5 text-end font-medium">{m.colBookings}</th>
                     <th scope="col" className="px-3 py-2.5 text-end font-medium">{m.colRevenue}</th>
-                    <th scope="col" className="ps-3 py-2.5 text-end font-medium">{m.colNoShows}</th>
+                    <th scope="col" className="px-3 py-2.5 text-end font-medium">{m.colNoShows}</th>
+                    <th scope="col" className="ps-3 py-2.5 text-end font-medium">{m.colCommission}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -138,7 +139,17 @@ export default async function StatisticsPage({ searchParams }: PageProps<"/dashb
                       </td>
                       <td className="px-3 py-3 text-end tabular-nums">{nf(e.count)}</td>
                       <td className="px-3 py-3 text-end font-semibold tabular-nums">{money(e.revenue)}</td>
-                      <td className="ps-3 py-3 text-end tabular-nums">{nf(e.noShows)}</td>
+                      <td className="px-3 py-3 text-end tabular-nums">{nf(e.noShows)}</td>
+                      <td className="ps-3 py-3 text-end tabular-nums">
+                        {e.rate > 0 ? (
+                          <>
+                            <span className="font-semibold">{money(e.commission)}</span>
+                            <span className="block text-xs text-muted-foreground">{nf(e.rate)} %</span>
+                          </>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
