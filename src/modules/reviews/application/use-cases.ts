@@ -2,16 +2,23 @@ import type { Actor } from "@/core/domain/actor";
 import type { Clock } from "@/core/domain/clock";
 import { forbidden, notFound } from "@/core/domain/errors";
 import type { EventPublisher } from "@/core/domain/events";
+import { analyzeReview } from "../domain/analysis";
 import { assertCanReview } from "../domain/policy";
 import type { ReviewRepository, SalonAccessPort } from "./ports";
 import type { CreateReviewInput, ReviewActionInput } from "./schemas";
+
+/** Seuil de suspicion au-delà duquel l'avis part en modération (signalement « IA ») */
+export const SUSPICION_REPORT = 60;
 
 /** Avis vérifiés, réponses, signalements et modération (P4) */
 export function makeReviews({ reviews, access, events, clock }: { reviews: ReviewRepository; access: SalonAccessPort; events: EventPublisher; clock: Clock }) {
   async function createReview(actor: Actor, input: CreateReviewInput) {
     const booking = await reviews.bookingForReview(input.bookingId);
     assertCanReview(booking, actor.id);
-    const review = await reviews.create({ ...input, clientId: actor.id, salonId: booking!.salonId, employeeId: booking!.employeeId });
+    // IA P4 : sentiment, aspects et suspicion calculés à la publication ; avis suspect → file de modération
+    const analysis = analyzeReview(input);
+    const review = await reviews.create({ ...input, clientId: actor.id, salonId: booking!.salonId, employeeId: booking!.employeeId, analysis });
+    if (analysis.suspicion >= SUSPICION_REPORT) await reviews.report({ reviewId: review.id, reporterId: null, source: "AI", reason: `Analyse automatique : suspicion ${analysis.suspicion} %` });
     await reviews.refreshSalonRating(review.salonId);
     await events.publish("review.published", { reviewId: review.id });
     return review;
