@@ -928,8 +928,6 @@ export const ar: Dictionary = {
       hidePassword: "إخفاء كلمة المرور",
       strength: ["قصيرة جدًا", "ضعيفة", "متوسطة", "جيدة", "ممتازة"],
       google: "المتابعة باستخدام Google",
-      googleToast: "الدخول عبر Google",
-      googleToastDesc: "متاح مع Auth.js (AUTH-08، إضافي).",
       orContinue: "أو تابع باستخدام",
       remember: "تذكرني",
       forgot: "نسيت كلمة المرور؟",

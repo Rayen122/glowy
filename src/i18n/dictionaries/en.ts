@@ -929,8 +929,6 @@ export const en: Dictionary = {
       hidePassword: "Hide password",
       strength: ["Too short", "Weak", "Fair", "Good", "Excellent"],
       google: "Continue with Google",
-      googleToast: "Google sign-in",
-      googleToastDesc: "Available with Auth.js (AUTH-08, bonus).",
       orContinue: "or continue with",
       remember: "Remember me",
       forgot: "Forgot password?",

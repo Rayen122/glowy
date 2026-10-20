@@ -1,4 +1,5 @@
 import type { Role } from "@/core/domain/actor";
+import type { Locale } from "@/core/domain/enums";
 import type { Clock } from "@/core/domain/clock";
 import { badRequest, conflict, unauthorized } from "@/core/domain/errors";
 import type { EventPublisher } from "@/core/domain/events";
@@ -179,5 +180,34 @@ export function makeIdentity({ accounts, hasher, events, clock, tokens, mailer }
     return { changed: true };
   }
 
-  return { register, authenticate, demoAccount, sessionUser, createStaffAccount, requestPasswordReset, resetPassword, sendEmailVerification, verifyEmail, changePassword };
+  /**
+   * AUTH-08 (bonus) : connexion avec Google. Un compte existant n'est relié que si Google certifie l'adresse ;
+   * sinon un compte cliente est créé (adresse vérifiée, mot de passe aléatoire inutilisable : « mot de passe
+   * oublié » permet d'en choisir un). Un compte bloqué ne peut pas se connecter.
+   */
+  async function oauthSignIn(profile: { email: string; emailVerified: boolean; firstName: string; lastName: string; locale: Locale }) {
+    if (!profile.emailVerified) return null;
+    const email = profile.email.trim().toLowerCase();
+    const existing = await accounts.findByEmail(email);
+    if (existing) {
+      if (existing.status !== "ACTIVE") return null;
+      if (!(await accounts.isEmailVerified(existing.id))) await accounts.markEmailVerified(existing.id, clock.now());
+      return existing;
+    }
+    const firstName = profile.firstName.trim() || email.split("@")[0];
+    const created = await accounts.createClient({
+      email,
+      passwordHash: await hasher.hash(`${temporaryPassword()}${temporaryPassword()}`),
+      firstName,
+      lastName: profile.lastName.trim(),
+      locale: profile.locale,
+      referralCode: await uniqueReferralCode(firstName),
+      referredById: null,
+    });
+    await accounts.markEmailVerified(created.id, clock.now());
+    await events.publish("user.registered", { userId: created.id });
+    return accounts.findById(created.id);
+  }
+
+  return { register, authenticate, demoAccount, sessionUser, createStaffAccount, requestPasswordReset, resetPassword, sendEmailVerification, verifyEmail, changePassword, oauthSignIn };
 }

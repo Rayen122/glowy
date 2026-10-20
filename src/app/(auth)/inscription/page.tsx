@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { googleLoginEnabled } from "@/auth";
 import { SignupForm } from "@/components/site/auth-forms";
 import { getI18n } from "@/i18n/server";
 
@@ -20,7 +21,7 @@ export default async function InscriptionPage({ searchParams }: PageProps<"/insc
       <p data-auth-item className="mt-3 mb-8 text-muted-foreground">
         {s.lead}
       </p>
-      <SignupForm initialType={type === "salon" ? "salon" : "client"} />
+      <SignupForm initialType={type === "salon" ? "salon" : "client"} googleEnabled={googleLoginEnabled} />
     </>
   );
 }

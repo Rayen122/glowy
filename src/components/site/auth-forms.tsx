@@ -168,14 +168,15 @@ function PasswordField({
 
 /* ---------- Boutons ---------- */
 
-function GoogleButton() {
+/** AUTH-08 : connexion Google (affichée seulement si l'application OAuth est configurée côté serveur) */
+function GoogleButton({ callbackUrl }: { callbackUrl?: string }) {
   const { t } = useI18n();
   const a = t.auth.form;
   return (
     <button
       type="button"
       data-auth-item
-      onClick={() => toast(a.googleToast, { description: a.googleToastDesc })}
+      onClick={() => void signIn("google", { redirectTo: callbackUrl ?? "/compte" })}
       className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-border bg-white text-sm font-semibold transition-colors hover:bg-muted"
     >
       <svg viewBox="0 0 24 24" className="size-5" aria-hidden>
@@ -256,7 +257,7 @@ function useAfterLogin(callbackUrl?: string) {
 
 const DEMO_ROLES = ["CLIENT", "MANAGER", "EMPLOYEE", "ADMIN"] as const;
 
-export function LoginForm({ callbackUrl, demoEnabled }: { callbackUrl?: string; demoEnabled: boolean }) {
+export function LoginForm({ callbackUrl, demoEnabled, googleEnabled = false }: { callbackUrl?: string; demoEnabled: boolean; googleEnabled?: boolean }) {
   const { t, f } = useI18n();
   const a = t.auth.form;
   const formRef = useRef<HTMLFormElement>(null);
@@ -326,8 +327,12 @@ export function LoginForm({ callbackUrl, demoEnabled }: { callbackUrl?: string; 
         <SubmitButton status={status} idle={a.signIn} loading={a.signingIn} success={a.welcome} />
       </form>
 
-      <Divider label={a.orContinue} />
-      <GoogleButton />
+      {googleEnabled && (
+        <>
+          <Divider label={a.orContinue} />
+          <GoogleButton callbackUrl={callbackUrl} />
+        </>
+      )}
 
       <p data-auth-item className="text-center text-sm text-muted-foreground">
         {a.newHere}{" "}
@@ -365,7 +370,7 @@ export function LoginForm({ callbackUrl, demoEnabled }: { callbackUrl?: string; 
 
 type SignupErrors = Partial<Record<"firstName" | "lastName" | "email" | "password" | "salonName" | "city" | "address" | "phone" | "terms", string>>;
 
-export function SignupForm({ initialType = "client" }: { initialType?: "client" | "salon" }) {
+export function SignupForm({ initialType = "client", googleEnabled = false }: { initialType?: "client" | "salon"; googleEnabled?: boolean }) {
   const { t, f, money, locale } = useI18n();
   const a = t.auth.form;
   const formRef = useRef<HTMLFormElement>(null);
@@ -588,7 +593,7 @@ export function SignupForm({ initialType = "client" }: { initialType?: "client" 
         />
       </form>
 
-      {type === "client" && (
+      {type === "client" && googleEnabled && (
         <>
           <Divider label={a.orContinue} />
           <GoogleButton />
