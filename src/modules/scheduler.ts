@@ -4,6 +4,7 @@
  * Lancées toutes les 10 minutes par le serveur (src/instrumentation.ts), par GET /api/cron avec le secret
  * CRON_SECRET (cron externe, Vercel Cron…), ou à la main par le Super Admin. Chaque tâche est idempotente.
  */
+import { expireWaitlist } from "./booking";
 import { expireInactivePoints, warnExpiringPoints } from "./loyalty";
 import { sendReminders } from "./notifications";
 import { analyzeMissingReviews } from "./reviews";
@@ -13,7 +14,8 @@ export async function runScheduledJobs(now = new Date()) {
   const warned = await warnExpiringPoints();
   const expired = await expireInactivePoints();
   const reviewsAnalyzed = await analyzeMissingReviews();
-  return { at: now.toISOString(), reminders, warned, expired, reviewsAnalyzed };
+  const waitlistExpired = await expireWaitlist(now);
+  return { at: now.toISOString(), reminders, warned, expired, reviewsAnalyzed, waitlistExpired };
 }
 
 export type ScheduledRun = Awaited<ReturnType<typeof runScheduledJobs>>;
