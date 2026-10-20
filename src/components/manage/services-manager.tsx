@@ -25,7 +25,7 @@ const toDraft = (s: ManagedService): Draft => ({
 });
 
 /** SAL-03 : catalogue des prestations du salon */
-export function ServicesManager({ services }: { services: ManagedService[] }) {
+export function ServicesManager({ services, catalogGroups = [] }: { services: ManagedService[]; catalogGroups?: string[] }) {
   const { t, f, tc, money, dur } = useI18n();
   const m = t.manage;
   const [editing, setEditing] = useState<ManagedService | "new" | null>(null);
@@ -82,7 +82,7 @@ export function ServicesManager({ services }: { services: ManagedService[] }) {
         ))
       )}
 
-      <ServiceDialog key={editing === "new" ? "new" : (editing?.id ?? "closed")} service={editing} groups={groups} onClose={() => setEditing(null)} />
+      <ServiceDialog key={editing === "new" ? "new" : (editing?.id ?? "closed")} service={editing} groups={[...new Set([...groups, ...catalogGroups])]} onClose={() => setEditing(null)} />
     </div>
   );
 }

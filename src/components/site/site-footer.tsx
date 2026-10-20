@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { getI18n } from "@/i18n/server";
-import { CITIES } from "@/lib/data";
+import { activeCities } from "@/modules/platform";
 
 export async function SiteFooter() {
-  const { t, tc } = await getI18n();
+  const [{ t, tc }, cities] = await Promise.all([getI18n(), activeCities()]);
   const f = t.footer;
 
   const columns = [
@@ -42,7 +42,7 @@ export async function SiteFooter() {
           <Logo />
           <p className="text-sm leading-relaxed text-muted-foreground">{f.tagline}</p>
           <div className="flex flex-wrap gap-x-3 text-sm text-muted-foreground sm:gap-y-1">
-            {CITIES.slice(0, 6).map((c) => (
+            {cities.slice(0, 6).map((c) => (
               <Link key={c.name} href={`/salons?ville=${encodeURIComponent(c.name)}`} className="inline-flex min-h-10 items-center hover:text-foreground hover:underline sm:min-h-0">
                 {tc(c.name)}
               </Link>

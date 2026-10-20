@@ -10,13 +10,14 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useI18n } from "@/i18n/client";
-import { LOCALE_COOKIE, LOCALE_META, LOCALES, type Locale } from "@/i18n/config";
+import { useEnabledLocales, useI18n } from "@/i18n/client";
+import { LOCALE_COOKIE, LOCALE_META, type Locale } from "@/i18n/config";
 import { cn } from "@/lib/utils";
 
 /** Sélecteur de langue : mémorisé dans un cookie, la page est re-rendue côté serveur. */
 export function LanguageSwitcher({ className, tone = "light" }: { className?: string; tone?: "light" | "dark" }) {
   const { locale, t } = useI18n();
+  const locales = useEnabledLocales();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -27,6 +28,8 @@ export function LanguageSwitcher({ className, tone = "light" }: { className?: st
     document.documentElement.dir = LOCALE_META[next].dir;
     startTransition(() => router.refresh());
   };
+
+  if (locales.length < 2) return null; // une seule langue activée : pas de sélecteur
 
   return (
     <DropdownMenu>
@@ -44,7 +47,7 @@ export function LanguageSwitcher({ className, tone = "light" }: { className?: st
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
         <DropdownMenuRadioGroup value={locale} onValueChange={(v) => change(v as Locale)}>
-          {LOCALES.map((l) => (
+          {locales.map((l) => (
             <DropdownMenuRadioItem key={l} value={l} lang={l} dir={LOCALE_META[l].dir} closeOnClick>
               {LOCALE_META[l].label}
             </DropdownMenuRadioItem>

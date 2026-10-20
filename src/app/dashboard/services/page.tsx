@@ -4,6 +4,7 @@ import { ServicesManager } from "@/components/manage/services-manager";
 import { requirePageUser } from "@/infrastructure/session";
 import { getI18n } from "@/i18n/server";
 import { listSalonServices, staffSalon } from "@/modules/dashboard";
+import { getPlatformSettings } from "@/modules/platform";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -14,11 +15,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ServicesPage() {
   const user = await requirePageUser("MANAGER", "ADMIN");
   const salon = await staffSalon(user);
-  const [{ t }, services] = await Promise.all([getI18n(), listSalonServices(salon.id)]);
+  const [{ t }, services, platform] = await Promise.all([getI18n(), listSalonServices(salon.id), getPlatformSettings()]);
   return (
     <div className="space-y-6">
       <ManageHeader title={t.manage.services.title} description={t.manage.services.description} />
-      <ServicesManager services={services} />
+      <ServicesManager services={services} catalogGroups={platform.serviceGroups} />
     </div>
   );
 }

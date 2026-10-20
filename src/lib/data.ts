@@ -41,17 +41,6 @@ export const CATEGORIES: {
   { id: "visage", label: "Soins du visage", count: 88, image: img("photo-1598901986949-f593ff2a31a6", 800) },
 ];
 
-export const CITIES = [
-  { name: "Tunis", salons: 684 },
-  { name: "La Marsa", salons: 142 },
-  { name: "Sousse", salons: 231 },
-  { name: "Sfax", salons: 198 },
-  { name: "Nabeul", salons: 96 },
-  { name: "Hammamet", salons: 88 },
-  { name: "Monastir", salons: 74 },
-  { name: "Bizerte", salons: 61 },
-];
-
 export type Affluence = "calme" | "moderee" | "forte";
 
 export type Salon = {
