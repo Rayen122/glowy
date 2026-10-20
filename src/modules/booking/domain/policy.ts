@@ -13,8 +13,12 @@ export const MIN_LEAD_MIN = 15;
 /** Grain du verrou anti double réservation (durées et horaires multiples de 5 min) */
 export const LOCK_GRAIN_MIN = 5;
 
-/** Heure creuse (+10 pts). Règle provisoire en attendant la prédiction d'affluence (IA P2) : lun.–mer., 10 h – 12 h. */
-export const isOffPeak = (weekday: number, minutes: number) => weekday >= 1 && weekday <= 3 && minutes >= 600 && minutes < 720;
+/**
+ * Heure creuse (+10 pts) : heures prévues calmes par la prédiction d'affluence du salon (IA P2) ;
+ * repli quand le salon n'a pas assez d'historique : lun.–mer., 10 h – 12 h.
+ */
+export const isOffPeak = (weekday: number, minutes: number, forecastHours?: number[] | null) =>
+  forecastHours ? forecastHours.includes(Math.floor(minutes / 60)) : weekday >= 1 && weekday <= 3 && minutes >= 600 && minutes < 720;
 
 /**
  * Acompte en ligne : `percent` % du total réglé par le salon (SAL-07, 20 % par défaut, 0 = pas d'acompte),
