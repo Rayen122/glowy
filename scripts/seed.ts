@@ -490,7 +490,7 @@ async function main() {
   }
   await User.updateOne(
     { _id: sarra._id },
-    { $set: { "loyalty.balance": CLIENT.points, "loyalty.lifetime": CLIENT.lifetimePoints, "loyalty.lastActivityAt": new Date(), favorites: FAVORITES.map((slug) => salonIds.get(slug)!) } }
+    { $set: { "loyalty.balance": CLIENT.points, "loyalty.lifetime": CLIENT.lifetimePoints, "loyalty.lastActivityAt": new Date(), favorites: FAVORITES.map((slug) => salonIds.get(slug)!), favoriteEmployees: [employeeIds.get("salon-yasmine-la-marsa:amira")!] } }
   );
 
   // ── Salons en attente de validation (ADM-02) ──

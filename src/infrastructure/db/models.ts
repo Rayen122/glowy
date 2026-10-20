@@ -65,6 +65,8 @@ const userSchema = new Schema(
     },
     /** Salons favoris (CLI-03) */
     favorites: { type: [{ type: ObjectId, ref: "Salon" }], default: [] },
+    /** Professionnels favoris (CLI-03) */
+    favoriteEmployees: { type: [{ type: ObjectId, ref: "Employee" }], default: [] },
   },
   { timestamps: true }
 );

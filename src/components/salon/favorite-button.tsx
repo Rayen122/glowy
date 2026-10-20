@@ -12,12 +12,15 @@ import { cn } from "@/lib/utils";
 export function FavoriteButton({
   salonName,
   salonSlug,
+  employeeKey,
   initial = false,
   className,
   variant = "overlay",
 }: {
+  /** Nom affiché (salon, ou professionnel quand employeeKey est fourni) */
   salonName: string;
   salonSlug: string;
+  employeeKey?: string;
   initial?: boolean;
   className?: string;
   variant?: "overlay" | "outline";
@@ -33,7 +36,7 @@ export function FavoriteButton({
     setActive(next);
     setPending(true);
     try {
-      await api("/api/me/favorites", { method: "PUT", body: { salonSlug, favorite: next } });
+      await api("/api/me/favorites", { method: "PUT", body: { salonSlug, employeeKey, favorite: next } });
       toast(next ? t.favorites.added : t.favorites.removed, { description: salonName });
     } catch (error) {
       setActive(!next);

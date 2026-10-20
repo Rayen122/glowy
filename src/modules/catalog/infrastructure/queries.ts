@@ -127,9 +127,10 @@ export const getSalonDetail = cache(async (salonSlug: string, userId?: string) =
   if (!row || row.status !== "ACTIVE") return null;
   const id = idOf(row);
 
-  const [visited, favorites, employees, reviews, ratings, sentiments] = await Promise.all([
+  const [visited, favorites, favoritePros, employees, reviews, ratings, sentiments] = await Promise.all([
     visitedSalonIds(userId),
     favoriteSalonIds(userId),
+    userId && objectId(userId) ? User.findById(objectId(userId), { favoriteEmployees: 1 }).lean() : null,
     Employee.find({ salon: row._id, active: true }).sort({ createdAt: 1 }).lean(),
     Review.find({ salon: row._id, status: "PUBLISHED" }).sort({ createdAt: -1 }).limit(10).lean(),
     Review.aggregate<{ _id: number; count: number }>([{ $match: { salon: row._id, status: "PUBLISHED" } }, { $group: { _id: "$rating", count: { $sum: 1 } } }]),
@@ -168,7 +169,15 @@ export const getSalonDetail = cache(async (salonSlug: string, userId?: string) =
     salonPointsPerVisit: row.salonPointsPerVisit ?? 0,
     favorite: favorites.has(id),
     serviceGroups: groups,
-    employees: employees.map((e) => ({ id: e.key, name: e.name, role: e.title, rating: e.rating, avatar: e.avatarUrl ?? undefined, color: e.color as 1 | 2 | 3 | 4 | 5 })),
+    employees: employees.map((e) => ({
+      id: e.key,
+      name: e.name,
+      role: e.title,
+      rating: e.rating,
+      avatar: e.avatarUrl ?? undefined,
+      color: e.color as 1 | 2 | 3 | 4 | 5,
+      favorite: (favoritePros?.favoriteEmployees ?? []).some((f) => f.equals(e._id)),
+    })),
     openingHours: [0, 1, 2, 3, 4, 5, 6].map((weekday) => {
       const h = row.openingHours.find((o) => o.weekday === weekday);
       return { weekday, hours: h ? `${h.opensAt} – ${h.closesAt}` : null };
