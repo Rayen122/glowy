@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { CalendarX, CircleCheck, Clock, Hourglass, Repeat, UserX } from "lucide-react";
+import { CalendarX, CircleCheck, Clock, Hourglass, Receipt, Repeat, UserX } from "lucide-react";
 import { rebookHref } from "@/lib/rebook";
 import { addDays, tunisToday } from "@/core/domain/time";
 import { CancelBookingButton, RescheduleButton, ReviewDialog } from "@/components/account/booking-actions";
@@ -86,6 +86,11 @@ function BookingList({ bookings, i18n }: { bookings: AccountBooking[]; i18n: I18
               )}
               {b.status === "COMPLETED" && !b.review && (
                 <ReviewDialog bookingId={b.id} salonName={b.salon.name} label={f(bk.review, { pts: f(t.common.plusPoints, { n: 15 }) })} />
+              )}
+              {b.invoiceId && (
+                <Link href={`/compte/factures/${b.invoiceId}`} className="inline-flex h-10 items-center gap-2 rounded-full border border-border px-4 text-sm font-semibold hover:bg-muted">
+                  <Receipt className="size-4" aria-hidden /> {t.manage.cashier.viewInvoice}
+                </Link>
               )}
               {(b.status === "COMPLETED" || b.status === "CANCELLED" || b.status === "NO_SHOW") && (
                 <Link
