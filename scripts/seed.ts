@@ -57,6 +57,7 @@ import {
   img,
 } from "../src/lib/data";
 import { DEFAULT_RULES } from "../src/modules/loyalty";
+import { analyzeMissingReviews } from "../src/modules/reviews";
 import { ACTIVE_STATUSES } from "../src/modules/booking";
 import { acquireSlices } from "../src/modules/booking/infrastructure/slot-locks";
 
@@ -559,6 +560,9 @@ async function main() {
     wallets.set(key, { salon: b.salon, user: b.client, points: (wallets.get(key)?.points ?? 0) + 10 });
   }
   await SalonWallet.insertMany([...wallets.values()].map((w) => ({ salon: w.salon, user: w.user, balance: w.points, lifetime: w.points })));
+
+  // IA P4 : analyse des avis de démonstration (sentiment, aspects, suspicion)
+  await analyzeMissingReviews();
 
   const counts = await Promise.all([User.countDocuments(), Salon.countDocuments(), Booking.countDocuments(), Review.countDocuments()]);
   console.info(`Seed terminé (${TODAY}) : ${counts[0]} utilisateurs, ${counts[1]} salons, ${counts[2]} réservations, ${counts[3]} avis.`);

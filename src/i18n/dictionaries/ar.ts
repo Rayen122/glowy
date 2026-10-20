@@ -155,6 +155,32 @@ export const ar: Dictionary = {
     noWait: "بدون انتظار",
   },
 
+  insights: {
+    aspects: {
+      accueil: "الاستقبال",
+      resultat: "النتيجة",
+      attente: "الانتظار",
+      prix: "الأسعار",
+      proprete: "النظافة",
+      conseil: "النصائح",
+      ponctualite: "الالتزام بالمواعيد",
+    },
+    aspectTitles: {
+      accueil: "الاستقبال",
+      resultat: "النتيجة",
+      attente: "الانتظار",
+      prix: "الأسعار",
+      proprete: "النظافة",
+      conseil: "النصائح",
+      ponctualite: "الالتزام بالمواعيد",
+    },
+    praised: "تشيد الحريفات خاصة بـ{list}.",
+    watch: "تتعلق الملاحظات السلبية بـ{list}.",
+    noWeakness: "لا نقطة ضعف متكررة في التقييمات الأخيرة.",
+    notEnough: "لا توجد بعد تقييمات كافية لملخص موثوق.",
+    basedOn: "تحليل آلي لـ{n} تقييمًا موثّقًا",
+    and: " و",
+  },
   favorites: {
     addAria: "أضف {name} إلى المفضلة",
     removeAria: "أزل {name} من المفضلة",
