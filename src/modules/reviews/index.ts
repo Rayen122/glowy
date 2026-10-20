@@ -11,3 +11,6 @@ export { createReviewInput, reviewActionInput } from "./application/schemas";
 export { roundRating } from "./domain/policy";
 export const refreshSalonRating = mongoReviewRepository.refreshSalonRating;
 export { salonReviewsForStaff, STAFF_REVIEW_FILTERS, type StaffReviewFilter, type StaffReviewRow } from "./infrastructure/queries";
+export { analyzeMissingReviews, salonReviewInsights, type ReviewInsights } from "./infrastructure/insights";
+export { analyzeReview, ASPECTS, summarizeReviews, type Aspect, type ReviewAnalysis } from "./domain/analysis";
+export { analyzeReviewInput } from "./application/analyze-schema";
