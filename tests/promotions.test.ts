@@ -4,9 +4,10 @@ import { after, beforeEach, describe, test } from "node:test";
 import { manualClock } from "@/core/domain/clock";
 import { AppError } from "@/core/domain/errors";
 import { tunisToUtc } from "@/core/domain/time";
-import { Booking, Promotion, Redemption, Reward } from "@/infrastructure/db";
-import { cancelBooking, createBooking, createBookingModule } from "@/modules/booking";
-import { checkPromotion, createPromotion, discountFor, promotionInput, redeemAtCounter, type PromotionRule } from "@/modules/promotions";
+import { Booking, Promotion, Redemption, Reward, SalonWallet, User } from "@/infrastructure/db";
+import { cancelBooking, createBooking, createBookingModule, setBookingStatus } from "@/modules/booking";
+import { redeem } from "@/modules/loyalty";
+import { checkPromotion, createPromotion, discountFor, promotionInput, redeemAtCounter, redeemSalonReward, salonWallets, setSalonPointsPerVisit, type PromotionRule } from "@/modules/promotions";
 import { closeDb, FUTURE_MONDAY, makeSalon, makeUser, resetDb } from "./helpers";
 
 const rule = (extra: Partial<PromotionRule> = {}): PromotionRule => ({
@@ -108,5 +109,29 @@ describe("Promotions et récompenses du salon (SAL-10, FID-06)", () => {
     const used = await redeemAtCounter(salon.id, "bh-abc123");
     assert.equal(used.reward, "Brushing offert");
     await assert.rejects(redeemAtCounter(salon.id, "BH-ABC123"), (e: AppError) => e.code === "ALREADY_USED");
+  });
+
+  test("points salon : crédités une fois par visite terminée, échangés contre une récompense du salon uniquement", async () => {
+    const { salon, owner } = await makeSalon("salon-a");
+    const client = await makeUser();
+    await User.updateOne({ _id: client.id }, { $set: { "loyalty.balance": 5000 } });
+    await setSalonPointsPerVisit(salon.id, 60);
+    const reward = await Reward.create({ salon: salon.id, label: "Brushing offert", cost: 100 });
+
+    for (const time of ["10:00", "14:00"]) {
+      const b = await createBooking(client.id, booking("salon-a", { time, paymentMethod: "ONSITE" }));
+      await setBookingStatus(b.id, owner, "complete");
+    }
+    const [wallet] = await salonWallets(client.id);
+    assert.equal(wallet.balance, 120);
+    assert.deepEqual(wallet.rewards.map((r) => r.label), ["Brushing offert"]);
+
+    // Les points Glowy ne servent pas pour une récompense de salon
+    await assert.rejects(redeem(client.id, reward._id.toString()), (e: AppError) => e.status === 404);
+    const { code } = await redeemSalonReward(client.id, reward._id.toString());
+    assert.match(code, /^SP-/);
+    assert.equal((await SalonWallet.findOne({ user: client.id }).orFail()).balance, 20);
+    await assert.rejects(redeemSalonReward(client.id, reward._id.toString()), (e: AppError) => e.code === "INSUFFICIENT_POINTS");
+    assert.equal((await redeemAtCounter(salon.id, code)).reward, "Brushing offert");
   });
 });

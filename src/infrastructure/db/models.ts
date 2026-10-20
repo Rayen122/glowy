@@ -107,6 +107,8 @@ const salonSchema = new Schema(
     documentUrl: optional(String),
     depositAmount: { type: Number, default: 20 },
     cancellationHours: { type: Number, default: 24 },
+    /** Points salon (locaux) crédités à chaque visite terminée (FID-06) ; 0 = pas de programme */
+    salonPointsPerVisit: { type: Number, default: 10 },
     ratingAvg: { type: Number, default: 0 },
     reviewCount: { type: Number, default: 0 },
     owner: { type: ObjectId, ref: "User", required: true },
@@ -232,6 +234,35 @@ const promotionSchema = new Schema(
 );
 promotionSchema.index({ salon: 1, code: 1 }, { unique: true, partialFilterExpression: { code: { $type: "string" } } });
 promotionSchema.index({ salon: 1, kind: 1, active: 1 });
+
+// ── Points salon (FID-06) ───────────────────────────────────
+/** Solde de points locaux d'une cliente dans un salon (décrément conditionnel : jamais négatif) */
+const salonWalletSchema = new Schema(
+  {
+    salon: { type: ObjectId, ref: "Salon", required: true },
+    user: { type: ObjectId, ref: "User", required: true },
+    balance: { type: Number, default: 0 },
+    lifetime: { type: Number, default: 0 },
+  },
+  { timestamps: true }
+);
+salonWalletSchema.index({ user: 1, salon: 1 }, { unique: true });
+salonWalletSchema.index({ salon: 1 });
+
+/** Mouvements de points salon ; une seule ligne VISIT par réservation (index unique) */
+const salonPointEntrySchema = new Schema(
+  {
+    salon: { type: ObjectId, ref: "Salon", required: true },
+    user: { type: ObjectId, ref: "User", required: true },
+    points: { type: Number, required: true },
+    reason: { type: String, enum: ["VISIT", "REDEMPTION"], required: true },
+    booking: { type: ObjectId, ref: "Booking", default: null },
+    label: optional(String),
+  },
+  { timestamps: { createdAt: true, updatedAt: false } }
+);
+salonPointEntrySchema.index({ user: 1, salon: 1, createdAt: -1 });
+salonPointEntrySchema.index({ booking: 1 }, { unique: true, partialFilterExpression: { reason: "VISIT", booking: { $type: "objectId" } } });
 
 // ── Caisse et factures (SAL-09) ─────────────────────────────
 /** Compteurs de numérotation (factures : une suite par salon et par année, sans trou) */
@@ -488,6 +519,8 @@ export const PhotoAnalysis = defineModel("PhotoAnalysis", photoAnalysisSchema);
 export const AuditLog = defineModel("AuditLog", auditLogSchema);
 export const ClientNote = defineModel("ClientNote", clientNoteSchema);
 export const Promotion = defineModel("Promotion", promotionSchema);
+export const SalonWallet = defineModel("SalonWallet", salonWalletSchema);
+export const SalonPointEntry = defineModel("SalonPointEntry", salonPointEntrySchema);
 export const Counter = defineModel("Counter", counterSchema);
 export const Invoice = defineModel("Invoice", invoiceSchema);
 
@@ -505,7 +538,7 @@ export type PromotionDoc = Lean<typeof promotionSchema>;
 export type PointTransactionDoc = Omit<Lean<typeof pointTransactionSchema>, "updatedAt">;
 
 /** Toutes les collections, pour vider la base (seed, tests) */
-export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog, ClientNote, Promotion, Counter, Invoice];
+export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog, ClientNote, Promotion, SalonWallet, SalonPointEntry, Counter, Invoice];
 
 /** Vide toutes les collections et recrée les index, dont les index uniques (seed, tests) */
 export async function resetAll() {
