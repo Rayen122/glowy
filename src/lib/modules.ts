@@ -16,14 +16,6 @@ export const SALON_MODULES: ModuleDef<keyof Dictionary["modules"]["salon"]>[] = 
 
 export const ADMIN_MODULES: ModuleDef<keyof Dictionary["modules"]["admin"]>[] = [
   { slug: "abonnements", owners: [5], requirements: [{ ref: "ADM-05", priority: "should" }] },
-  {
-    slug: "fidelite",
-    owners: [1, 5],
-    requirements: [
-      { ref: "ADM-09", priority: "should" },
-      { ref: "FID-07", priority: "should" },
-    ],
-  },
   { slug: "rapports", owners: [1], requirements: [{ ref: "ADM-08", priority: "should" }] },
   {
     slug: "parametres",
