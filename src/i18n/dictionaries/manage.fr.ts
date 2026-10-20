@@ -521,6 +521,31 @@ export const manageFr = {
       NO_SHOW: "Absence ou annulation tardive (pénalité)",
     },
   },
+  reports: {
+    title: "Rapports",
+    description: "Activité de la plateforme par ville, par prestation et par salon, exportable en Excel ou en PDF (ADM-08).",
+    periods: {
+      "30": "30 jours",
+      "90": "90 jours",
+      "365": "12 mois",
+    },
+    bookings: "Rendez-vous",
+    revenue: "Chiffre d'affaires",
+    completed: "Terminés",
+    byCity: "Par ville",
+    byService: "Par prestation",
+    bySalon: "Par salon",
+    colCity: "Ville",
+    colSalons: "Salons",
+    colService: "Prestation",
+    colSalon: "Salon",
+    colPlan: "Plan",
+    colBasket: "Panier moyen",
+    colCancel: "Annulations",
+    colNoShow: "Absences",
+    colRating: "Note",
+    empty: "Aucune donnée sur la période.",
+  },
 };
 
 export type ManageDictionary = typeof manageFr;

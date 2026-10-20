@@ -1,3 +1,4 @@
+import { toCsv } from "@/core/domain/csv";
 import { addDays, tunisDayRange, tunisToday, utcToTunis } from "@/core/domain/time";
 import { shortName } from "@/core/domain/text";
 import { Booking, Employee, objectId, User } from "@/infrastructure/db";
@@ -134,15 +135,9 @@ export async function salonBookingsCsv(salonId: string, days: StatPeriod = 30, n
   ]);
   const clientName = new Map(clients.map((c) => [c._id.toString(), shortName(c.firstName, c.lastName)]));
   const employeeName = new Map(employees.map((e) => [e._id.toString(), e.name]));
-  const cell = (v: string | number) => {
-    const text = String(v);
-    // Neutralise les formules (=, +, -, @) : protection contre l'injection CSV dans Excel
-    const safe = /^[=+\-@]/.test(text) ? `'${text}` : text;
-    return /[;"\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
-  };
-  const lines = [
-    ["Date", "Heure", "Cliente", "Prestations", "Professionnel", "Statut", "Montant (DT)", "Acompte (DT)", "Paiement"].join(";"),
-    ...rows.map((r) => {
+  return toCsv(
+    ["Date", "Heure", "Cliente", "Prestations", "Professionnel", "Statut", "Montant (DT)", "Acompte (DT)", "Paiement"],
+    rows.map((r) => {
       const local = utcToTunis(r.startsAt);
       return [
         local.date,
@@ -154,10 +149,7 @@ export async function salonBookingsCsv(salonId: string, days: StatPeriod = 30, n
         r.totalPrice,
         r.deposit,
         r.paymentMethod === "ONLINE" ? "En ligne" : "Sur place",
-      ]
-        .map(cell)
-        .join(";");
-    }),
-  ];
-  return `﻿${lines.join("\r\n")}\r\n`;
+      ];
+    })
+  );
 }
