@@ -31,7 +31,9 @@ export function makeLoyalty({ ledger, clock, notices = SILENT }: { ledger: Loyal
     // Anti-fraude : plafond quotidien par type d'action (les pénalités ne sont jamais plafonnées)
     if (rule.points > 0 && (await ledger.countSince(userId, reason, tunisDayRange(tunisToday(now)).start)) >= (rule.dailyCap ?? DEFAULT_DAILY_CAP)) return 0;
     const account = await ledger.account(userId);
-    const points = withTierBonus(rule.points, account.lifetime);
+    // Campagne « double points » en cours (ADM-09) : s'applique aux gains, jamais aux pénalités
+    const boost = rule.points > 0 ? await ledger.multiplier(reason, now) : 1;
+    const points = Math.round(withTierBonus(rule.points, account.lifetime) * boost);
     await ledger.record({ userId, points, reason, ...opts, at: now });
     return points;
   }

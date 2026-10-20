@@ -14,6 +14,8 @@ export interface LoyaltyRepository {
   reward(id: string): Promise<{ id: string; label: string; cost: number; active: boolean } | null>;
   /** Décrément conditionnel (solde ≥ coût) + grand livre + échange ; null si le solde est insuffisant */
   redeem(userId: string, reward: { id: string; label: string; cost: number }, code: string, at: Date): Promise<{ id: string; code: string; points: number } | null>;
+  /** Multiplicateur de la meilleure campagne en cours pour cette action (1 sans campagne, ADM-09) */
+  multiplier(reason: PointReason, at: Date): Promise<number>;
   staleAccounts(before: Date): Promise<{ userId: string; balance: number }[]>;
   /** Comptes inactifs depuis `before` (mais pas encore expirés) et pas encore prévenus depuis leur dernière activité */
   expiringAccounts(before: Date, notBefore: Date): Promise<{ userId: string; balance: number; lastActivityAt: Date }[]>;
