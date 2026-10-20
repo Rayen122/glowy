@@ -19,6 +19,17 @@ export const createBookingInput = z.object({
   time: TIME,
   paymentMethod: z.enum(["ONLINE", "ONSITE"]).default("ONSITE"),
   note: z.string().trim().max(500).optional(),
+  /** Code promo du salon (SAL-10) */
+  promoCode: z.string().trim().max(20).optional(),
+});
+
+/** Prix d'une réservation avant confirmation : remise de dernière minute ou code promo (SAL-10) */
+export const bookingQuoteInput = z.object({
+  services: z.string().min(1),
+  date: DATE,
+  time: TIME,
+  code: z.string().trim().max(20).optional(),
+  paymentMethod: z.enum(["ONLINE", "ONSITE"]).default("ONSITE"),
 });
 
 export const bookingActionInput = z.discriminatedUnion("action", [
@@ -31,3 +42,4 @@ export const bookingActionInput = z.discriminatedUnion("action", [
 
 export type AvailabilityQuery = z.infer<typeof availabilityQuery>;
 export type CreateBookingInput = z.infer<typeof createBookingInput>;
+export type BookingQuoteInput = z.infer<typeof bookingQuoteInput>;

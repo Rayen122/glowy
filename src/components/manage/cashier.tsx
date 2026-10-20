@@ -12,7 +12,7 @@ import { api, Field, FIELD, FormError, ICON_BUTTON, PRIMARY_BUTTON, SECONDARY_BU
 
 type Method = "CASH" | "CARD" | "D17" | "CHEQUE";
 type Line = { label: string; quantity: string; unitPrice: string };
-type Ticket = { bookingId: string | null; client: string; lines: Line[]; deposit: number };
+type Ticket = { bookingId: string | null; client: string; lines: Line[]; deposit: number; discount: number };
 
 const METHODS: Method[] = ["CASH", "CARD", "D17", "CHEQUE"];
 const toLines = (lines: Line[]) => lines.map((l) => ({ label: l.label, quantity: Number(l.quantity) || 0, unitPrice: Number(l.unitPrice) || 0 }));
@@ -29,7 +29,7 @@ export function CashierQueue({ toCollect }: { toCollect: CashierDay["toCollect"]
         <h2 id="to-collect" className="font-semibold">
           {m.toCollect} <span className="text-muted-foreground tabular-nums">({toCollect.length})</span>
         </h2>
-        <button type="button" onClick={() => setTicket({ bookingId: null, client: "", lines: [{ label: "", quantity: "1", unitPrice: "" }], deposit: 0 })} className={cn(SECONDARY_BUTTON, "h-10 px-4")}>
+        <button type="button" onClick={() => setTicket({ bookingId: null, client: "", lines: [{ label: "", quantity: "1", unitPrice: "" }], deposit: 0, discount: 0 })} className={cn(SECONDARY_BUTTON, "h-10 px-4")}>
           <ShoppingBag className="size-4" aria-hidden /> {m.walkIn}
         </button>
       </div>
@@ -50,6 +50,7 @@ export function CashierQueue({ toCollect }: { toCollect: CashierDay["toCollect"]
               </div>
               <div className="text-end">
                 <p className="font-semibold tabular-nums">{money(b.total)}</p>
+                {b.promo && <p className="text-xs text-plum-700">{b.promo}</p>}
                 {b.deposit > 0 && (
                   <p className="text-xs text-success">
                     {m.depositPaid} : {money(b.deposit)}
@@ -58,7 +59,7 @@ export function CashierQueue({ toCollect }: { toCollect: CashierDay["toCollect"]
               </div>
               <button
                 type="button"
-                onClick={() => setTicket({ bookingId: b.id, client: b.client, lines: b.items.map((i) => ({ label: i.label, quantity: "1", unitPrice: String(i.unitPrice) })), deposit: b.deposit })}
+                onClick={() => setTicket({ bookingId: b.id, client: b.client, lines: b.items.map((i) => ({ label: i.label, quantity: "1", unitPrice: String(i.unitPrice) })), deposit: b.deposit, discount: b.discount })}
                 className={cn(PRIMARY_BUTTON, "h-10 px-4")}
               >
                 {m.collect}
@@ -78,7 +79,7 @@ function CheckoutDialog({ ticket, onClose }: { ticket: Ticket; onClose: () => vo
   const router = useRouter();
   const [client, setClient] = useState(ticket.client);
   const [lines, setLines] = useState<Line[]>(ticket.lines);
-  const [discount, setDiscount] = useState("0");
+  const [discount, setDiscount] = useState(String(ticket.discount));
   const [method, setMethod] = useState<Method>("CASH");
   const { run, pending, error } = useAction();
   const totals = invoiceTotals(toLines(lines), Number(discount) || 0, ticket.deposit);
