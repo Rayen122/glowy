@@ -394,6 +394,22 @@ const pointRuleSchema = new Schema({
   dailyCap: optional(Number),
 });
 
+/** Campagne « double points » (ADM-09) : multiplie les gains pendant une période, pour certaines actions ou toutes */
+const pointCampaignSchema = new Schema(
+  {
+    label: { type: String, required: true },
+    multiplier: { type: Number, required: true },
+    startsAt: { type: Date, required: true },
+    endsAt: { type: Date, required: true },
+    /** Vide : toutes les actions qui rapportent des points */
+    reasons: { type: [{ type: String, enum: POINT_REASONS }], default: [] },
+    active: { type: Boolean, default: true },
+    createdBy: { type: ObjectId, ref: "User", default: null },
+  },
+  { timestamps: true }
+);
+pointCampaignSchema.index({ active: 1, startsAt: 1, endsAt: 1 });
+
 /** Grand livre : toute variation de points laisse une ligne */
 const pointTransactionSchema = new Schema(
   {
@@ -519,6 +535,7 @@ export const OutboxMessage = defineModel("OutboxMessage", outboxMessageSchema);
 export const AccountToken = defineModel("AccountToken", accountTokenSchema);
 export const PointRule = defineModel("PointRule", pointRuleSchema);
 export const PointTransaction = defineModel("PointTransaction", pointTransactionSchema);
+export const PointCampaign = defineModel("PointCampaign", pointCampaignSchema);
 export const Reward = defineModel("Reward", rewardSchema);
 export const Redemption = defineModel("Redemption", redemptionSchema);
 export const Review = defineModel("Review", reviewSchema);
@@ -546,7 +563,7 @@ export type PromotionDoc = Lean<typeof promotionSchema>;
 export type PointTransactionDoc = Omit<Lean<typeof pointTransactionSchema>, "updatedAt">;
 
 /** Toutes les collections, pour vider la base (seed, tests) */
-export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog, ClientNote, Promotion, SalonWallet, SalonPointEntry, Counter, Invoice];
+export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, PointCampaign, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog, ClientNote, Promotion, SalonWallet, SalonPointEntry, Counter, Invoice];
 
 /** Vide toutes les collections et recrée les index, dont les index uniques (seed, tests) */
 export async function resetAll() {

@@ -22,3 +22,5 @@ export const registerSubscribers = (bus: EventSubscriber) =>
 
 export { getAccount, getLoyaltyPage, getLoyaltySummary } from "./infrastructure/queries";
 export { DEFAULT_RULES, HISTORY_KEY, SALON_MILESTONES, TIERS, tierFor } from "./domain/rules";
+export { EDITABLE_REASONS, createCampaign, deleteCampaign, listCampaigns, listPointRules, loyaltyStats, runningCampaign, setCampaignActive, updatePointRule, type CampaignRow, type PointRuleRow } from "./infrastructure/admin";
+export { campaignToggleInput, pointCampaignInput, pointRuleInput } from "./application/admin-schemas";
