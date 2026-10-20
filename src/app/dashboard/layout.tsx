@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { AppShell, type NavGroup } from "@/components/app-shell/app-shell";
 import { getI18n } from "@/i18n/server";
-import { staffSalon } from "@/modules/dashboard";
+import { lowStockCount, staffSalon } from "@/modules/dashboard";
 import { requirePageUser } from "@/infrastructure/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -32,6 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await requirePageUser("MANAGER", "EMPLOYEE", "ADMIN");
   const [{ t, tc }, salon] = await Promise.all([getI18n(), staffSalon(user)]);
+  const lowStock = await lowStockCount(salon.id);
   const d = t.dashboard;
 
   const groups: NavGroup[] = [
@@ -53,7 +54,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         { href: "/dashboard/avis", label: d.nav.reviews, icon: <MessageSquareText />, badge: "1" },
         { href: "/dashboard/promotions", label: d.nav.promotions, icon: <Percent /> },
         { href: "/dashboard/caisse", label: d.nav.cashier, icon: <Receipt /> },
-        { href: "/dashboard/stocks", label: d.nav.stocks, icon: <Boxes /> },
+        { href: "/dashboard/stocks", label: d.nav.stocks, icon: <Boxes />, badge: lowStock > 0 ? String(lowStock) : undefined },
       ],
     },
     {
