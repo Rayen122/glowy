@@ -260,7 +260,8 @@ export const fr = {
     noDeposit: "Pas d'acompte : vous payez sur place",
     freeCancel: "Annulation gratuite jusqu'à {hours} h avant",
     lastMinuteOffer: "{value} sur les créneaux des {hours} prochaines heures",
-    salonReward: "{label} contre {points} points fidélité",
+    salonReward: "{label} contre {points} points salon",
+    earnSalonPoints: "+{n} points salon à chaque visite",
   },
 
   loyalty: {
@@ -361,7 +362,12 @@ export const fr = {
       expiry: "Vos points expirent après 12 mois sans activité. Nous vous prévenons avant.",
       perksTitle: "Avantages par niveau",
       rewardsTitle: "Catalogue de récompenses",
-      atSalon: "Chez {salon}",
+      salonPointsTitle: "Mes points salon",
+      salonPointsHint: "Chaque salon a son propre programme : ses points s'échangent contre ses récompenses.",
+      salonBalance: "{n} points salon",
+      perVisitInfo: "+{n} points à chaque visite",
+      noSalonPoints: "Vos points salon apparaîtront ici après votre première visite dans un salon partenaire.",
+      noSalonRewards: "Ce salon n'a pas encore de récompense.",
       earnTitle: "Comment gagner des points",
       earnCaption: "Barème des points",
       antiFraud: "Points crédités uniquement après un rendez-vous confirmé terminé par le salon. Absence ou annulation tardive : −20 pts.",

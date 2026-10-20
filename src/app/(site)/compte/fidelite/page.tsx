@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
-import { Award, Clock3, Compass, Crown, Gift, MessageSquareText, ShieldCheck, Timer, Users } from "lucide-react";
+import Link from "next/link";
+import { Award, Clock3, Compass, Crown, Gift, MessageSquareText, ShieldCheck, Store, Timer, Users } from "lucide-react";
 import { CopyCode, RedeemButton } from "@/components/loyalty/loyalty-ui";
 import { TierProgress } from "@/components/loyalty/tier-progress";
 import { getI18n } from "@/i18n/server";
 import { EARN_RULES, TIERS, tierFor } from "@/lib/data";
 import { getAccountSummary } from "@/modules/account";
 import { getLoyaltyPage, HISTORY_KEY } from "@/modules/loyalty";
+import { salonWallets } from "@/modules/promotions";
 import { requirePageUser } from "@/infrastructure/session";
 import { utcToTunis } from "@/core/domain/time";
 import { cn } from "@/lib/utils";
@@ -25,10 +27,11 @@ const BADGE_ICON: Record<string, typeof Award> = {
 
 export default async function FidelitePage() {
   const user = await requirePageUser();
-  const [{ t, tc, f, nf, df }, { account, history, rewards, badges }, { profile }] = await Promise.all([
+  const [{ t, tc, f, nf, df }, { account, history, rewards, badges }, { profile }, wallets] = await Promise.all([
     getI18n(),
     getLoyaltyPage(user.id),
     getAccountSummary(user.id),
+    salonWallets(user.id),
   ]);
   const l = t.account.loyalty;
   const tier = tierFor(account.lifetime);
@@ -90,10 +93,7 @@ export default async function FidelitePage() {
               <span className="flex size-10 items-center justify-center rounded-2xl bg-gold-soft text-gold">
                 <Gift className="size-5" aria-hidden />
               </span>
-              <p className="mt-4 flex-1 font-medium">
-                {tc(r.label)}
-                {r.salon && <span className="mt-0.5 block text-xs font-normal text-muted-foreground">{f(l.atSalon, { salon: r.salon.name })}</span>}
-              </p>
+              <p className="mt-4 flex-1 font-medium">{tc(r.label)}</p>
               <p className="mt-2 text-2xl font-semibold tracking-tight">
                 {nf(r.cost)} <span className="text-sm font-normal text-muted-foreground">{t.common.pts}</span>
               </p>
@@ -103,6 +103,54 @@ export default async function FidelitePage() {
             </li>
           ))}
         </ul>
+      </section>
+
+      {/* Points salon (FID-06) : un programme par salon, distinct des points Glowy */}
+      <section aria-labelledby="salon-points-title">
+        <h2 id="salon-points-title" className="text-lg font-semibold">
+          {l.salonPointsTitle}
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">{l.salonPointsHint}</p>
+        {wallets.length === 0 ? (
+          <p className="mt-4 rounded-3xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">{l.noSalonPoints}</p>
+        ) : (
+          <ul className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-2">
+            {wallets.map((w) => (
+              <li key={w.salon.id} className="rounded-3xl bg-card p-5 ring-1 ring-border">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="flex size-10 items-center justify-center rounded-2xl bg-plum-50 text-plum-700">
+                    <Store className="size-5" aria-hidden />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <Link href={`/salons/${w.salon.slug}`} className="font-semibold hover:underline">
+                      {w.salon.name}
+                    </Link>
+                    {w.salon.perVisit > 0 && <p className="text-xs text-muted-foreground">{f(l.perVisitInfo, { n: nf(w.salon.perVisit) })}</p>}
+                  </div>
+                  <p className="text-xl font-semibold tabular-nums">{f(l.salonBalance, { n: nf(w.balance) })}</p>
+                </div>
+                {w.rewards.length === 0 ? (
+                  <p className="mt-4 text-sm text-muted-foreground">{l.noSalonRewards}</p>
+                ) : (
+                  <ul className="mt-4 divide-y divide-border border-t border-border">
+                    {w.rewards.map((r) => (
+                      <li key={r.id} className="flex flex-wrap items-center gap-3 py-3">
+                        <Gift className="size-4 shrink-0 text-gold" aria-hidden />
+                        <span className="min-w-32 flex-1 text-sm font-medium">{r.label}</span>
+                        <span className="text-sm font-semibold tabular-nums">
+                          {nf(r.cost)} {t.common.pts}
+                        </span>
+                        <div className="w-full sm:w-48">
+                          <RedeemButton rewardId={r.id} label={r.label} cost={r.cost} balance={w.balance} endpoint="/api/me/salon-points/redeem" />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <div data-animate="stagger" data-stagger="0.12" className="grid grid-cols-1 gap-4 xl:grid-cols-2">

@@ -4,7 +4,7 @@ import { PromotionsManager, SalonRewardsManager } from "@/components/manage/prom
 import { requirePageUser } from "@/infrastructure/session";
 import { getI18n } from "@/i18n/server";
 import { staffSalon } from "@/modules/dashboard";
-import { listSalonPromotions, listSalonRewards } from "@/modules/promotions";
+import { listSalonPromotions, listSalonRewards, salonPointsOverview } from "@/modules/promotions";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -16,12 +16,12 @@ export default async function PromotionsPage() {
   const user = await requirePageUser("MANAGER", "EMPLOYEE", "ADMIN");
   const salon = await staffSalon(user);
   const canEdit = user.role !== "EMPLOYEE";
-  const [{ t }, promotions, rewards] = await Promise.all([getI18n(), canEdit ? listSalonPromotions(salon.id) : [], listSalonRewards(salon.id)]);
+  const [{ t }, promotions, rewards, points] = await Promise.all([getI18n(), canEdit ? listSalonPromotions(salon.id) : [], listSalonRewards(salon.id), salonPointsOverview(salon.id)]);
   return (
     <div className="space-y-8">
       <ManageHeader title={t.manage.promos.title} description={t.manage.promos.description} />
       {canEdit && <PromotionsManager promotions={promotions} />}
-      <SalonRewardsManager rewards={rewards} canEdit={canEdit} />
+      <SalonRewardsManager rewards={rewards} canEdit={canEdit} points={points} />
     </div>
   );
 }

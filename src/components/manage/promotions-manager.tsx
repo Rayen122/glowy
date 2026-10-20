@@ -211,12 +211,14 @@ function PromotionDialog({ promotion, onClose }: { promotion: PromotionRule | "n
 }
 
 /** FID-06 : récompenses propres au salon + validation des codes au comptoir */
-export function SalonRewardsManager({ rewards, canEdit }: { rewards: SalonReward[]; canEdit: boolean }) {
+export function SalonRewardsManager({ rewards, canEdit, points }: { rewards: SalonReward[]; canEdit: boolean; points: { perVisit: number; members: number; outstanding: number } }) {
   const { t, f, nf } = useI18n();
   const m = t.manage.promos;
   const [label, setLabel] = useState("");
-  const [cost, setCost] = useState("300");
+  const [cost, setCost] = useState("100");
+  const [perVisit, setPerVisit] = useState(String(points.perVisit));
   const { run, pending, error } = useAction();
+  const settings = useAction();
 
   return (
     <section aria-labelledby="rewards-title" className="space-y-4">
@@ -226,6 +228,28 @@ export function SalonRewardsManager({ rewards, canEdit }: { rewards: SalonReward
         </h2>
         <p className="text-sm text-muted-foreground">{m.rewardsHint}</p>
       </div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void settings.run(() => api("/api/dashboard/salon-points", { method: "PATCH", body: { perVisit } }), t.manage.common.saved);
+        }}
+        className="flex flex-wrap items-end gap-3 rounded-3xl bg-card p-5 ring-1 ring-border"
+      >
+        <Field label={m.perVisit} hint={m.perVisitHint} className="min-w-56 flex-1">
+          <input type="number" inputMode="numeric" min={0} max={500} value={perVisit} onChange={(e) => setPerVisit(e.target.value)} disabled={!canEdit} className={cn(FIELD, "max-w-32")} />
+        </Field>
+        <p className="text-sm text-muted-foreground">{f(m.members, { n: nf(points.members), points: nf(points.outstanding) })}</p>
+        {canEdit && (
+          <button type="submit" disabled={settings.pending || perVisit === String(points.perVisit)} className={SECONDARY_BUTTON}>
+            {t.manage.common.save}
+          </button>
+        )}
+        {settings.error && (
+          <div className="w-full">
+            <FormError message={settings.error} />
+          </div>
+        )}
+      </form>
       <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
         <div className="rounded-3xl bg-card ring-1 ring-border">
           {rewards.length === 0 ? (
@@ -279,7 +303,7 @@ export function SalonRewardsManager({ rewards, canEdit }: { rewards: SalonReward
                 <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder={m.rewardPlaceholder} maxLength={80} required className={FIELD} />
               </Field>
               <Field label={m.cost} className="w-32">
-                <input type="number" inputMode="numeric" min={50} step={50} value={cost} onChange={(e) => setCost(e.target.value)} required className={FIELD} />
+                <input type="number" inputMode="numeric" min={10} step={10} value={cost} onChange={(e) => setCost(e.target.value)} required className={FIELD} />
               </Field>
               <button type="submit" disabled={pending || label.trim().length < 3} className={PRIMARY_BUTTON}>
                 <Plus className="size-4" aria-hidden /> {m.addReward}
