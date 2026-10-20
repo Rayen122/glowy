@@ -119,3 +119,22 @@ export const checkoutInput = z
 export type CheckoutInput = z.infer<typeof checkoutInput>;
 
 export const voidInvoiceInput = z.object({ reason: z.string().trim().min(3, "3 caractères minimum").max(200) });
+
+/** SAL-12 : produit du stock */
+export const productInput = z.object({
+  name: z.string().trim().min(2, "2 caractères minimum").max(80),
+  usage: z.enum(["salon", "vente"]).default("salon"),
+  unit: z.string().trim().min(1).max(10).default("pcs"),
+  threshold: z.coerce.number().int().min(0).max(10_000).default(2),
+  price: z.coerce.number().min(0).max(10_000).nullable().default(null),
+  active: z.boolean().default(true),
+});
+export type ProductInput = z.infer<typeof productInput>;
+
+/** Entrée (livraison), sortie (utilisation), vente ou correction d'inventaire */
+export const stockMoveInput = z.object({
+  delta: z.coerce.number().int().refine((n) => n !== 0, "Quantité non nulle").refine((n) => Math.abs(n) <= 10_000, "Quantité trop grande"),
+  reason: z.enum(["IN", "OUT", "SALE", "ADJUST"]),
+  note: z.string().trim().max(120).optional(),
+});
+export type StockMoveInput = z.infer<typeof stockMoveInput>;

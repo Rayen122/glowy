@@ -24,6 +24,7 @@ import {
   Notification,
   PlanPayment,
   PointCampaign,
+  Product,
   PointRule,
   PointTransaction,
   resetAll,
@@ -535,6 +536,14 @@ async function main() {
   await Notification.insertMany([
     { user: sarra._id, type: "booking.reminder", title: "Rappel", body: "Votre balayage au Salon Yasmine approche.", link: "/compte/rendez-vous" },
     { user: sarra._id, type: "points", title: "+40 points", body: "Merci pour votre visite chez Maison Elyssa.", link: "/compte/fidelite", readAt: new Date() },
+  ]);
+
+  // ── Stocks du Salon Yasmine (SAL-12) ──
+  await Product.insertMany([
+    { salon: salonIds.get("salon-yasmine-la-marsa")!, name: "Shampoing kératine 1 L", usage: "salon", unit: "flacon", quantity: 6, threshold: 2 },
+    { salon: salonIds.get("salon-yasmine-la-marsa")!, name: "Coloration blond cendré 7.1", usage: "salon", unit: "tube", quantity: 2, threshold: 3 },
+    { salon: salonIds.get("salon-yasmine-la-marsa")!, name: "Masque hydratant 250 ml", usage: "vente", unit: "pot", quantity: 9, threshold: 3, price: 38 },
+    { salon: salonIds.get("salon-yasmine-la-marsa")!, name: "Sérum anti-frisottis", usage: "vente", unit: "flacon", quantity: 1, threshold: 2, price: 45 },
   ]);
 
   // ── Campagne « double points » passée (ADM-09) ──
