@@ -1,4 +1,4 @@
-import { idOf, objectId, PointRule, PointTransaction, Redemption, Reward, User, withTransaction } from "@/infrastructure/db";
+import { idOf, objectId, PointCampaign, PointRule, PointTransaction, Redemption, Reward, User, withTransaction } from "@/infrastructure/db";
 import type { LoyaltyRepository } from "../application/ports";
 
 export const mongoLoyaltyRepository: LoyaltyRepository = {
@@ -67,6 +67,11 @@ export const mongoLoyaltyRepository: LoyaltyRepository = {
       const [redemption] = await Redemption.create([{ user, reward: objectId(reward.id)!, points: reward.cost, code }], { session });
       return { id: idOf(redemption), code: redemption.code, points: redemption.points };
     }),
+
+  async multiplier(reason, at) {
+    const campaigns = await PointCampaign.find({ active: true, startsAt: { $lte: at }, endsAt: { $gt: at }, $or: [{ reasons: { $size: 0 } }, { reasons: reason }] }, { multiplier: 1 }).lean();
+    return Math.max(1, ...campaigns.map((c) => c.multiplier));
+  },
 
   expiringAccounts: async (before, notBefore) =>
     (

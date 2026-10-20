@@ -41,7 +41,9 @@ export default async function AuditPage({ searchParams }: PageProps<"/admin/audi
       <ol className="divide-y divide-border rounded-3xl bg-card ring-1 ring-border">
         {trail.rows.length === 0 && <li className="p-10 text-center text-sm text-muted-foreground">{m.noAudit}</li>}
         {trail.rows.map((e) => {
-          const target = String((e.meta?.name as string | undefined) ?? (e.meta?.email as string | undefined) ?? e.targetId ?? "");
+          const raw = String((e.meta?.name as string | undefined) ?? (e.meta?.email as string | undefined) ?? e.targetId ?? "");
+          // Barème de fidélité : nom lisible de l'action plutôt que son code (ADM-09)
+          const target = e.action === "loyalty.rule" ? (t.manage.loyaltyAdmin.reasons[raw as keyof typeof t.manage.loyaltyAdmin.reasons] ?? raw) : raw;
           return (
             <li key={e.id} className="flex flex-col gap-1 px-5 py-3.5 sm:flex-row sm:items-start sm:gap-4">
               <span className="w-28 shrink-0 text-xs text-muted-foreground">{ago(e.minutesAgo)}</span>
