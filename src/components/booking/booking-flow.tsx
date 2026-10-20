@@ -48,6 +48,7 @@ export function BookingFlow({
   initialTime,
   depositPercent = 20,
   initialEmployee,
+  initialDate,
 }: {
   salon: Salon;
   serviceGroups: { id: string; label: string; services: Service[] }[];
@@ -64,6 +65,8 @@ export function BookingFlow({
   initialEmployee?: string;
   initialServiceId?: string;
   initialTime?: string;
+  /** Jour proposé (lien de liste d'attente, RES-09) */
+  initialDate?: string;
 }) {
   const { t, tc, f, rich, money, dur, df } = useI18n();
   const b = t.booking;
@@ -82,7 +85,10 @@ export function BookingFlow({
   const [step, setStep] = useState(initialServiceId ? 1 : 0);
   const [serviceIds, setServiceIds] = useState<string[]>(initialServiceId ? [initialServiceId] : []);
   const [employee, setEmployee] = useState<string>(initialEmployee && employees.some((e) => e.id === initialEmployee) ? initialEmployee : "any");
-  const [day, setDay] = useState(() => (initialTime ? 0 : Math.max(0, DAYS.findIndex((d) => !d.closed))));
+  const [day, setDay] = useState(() => {
+    const asked = initialDate ? DAYS.findIndex((d) => d.iso === initialDate && !d.closed) : -1;
+    return asked >= 0 ? asked : initialTime ? 0 : Math.max(0, DAYS.findIndex((d) => !d.closed));
+  });
   const [time, setTime] = useState<string | null>(initialTime ?? null);
   const [lockLeft, setLockLeft] = useState(initialTime ? LOCK_SECONDS : 0);
   const [payment, setPayment] = useState<"online" | "onsite">("online");
@@ -226,6 +232,17 @@ export function BookingFlow({
       setSubmitting(false);
     }
   };
+
+  // RES-09 : liste d'attente du jour choisi, prévenue dès qu'un créneau compatible se libère
+  async function joinWaitlist() {
+    if (!user) return goToLogin();
+    try {
+      await api(`/api/salons/${salon.slug}/waitlist`, { method: "POST", body: { date: DAYS[day].iso, serviceKeys: serviceIds } });
+      toast.success(b.waitlistToast, { description: b.waitlistToastDesc });
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : t.errors.generic);
+    }
+  }
 
   const summary = (
     <Summary
@@ -505,7 +522,7 @@ export function BookingFlow({
                 {b.allFull}{" "}
                 <button
                   type="button"
-                  onClick={() => toast.success(b.waitlistToast, { description: b.waitlistToastDesc })}
+                  onClick={() => void joinWaitlist()}
                   className="font-semibold text-plum-700 hover:underline"
                 >
                   {b.waitlist}
