@@ -10,6 +10,7 @@ import type { Salon } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { AffluencePill, PointsBadge, Rating, VerifiedBadge } from "./badges";
 import { FavoriteButton } from "./favorite-button";
+import { recoText } from "@/lib/reco";
 
 const SalonMap = dynamic(() => import("./salon-map"), {
   ssr: false,
@@ -171,7 +172,9 @@ function SalonRow({
   showReason: boolean;
   onHover: (slug: string | null) => void;
 }) {
-  const { t, tc, f, nf, money, dur } = useI18n();
+  const i18n = useI18n();
+  const { t, tc, f, nf, money, dur } = i18n;
+  const reason = recoText(i18n, salon);
   return (
     <article
       onMouseEnter={() => onHover(salon.slug)}
@@ -236,11 +239,11 @@ function SalonRow({
           ))}
         </ul>
 
-        {showReason && (
+        {showReason && reason && (
           <p className="flex gap-2 text-[13px] leading-snug text-plum-800">
             <Sparkles className="mt-0.5 size-3.5 shrink-0" aria-hidden />
             <span>
-              <span className="font-semibold">{t.common.whySalon}</span> {tc(salon.aiReason)}
+              <span className="font-semibold">{t.common.whySalon}</span> {reason}
             </span>
           </p>
         )}
