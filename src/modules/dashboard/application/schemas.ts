@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CASH_METHODS } from "@/core/domain/enums";
 
 const DATE = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date attendue au format AAAA-MM-JJ");
 const TIME = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Heure attendue au format HH:MM");
@@ -92,3 +93,29 @@ export const clientNoteInput = z.object({
   text: z.string().trim().min(2, "2 caractères minimum").max(500),
 });
 export type ClientNoteInput = z.infer<typeof clientNoteInput>;
+
+const OBJECT_ID = z.string().regex(/^[a-f\d]{24}$/i, "Identifiant invalide");
+const AMOUNT = z.coerce.number().min(0, "Montant positif attendu").max(100_000);
+
+/** SAL-09 : encaissement d'un rendez-vous ou vente libre au comptoir */
+export const checkoutInput = z
+  .object({
+    bookingId: OBJECT_ID.nullable().default(null),
+    clientName: z.string().trim().max(80).optional(),
+    lines: z
+      .array(
+        z.object({
+          label: z.string().trim().min(1, "Libellé requis").max(80),
+          quantity: z.coerce.number().int().min(1).max(99),
+          unitPrice: AMOUNT,
+        })
+      )
+      .min(1, "Ajoutez au moins une ligne")
+      .max(30),
+    discount: AMOUNT.default(0),
+    method: z.enum(CASH_METHODS),
+  })
+  .refine((v) => v.bookingId || (v.clientName?.length ?? 0) >= 2, { message: "Nom de la cliente requis", path: ["clientName"] });
+export type CheckoutInput = z.infer<typeof checkoutInput>;
+
+export const voidInvoiceInput = z.object({ reason: z.string().trim().min(3, "3 caractères minimum").max(200) });
