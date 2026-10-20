@@ -226,7 +226,8 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
             </h2>
             <ul data-animate="stagger" className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
               {detail.employees.map((e) => (
-                <li key={e.id} className="rounded-2xl border border-border bg-card p-4 text-center">
+                <li key={e.id} className="relative rounded-2xl border border-border bg-card p-4 text-center">
+                  <FavoriteButton salonName={e.name} salonSlug={salon.slug} employeeKey={e.id} initial={e.favorite} variant="outline" className="absolute end-2 top-2 size-9" />
                   <Avatar className="mx-auto size-16">
                     {e.avatar && <AvatarImage src={e.avatar} alt="" />}
                     <AvatarFallback className="bg-blush text-lg font-semibold text-plum-700">{e.name[0]}</AvatarFallback>

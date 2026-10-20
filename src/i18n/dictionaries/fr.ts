@@ -401,6 +401,11 @@ export const fr = {
     favorites: {
       title: "Favoris",
       subtitle: "{n} salons enregistrés. Nous vous prévenons des créneaux de dernière minute.",
+      salonsTitle: "Salons",
+      prosTitle: "Professionnels",
+      prosEmpty: "Touchez le cœur d'un professionnel sur la page d'un salon pour le retrouver ici.",
+      bookWith: "Réserver avec {name}",
+      unavailable: "Ne travaille plus dans ce salon",
     },
   },
 
