@@ -155,6 +155,15 @@ export const ar: Dictionary = {
     noWait: "بدون انتظار",
   },
 
+  reco: {
+    category: "تحبين فئة {category}.",
+    service: "يقدّم «{service}» التي حجزتِها من قبل.",
+    rating: "تقييم ممتاز: {rating}/5 من {reviews} تقييمًا موثّقًا.",
+    city: "قريب منك، في {city}.",
+    price: "ضمن ميزانيتك المعتادة، ابتداءً من {price} د.ت.",
+    available: "{slots} مواعيد ما زالت متاحة اليوم.",
+    popular: "من الصالونات المفضّلة لدى حريفات Glowy.",
+  },
   insights: {
     aspects: {
       accueil: "الاستقبال",

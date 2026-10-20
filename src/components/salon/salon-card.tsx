@@ -6,6 +6,7 @@ import { MapPin, Sparkles } from "lucide-react";
 import { useI18n } from "@/i18n/client";
 import type { Salon } from "@/lib/data";
 import { cn } from "@/lib/utils";
+import { recoText } from "@/lib/reco";
 import { AffluencePill, PointsBadge, Rating, VerifiedBadge } from "./badges";
 import { FavoriteButton } from "./favorite-button";
 
@@ -21,7 +22,9 @@ export function SalonCard({
   className?: string;
   priority?: boolean;
 }) {
-  const { t, tc, f, money } = useI18n();
+  const i18n = useI18n();
+  const { t, tc, f, money } = i18n;
+  const reason = recoText(i18n, salon);
   return (
     <article
       className={cn(
@@ -64,11 +67,11 @@ export function SalonCard({
           </span>
         </p>
 
-        {showReason && (
+        {showReason && reason && (
           <p className="mt-1 flex gap-2 rounded-xl bg-blush px-3 py-2 text-[13px] leading-snug text-plum-800">
             <Sparkles className="mt-0.5 size-3.5 shrink-0" aria-hidden />
             <span>
-              <span className="font-semibold">{t.common.whySalon}</span> {tc(salon.aiReason)}
+              <span className="font-semibold">{t.common.whySalon}</span> {reason}
             </span>
           </p>
         )}
