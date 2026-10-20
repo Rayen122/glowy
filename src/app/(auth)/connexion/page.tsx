@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { demoLoginEnabled } from "@/auth";
+import { demoLoginEnabled, googleLoginEnabled } from "@/auth";
 import { LoginForm } from "@/components/site/auth-forms";
 import { getI18n } from "@/i18n/server";
 
@@ -21,7 +21,7 @@ export default async function ConnexionPage({ searchParams }: PageProps<"/connex
       <p data-auth-item className="mt-3 mb-8 text-muted-foreground">
         {l.lead}
       </p>
-      <LoginForm callbackUrl={typeof callbackUrl === "string" ? callbackUrl : undefined} demoEnabled={demoLoginEnabled} />
+      <LoginForm callbackUrl={typeof callbackUrl === "string" ? callbackUrl : undefined} demoEnabled={demoLoginEnabled} googleEnabled={googleLoginEnabled} />
     </>
   );
 }
