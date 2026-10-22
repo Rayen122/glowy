@@ -695,6 +695,31 @@ export const manageFr = {
       all: "Tous",
     },
   },
+  branches: {
+    title: "Succursales",
+    description: "Pilotez tous vos salons : chiffres du jour et du mois, et choix du salon affiché dans le dashboard (SAL-14).",
+    current: "Salon affiché",
+    manage: "Piloter ce salon",
+    switched: "Vous pilotez maintenant {name}",
+    today: "RDV aujourd'hui",
+    revenue: "CA 30 jours",
+    team: "Professionnels",
+    statuses: {
+      PENDING: "En attente de validation",
+      ACTIVE: "En ligne",
+      SUSPENDED: "Suspendu",
+      REJECTED: "Refusé",
+    },
+    total: "Total de vos salons",
+    add: "Ouvrir une succursale",
+    addHint: "Prestations, horaires et règles sont repris du salon affiché ; la succursale est mise en ligne après validation par l'équipe Glowy.",
+    name: "Nom de la succursale",
+    city: "Ville",
+    address: "Adresse",
+    phone: "Téléphone (facultatif)",
+    create: "Envoyer la demande",
+    created: "Succursale créée : en attente de validation",
+  },
 };
 
 export type ManageDictionary = typeof manageFr;
