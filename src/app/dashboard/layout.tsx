@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Boxes, CalendarDays, ChartColumn, ChevronsUpDown, CreditCard, Headset, Hourglass, LayoutGrid, ListOrdered, MessageSquareText, Percent, Plus, Receipt, Scissors, Settings, UserRound, Users } from "lucide-react";
+import { Boxes, Building2, CalendarDays, ChartColumn, ChevronsUpDown, CreditCard, Headset, Hourglass, LayoutGrid, ListOrdered, MessageSquareText, Percent, Plus, Receipt, Scissors, Settings, UserRound, Users } from "lucide-react";
 import { AppShell, type NavGroup } from "@/components/app-shell/app-shell";
 import { getI18n } from "@/i18n/server";
 import { lowStockCount, staffSalon } from "@/modules/dashboard";
@@ -45,7 +45,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
       items: [
         { href: "/dashboard/parametres", label: d.nav.settingsPage, icon: <Settings /> },
         { href: "/dashboard/support", label: t.manage.support.title, icon: <Headset /> },
-        ...(user.role === "MANAGER" ? [{ href: "/dashboard/abonnement", label: d.nav.subscription, icon: <CreditCard /> }] : []),
+        ...(user.role === "MANAGER"
+          ? [
+              { href: "/dashboard/abonnement", label: d.nav.subscription, icon: <CreditCard /> },
+              { href: "/dashboard/succursales", label: t.manage.branches.title, icon: <Building2 /> },
+            ]
+          : []),
       ],
     },
   ];
@@ -56,18 +61,33 @@ export default async function DashboardLayout({ children }: { children: React.Re
       groups={groups}
       user={{ name: `${user.firstName} ${user.lastName}`.trim(), role: user.role === "EMPLOYEE" ? t.auth.form.roles.employee : user.role === "ADMIN" ? t.admin.metaTitle : d.managerRole }}
       context={
-        <button type="button" className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-2.5 text-start hover:bg-muted/60">
-          <span className="relative size-10 shrink-0 overflow-hidden rounded-xl bg-muted">
-            {salon.coverUrl && <Image src={salon.coverUrl} alt="" fill sizes="40px" className="object-cover" />}
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-semibold">{salon.name}</span>
-            <span className="block truncate text-xs text-muted-foreground">
-              {tc(salon.city)} · {t.admin.plans[salon.plan]}
-            </span>
-          </span>
-          <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-        </button>
+        // SAL-14 : le gérant change de succursale depuis la page « Succursales »
+        user.role === "MANAGER" ? (
+          <Link href="/dashboard/succursales" aria-label={t.manage.branches.title} className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-2.5 text-start hover:bg-muted/60">
+              <span className="relative size-10 shrink-0 overflow-hidden rounded-xl bg-muted">
+                {salon.coverUrl && <Image src={salon.coverUrl} alt="" fill sizes="40px" className="object-cover" />}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">{salon.name}</span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {tc(salon.city)} · {t.admin.plans[salon.plan]}
+                </span>
+              </span>
+              <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          </Link>
+        ) : (
+          <div className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-2.5 text-start">
+              <span className="relative size-10 shrink-0 overflow-hidden rounded-xl bg-muted">
+                {salon.coverUrl && <Image src={salon.coverUrl} alt="" fill sizes="40px" className="object-cover" />}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">{salon.name}</span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {tc(salon.city)} · {t.admin.plans[salon.plan]}
+                </span>
+              </span>
+          </div>
+        )
       }
       action={
         <Link

@@ -3,29 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import {
-  Camera,
-  Check,
-  CircleAlert,
-  ImagePlus,
-  Info,
-  LoaderCircle,
-  Lock,
-  RotateCcw,
-  ScanFace,
-  Sparkles,
-  Trash2,
-} from "lucide-react";
+import { Camera, Check, CircleAlert, ImagePlus, Info, LoaderCircle, Lock, RotateCcw, ScanFace, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PointsBadge } from "@/components/salon/badges";
 import { useI18n } from "@/i18n/client";
 import { api } from "@/lib/api";
 import { IMAGES } from "@/lib/data";
-import {
-  measure,
-  type BeautyMode,
-  type Metrics,
-} from "@/modules/beauty/domain/analysis";
+import { measure, type BeautyMode, type Metrics } from "@/modules/beauty/domain/analysis";
 import type { BeautyResult } from "@/modules/beauty";
 import { gsap, MOTION_OK, useGSAP } from "@/lib/gsap";
 import { cn } from "@/lib/utils";
@@ -41,10 +25,7 @@ async function measurePhoto(src: string): Promise<Metrics> {
   img.crossOrigin = "anonymous";
   img.src = src;
   await img.decode();
-  const scale = Math.min(
-    1,
-    128 / Math.max(img.naturalWidth, img.naturalHeight),
-  );
+  const scale = Math.min(1, 128 / Math.max(img.naturalWidth, img.naturalHeight));
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(3, Math.round(img.naturalWidth * scale));
   canvas.height = Math.max(3, Math.round(img.naturalHeight * scale));
@@ -132,8 +113,7 @@ export function BeautyAnalysis() {
   useGSAP(
     () => {
       const el = resultRef.current;
-      if (phase !== "result" || !el || !window.matchMedia(MOTION_OK).matches)
-        return;
+      if (phase !== "result" || !el || !window.matchMedia(MOTION_OK).matches) return;
       gsap.from(el.children, {
         autoAlpha: 0,
         y: 28,
@@ -156,11 +136,7 @@ export function BeautyAnalysis() {
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
       {/* Colonne gauche : photo */}
       <div className="min-w-0 space-y-5">
-        <div
-          className="inline-flex rounded-full bg-muted p-1"
-          role="tablist"
-          aria-label={a.modeAria}
-        >
+        <div className="inline-flex rounded-full bg-muted p-1" role="tablist" aria-label={a.modeAria}>
           {(["cheveux", "visage"] as const).map((m) => (
             <button
               key={m}
@@ -171,12 +147,7 @@ export function BeautyAnalysis() {
                 setMode(m);
                 setPhase("idle");
               }}
-              className={cn(
-                "h-10 rounded-full px-5 text-sm font-medium transition-colors",
-                mode === m
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
+              className={cn("h-10 rounded-full px-5 text-sm font-medium transition-colors", mode === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
             >
               {a.modes[m]}
             </button>
@@ -196,23 +167,12 @@ export function BeautyAnalysis() {
           }}
           className={cn(
             "relative aspect-[4/5] max-h-[70vh] w-full overflow-hidden rounded-3xl border-2 border-dashed transition-colors sm:max-h-none",
-            photo
-              ? "border-transparent bg-ink"
-              : dragging
-                ? "border-plum-400 bg-plum-50"
-                : "border-plum-200 bg-card",
+            photo ? "border-transparent bg-ink" : dragging ? "border-plum-400 bg-plum-50" : "border-plum-200 bg-card",
           )}
         >
           {photo ? (
             <>
-              <Image
-                src={photo}
-                alt={a.photoAlt}
-                fill
-                unoptimized
-                sizes="(min-width:1024px) 40vw, 100vw"
-                className="object-cover"
-              />
+              <Image src={photo} alt={a.photoAlt} fill unoptimized sizes="(min-width:1024px) 40vw, 100vw" className="object-cover" />
               {phase === "analyzing" && (
                 <div className="absolute inset-0 bg-ink/30" aria-hidden>
                   <div className="absolute inset-x-0 h-24 animate-[scan_1.8s_ease-in-out_infinite] bg-gradient-to-b from-transparent via-plum-300/50 to-transparent" />
@@ -225,10 +185,7 @@ export function BeautyAnalysis() {
                   "start-0 bottom-0 border-s-2 border-b-2 rounded-es-2xl",
                   "end-0 bottom-0 border-e-2 border-b-2 rounded-ee-2xl",
                 ].map((c) => (
-                  <span
-                    key={c}
-                    className={cn("absolute size-10 border-white/90", c)}
-                  />
+                  <span key={c} className={cn("absolute size-10 border-white/90", c)} />
                 ))}
               </div>
               <div className="absolute inset-x-4 bottom-4 flex justify-between gap-2">
@@ -255,9 +212,7 @@ export function BeautyAnalysis() {
               </span>
               <div>
                 <p className="font-semibold">{a.dropTitle[mode]}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {a.dropHint}
-                </p>
+                <p className="mt-1 text-sm text-muted-foreground">{a.dropHint}</p>
               </div>
               <div className="flex flex-wrap justify-center gap-2">
                 <button
@@ -277,27 +232,13 @@ export function BeautyAnalysis() {
               </div>
             </div>
           )}
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            capture="user"
-            className="sr-only"
-            aria-label={a.pickAria}
-            onChange={(e) => loadFile(e.target.files?.[0])}
-          />
+          <input ref={inputRef} type="file" accept="image/*" capture="user" className="sr-only" aria-label={a.pickAria} onChange={(e) => loadFile(e.target.files?.[0])} />
         </div>
 
         <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-card p-4 text-sm ring-1 ring-border">
-          <input
-            type="checkbox"
-            checked={consent}
-            onChange={(e) => setConsent(e.target.checked)}
-            className="mt-0.5 size-4 shrink-0 accent-[#6b2a5c]"
-          />
+          <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 size-4 shrink-0 accent-[#6b2a5c]" />
           <span>
-            <span className="font-medium">{a.consentTitle}</span>{" "}
-            <span className="text-muted-foreground">{a.consentText}</span>
+            <span className="font-medium">{a.consentTitle}</span> <span className="text-muted-foreground">{a.consentText}</span>
           </span>
         </label>
 
@@ -307,11 +248,7 @@ export function BeautyAnalysis() {
           onClick={() => void analyze()}
           className="inline-flex h-13 w-full items-center justify-center gap-2 rounded-full bg-ink py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-plum-800 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {phase === "analyzing" ? (
-            <LoaderCircle className="size-5 animate-spin" aria-hidden />
-          ) : (
-            <ScanFace className="size-5" aria-hidden />
-          )}
+          {phase === "analyzing" ? <LoaderCircle className="size-5 animate-spin" aria-hidden /> : <ScanFace className="size-5" aria-hidden />}
           {phase === "analyzing" ? a.analyzing : a.launch}
         </button>
         {!consent && photo && (
@@ -329,14 +266,10 @@ export function BeautyAnalysis() {
             <ol className="mt-6 space-y-6">
               {a.how.map((s, i) => (
                 <li key={s.title} className="flex gap-4">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blush text-base font-bold text-plum-700">
-                    {i + 1}
-                  </span>
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blush text-base font-bold text-plum-700">{i + 1}</span>
                   <span>
                     <span className="block font-semibold">{s.title}</span>
-                    <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
-                      {s.text}
-                    </span>
+                    <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">{s.text}</span>
                   </span>
                 </li>
               ))}
@@ -352,32 +285,9 @@ export function BeautyAnalysis() {
           <div className="flex h-full flex-col justify-center rounded-3xl bg-card p-6 ring-1 ring-border sm:p-8">
             <ol className="space-y-5">
               {a.steps.map((s, i) => (
-                <li
-                  key={s}
-                  className={cn(
-                    "flex items-center gap-3 transition-opacity",
-                    i > stepIdx && "opacity-40",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "flex size-8 shrink-0 items-center justify-center rounded-full",
-                      i < stepIdx
-                        ? "bg-success-soft text-success"
-                        : "bg-blush text-plum-700",
-                    )}
-                  >
-                    {i < stepIdx ? (
-                      <Check className="size-4" aria-hidden />
-                    ) : (
-                      <LoaderCircle
-                        className={cn(
-                          "size-4",
-                          i === stepIdx && "animate-spin",
-                        )}
-                        aria-hidden
-                      />
-                    )}
+                <li key={s} className={cn("flex items-center gap-3 transition-opacity", i > stepIdx && "opacity-40")}>
+                  <span className={cn("flex size-8 shrink-0 items-center justify-center rounded-full", i < stepIdx ? "bg-success-soft text-success" : "bg-blush text-plum-700")}>
+                    {i < stepIdx ? <Check className="size-4" aria-hidden /> : <LoaderCircle className={cn("size-4", i === stepIdx && "animate-spin")} aria-hidden />}
                   </span>
                   <span className="font-medium">{s}</span>
                 </li>
@@ -392,10 +302,7 @@ export function BeautyAnalysis() {
         )}
 
         {phase === "retake" && (
-          <div
-            className="flex h-full flex-col justify-center gap-3 rounded-3xl bg-card p-6 ring-1 ring-border sm:p-8"
-            role="alert"
-          >
+          <div className="flex h-full flex-col justify-center gap-3 rounded-3xl bg-card p-6 ring-1 ring-border sm:p-8" role="alert">
             <CircleAlert className="size-8 text-warning" aria-hidden />
             <h2 className="text-xl font-semibold">{a.retakeTitle}</h2>
             <p className="text-muted-foreground">{a.retake[retake]}</p>
@@ -407,60 +314,34 @@ export function BeautyAnalysis() {
             <div className="rounded-3xl bg-card p-6 ring-1 ring-border sm:p-8">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="eyebrow">
-                    {f(a.diagnosis, { mode: a.modes[mode] })}
-                  </p>
-                  <h2 className="display mt-2 text-3xl text-ink">
-                    {a.overall}
-                  </h2>
+                  <p className="eyebrow">{f(a.diagnosis, { mode: a.modes[mode] })}</p>
+                  <h2 className="display mt-2 text-3xl text-ink">{a.overall}</h2>
                 </div>
                 <div className="text-end">
-                  <p
-                    className="text-4xl font-semibold tracking-tight"
-                    dir="ltr"
-                  >
+                  <p className="text-4xl font-semibold tracking-tight" dir="ltr">
                     {nf(r.score)}
                     <span className="text-lg text-muted-foreground">/100</span>
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    {a.healthIndex}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{a.healthIndex}</p>
                 </div>
               </div>
               <p className="mt-4 leading-relaxed">
                 {r.healthy
                   ? f(a.summaryHealthy, { mode: a.modes[mode].toLowerCase() })
                   : f(a.summaryIssues, {
-                      list: r.issues
-                        .map((i) => a.issues[i.key].toLowerCase())
-                        .join(", "),
+                      list: r.issues.map((i) => a.issues[i.key].toLowerCase()).join(", "),
                     })}
               </p>
 
               {!r.healthy && (
                 <>
-                  <h3 className="mt-6 text-sm font-semibold">
-                    {a.issuesTitle}
-                  </h3>
+                  <h3 className="mt-6 text-sm font-semibold">{a.issuesTitle}</h3>
                   <ul className="mt-2 flex flex-wrap gap-2">
                     {r.issues.map((i) => (
-                      <li
-                        key={i.key}
-                        className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm"
-                      >
-                        <CircleAlert
-                          className={cn(
-                            "size-4 shrink-0",
-                            i.level === "moderate"
-                              ? "text-warning"
-                              : "text-muted-foreground",
-                          )}
-                          aria-hidden
-                        />
+                      <li key={i.key} className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm">
+                        <CircleAlert className={cn("size-4 shrink-0", i.level === "moderate" ? "text-warning" : "text-muted-foreground")} aria-hidden />
                         {a.issues[i.key]}
-                        <span className="text-xs text-muted-foreground">
-                          · {a.levels[i.level]}
-                        </span>
+                        <span className="text-xs text-muted-foreground">· {a.levels[i.level]}</span>
                       </li>
                     ))}
                   </ul>
@@ -469,10 +350,7 @@ export function BeautyAnalysis() {
 
               <h3 className="mt-6 text-sm font-semibold">{a.tipsTitle}</h3>
               <ol className="mt-2 space-y-2">
-                {(r.healthy
-                  ? a.healthyTips[mode]
-                  : r.issues.map((i) => a.tipsByIssue[i.key])
-                ).map((tip, i) => (
+                {(r.healthy ? a.healthyTips[mode] : r.issues.map((i) => a.tipsByIssue[i.key])).map((tip, i) => (
                   <li key={tip} className="flex gap-3 text-sm leading-relaxed">
                     <span className="font-bold text-plum-600">{i + 1}.</span>
                     {tip}
@@ -483,30 +361,18 @@ export function BeautyAnalysis() {
 
             <div className="rounded-3xl bg-blush p-6 ring-1 ring-plum-200 sm:p-8">
               <h3 className="flex items-center gap-2 font-semibold text-plum-800">
-                <Sparkles className="size-4 shrink-0" aria-hidden />{" "}
-                {a.recommended}
+                <Sparkles className="size-4 shrink-0" aria-hidden /> {a.recommended}
               </h3>
-              {r.services.length === 0 && (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  {a.noServices}
-                </p>
-              )}
+              {r.services.length === 0 && <p className="mt-3 text-sm text-muted-foreground">{a.noServices}</p>}
               <ul className="mt-4 space-y-2">
                 {r.services.map((s) => (
                   <li key={s.name + s.salon}>
-                    <Link
-                      href={`/salons/${s.slug}/reserver?service=${s.service}`}
-                      className="flex items-center justify-between gap-3 rounded-2xl bg-card p-4 transition-shadow hover:shadow-soft"
-                    >
+                    <Link href={`/salons/${s.slug}/reserver?service=${s.service}`} className="flex items-center justify-between gap-3 rounded-2xl bg-card p-4 transition-shadow hover:shadow-soft">
                       <span className="min-w-0">
                         <span className="block font-medium">{s.name}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {s.salon}
-                        </span>
+                        <span className="text-sm text-muted-foreground">{s.salon}</span>
                       </span>
-                      <span className="shrink-0 text-sm font-semibold">
-                        {money(s.price)}
-                      </span>
+                      <span className="shrink-0 text-sm font-semibold">{money(s.price)}</span>
                     </Link>
                   </li>
                 ))}
@@ -516,12 +382,9 @@ export function BeautyAnalysis() {
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-card p-4 ring-1 ring-border">
               <p className="flex items-start gap-2 text-xs text-muted-foreground">
                 <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                {a.disclaimer} {r.saved ? a.savedNote : a.guestNote}{" "}
-                {a.onDevice}
+                {a.disclaimer} {r.saved ? a.savedNote : a.guestNote} {a.onDevice}
               </p>
-              {r.points > 0 && (
-                <PointsBadge points={r.points} label={a.credited} />
-              )}
+              {r.points > 0 && <PointsBadge points={r.points} label={a.credited} />}
             </div>
           </div>
         )}
