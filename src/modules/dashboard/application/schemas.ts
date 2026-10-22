@@ -140,3 +140,14 @@ export const stockMoveInput = z.object({
   note: z.string().trim().max(120).optional(),
 });
 export type StockMoveInput = z.infer<typeof stockMoveInput>;
+
+/** SAL-14 : nouvelle succursale (prestations, horaires et règles copiés du salon courant) */
+export const branchInput = z.object({
+  name: z.string().trim().min(2, "2 caractères minimum").max(80),
+  city: z.string().trim().min(2, "Indiquez la ville").max(60),
+  address: z.string().trim().min(5, "Indiquez l'adresse").max(160),
+  phone: z.string().trim().max(30).optional(),
+});
+export type BranchInput = z.infer<typeof branchInput>;
+
+export const branchSwitchInput = z.object({ salonId: z.string().regex(/^[a-f\d]{24}$/i, "Identifiant invalide") });
