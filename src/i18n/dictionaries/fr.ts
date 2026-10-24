@@ -33,6 +33,7 @@ export const fr = {
     newSalon: "nouveau salon",
     whySalon: "Pourquoi ce salon ?",
     salonInterior: "Intérieur du salon {name}",
+    pagination: { label: "Pagination", previous: "Page précédente", next: "Page suivante", page: "Page {page} sur {pages}", goTo: "Aller à la page {n}" },
   },
 
   categories: {

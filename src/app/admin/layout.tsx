@@ -52,6 +52,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <AppShell
       space={a.space}
+      helpHref="/admin/support"
       groups={groups}
       user={{ name: a.userName, role: a.metaTitle }}
       context={
