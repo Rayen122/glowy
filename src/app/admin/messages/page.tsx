@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Mail, MessageSquare } from "lucide-react";
 import { RunJobsButton } from "@/components/manage/admin-actions";
 import { ManageHeader } from "@/components/manage/kit";
+import { PaginatedList } from "@/components/ui/paginated-list";
 import { utcToTunis } from "@/core/domain/time";
 import { getI18n } from "@/i18n/server";
 import { cn } from "@/lib/utils";
@@ -23,7 +24,7 @@ export default async function OutboxPage() {
       {messages.length === 0 ? (
         <p className="rounded-3xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">{m.noOutbox}</p>
       ) : (
-        <ul className="space-y-3">
+        <PaginatedList pageSize={10} className="space-y-3">
           {messages.map((msg) => {
             const at = utcToTunis(msg.createdAt);
             return (
@@ -57,7 +58,7 @@ export default async function OutboxPage() {
               </li>
             );
           })}
-        </ul>
+        </PaginatedList>
       )}
     </div>
   );

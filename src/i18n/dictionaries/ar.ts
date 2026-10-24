@@ -29,6 +29,7 @@ export const ar: Dictionary = {
     newSalon: "صالون جديد",
     whySalon: "لماذا هذا الصالون؟",
     salonInterior: "داخل صالون {name}",
+    pagination: { label: "ترقيم الصفحات", previous: "الصفحة السابقة", next: "الصفحة التالية", page: "الصفحة {page} من {pages}", goTo: "الانتقال إلى الصفحة {n}" },
   },
 
   categories: {
