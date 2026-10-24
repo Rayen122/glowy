@@ -485,13 +485,15 @@ const accountTokenSchema = new Schema(
 // Les jetons expirés disparaissent seuls (index TTL)
 accountTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 86_400 });
 
-/** E-mails et SMS simulés (démonstration) : conservés pour être consultés par le Super Admin — cahier §1.4 */
+/** E-mails et SMS envoyés ou simulés (démonstration) : conservés pour être consultés par le Super Admin — cahier §1.4 */
 const outboxMessageSchema = new Schema(
   {
     channel: { type: String, enum: ["email", "sms"], required: true },
     to: { type: String, required: true },
     subject: { type: String, default: "" },
     text: { type: String, required: true },
+    /** simulated : rien n'est parti (pas de SMTP) ; sent / failed : résultat de l'envoi SMTP */
+    delivery: { type: String, enum: ["simulated", "sent", "failed"], default: "simulated" },
   },
   { timestamps: { createdAt: true, updatedAt: false } }
 );

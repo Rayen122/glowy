@@ -41,6 +41,8 @@ export interface AccountRepository {
   setPasswordHash(userId: string, passwordHash: string): Promise<void>;
   /** Lien à usage unique (empreinte seulement) */
   saveToken(userId: string, purpose: "reset" | "verify", tokenHash: string, expiresAt: Date): Promise<void>;
+  /** Date du dernier lien émis pour ce compte et cet usage, ou null */
+  lastTokenAt(userId: string, purpose: "reset" | "verify"): Promise<Date | null>;
   /** Consomme un lien valide (non utilisé, non expiré) et renvoie l'utilisateur, ou null */
   consumeToken(purpose: "reset" | "verify", tokenHash: string, now: Date): Promise<string | null>;
   markEmailVerified(userId: string, at: Date): Promise<void>;

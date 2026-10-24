@@ -4,6 +4,7 @@ import { RunJobsButton } from "@/components/manage/admin-actions";
 import { ManageHeader } from "@/components/manage/kit";
 import { utcToTunis } from "@/core/domain/time";
 import { getI18n } from "@/i18n/server";
+import { cn } from "@/lib/utils";
 import { latestOutbox } from "@/modules/notifications";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -11,7 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.manage.admin.outboxTitle };
 }
 
-/** Boîte d'envoi simulée : e-mails et SMS de la démonstration (cahier §1.4 : envoi réel hors périmètre) */
+/** Boîte d'envoi : e-mails (réels via SMTP ou simulés) et SMS simulés de la démonstration (cahier §1.4) */
 export default async function OutboxPage() {
   const [{ t, df }, messages] = await Promise.all([getI18n(), latestOutbox(100)]);
   const m = t.manage.admin;
@@ -35,6 +36,16 @@ export default async function OutboxPage() {
                   <span className="font-semibold" dir="ltr">
                     {msg.to}
                   </span>
+                  {msg.channel === "email" && (
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-0.5 text-xs font-semibold",
+                        msg.delivery === "sent" ? "bg-success-soft text-success" : msg.delivery === "failed" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {m.outboxDelivery[msg.delivery]}
+                    </span>
+                  )}
                   <span className="ms-auto text-xs text-muted-foreground">
                     {df(at.date, { day: "numeric", month: "short" })} · <span dir="ltr">{at.time}</span>
                   </span>
