@@ -85,6 +85,7 @@ export const ar: Dictionary = {
       toastOffline: "انقطع الاتصال",
       toastOfflineHint: "الصفحات التي زرتها تبقى متاحة.",
       toastOnline: "عاد الاتصال",
+      available: "متاح دون اتصال",
     },
     push: {
       title: "الإشعارات على هذا الجهاز",
