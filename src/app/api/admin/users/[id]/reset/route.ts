@@ -1,4 +1,4 @@
-import { ok, route } from "@/infrastructure/http";
+import { appOrigin, ok, route } from "@/infrastructure/http";
 import { requireUser } from "@/infrastructure/session";
 import { sendPasswordResetFor } from "@/modules/admin";
 
@@ -6,5 +6,5 @@ import { sendPasswordResetFor } from "@/modules/admin";
 export const POST = route(async (request, ctx: RouteContext<"/api/admin/users/[id]/reset">) => {
   const { id } = await ctx.params;
   const admin = await requireUser("ADMIN");
-  return ok(await sendPasswordResetFor(admin.id, id, new URL(request.url).origin));
+  return ok(await sendPasswordResetFor(admin.id, id, appOrigin(request)));
 });

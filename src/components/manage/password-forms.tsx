@@ -14,7 +14,7 @@ export function ForgotPasswordForm() {
   const { t } = useI18n();
   const m = t.manage.password;
   const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
+  const [sent, setSent] = useState<{ simulated: boolean } | null>(null);
   const { run, pending, error } = useAction();
 
   if (sent) {
@@ -24,7 +24,7 @@ export function ForgotPasswordForm() {
           <MailCheck className="size-5 text-plum-600" aria-hidden /> {m.sentTitle}
         </p>
         <p className="text-muted-foreground">{m.sentText}</p>
-        <p className="rounded-xl bg-muted p-3 text-sm text-muted-foreground">{m.demoHint}</p>
+        {sent.simulated && <p className="rounded-xl bg-muted p-3 text-sm text-muted-foreground">{m.demoHint}</p>}
         <Link href="/connexion" className={cn(SECONDARY_BUTTON, "w-full")}>
           {m.toLogin}
         </Link>
@@ -35,7 +35,8 @@ export function ForgotPasswordForm() {
     <form
       onSubmit={async (e) => {
         e.preventDefault();
-        if (await run(() => api("/api/auth/password/forgot", { method: "POST", body: { email } }))) setSent(true);
+        const result = await run(() => api<{ simulated: boolean }>("/api/auth/password/forgot", { method: "POST", body: { email } }));
+        if (result) setSent(result);
       }}
       className="space-y-4"
       noValidate
@@ -155,8 +156,8 @@ export function ResendVerificationButton() {
       onClick={async () => {
         setPending(true);
         try {
-          await api("/api/me/verify-email", { method: "POST" });
-          toast.success(m.verificationSent, { description: m.demoHint });
+          const { simulated } = await api<{ simulated: boolean }>("/api/me/verify-email", { method: "POST" });
+          toast.success(m.verificationSent, { description: simulated ? m.demoHint : undefined });
         } catch {
           toast.error(t.errors.generic);
         } finally {

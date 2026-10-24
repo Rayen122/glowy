@@ -1,8 +1,12 @@
-import { ok, readJson, route } from "@/infrastructure/http";
+import { appOrigin, ok, readJson, route } from "@/infrastructure/http";
 import { forgotPasswordInput, requestPasswordReset } from "@/modules/identity";
+import { emailIsSimulated } from "@/modules/notifications";
 
-/** POST /api/auth/password/forgot — { email } : envoie un lien de réinitialisation (AUTH-05) ; même réponse si le compte n'existe pas */
+/**
+ * POST /api/auth/password/forgot — { email } : envoie un lien de réinitialisation (AUTH-05) ; même réponse si le compte n'existe pas.
+ * simulated : true quand aucun serveur SMTP n'est configuré (e-mail visible seulement dans la boîte d'envoi du Super Admin).
+ */
 export const POST = route(async (request) => {
   const { email } = await readJson(request, forgotPasswordInput);
-  return ok(await requestPasswordReset(email, new URL(request.url).origin));
+  return ok({ ...(await requestPasswordReset(email, appOrigin(request))), simulated: emailIsSimulated() });
 });

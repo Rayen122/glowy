@@ -43,6 +43,23 @@ export function route<Ctx = unknown>(handler: (request: Request, ctx: Ctx) => Pr
   };
 }
 
+let originWarned = false;
+
+/**
+ * Adresse publique du site pour les liens envoyés par e-mail (réinitialisation, vérification).
+ * APP_URL (ou AUTH_URL) fait foi : sans elle, l'adresse vient de l'en-tête Host de la requête, qu'un attaquant
+ * peut falsifier pour recevoir le lien secret d'une victime. Toléré en développement uniquement.
+ */
+export function appOrigin(request: Request) {
+  const configured = process.env.APP_URL?.trim() || process.env.AUTH_URL?.trim();
+  if (configured) return new URL(configured).origin;
+  if (process.env.NODE_ENV === "production" && !originWarned) {
+    originWarned = true;
+    console.warn("[config] APP_URL manquant : les liens envoyés par e-mail utilisent l'en-tête Host de la requête. Renseignez APP_URL dans .env.");
+  }
+  return new URL(request.url).origin;
+}
+
 export async function readJson<T>(request: Request, schema: ZodType<T>): Promise<T> {
   let body: unknown;
   try {
