@@ -86,6 +86,7 @@ export const en: Dictionary = {
       toastOffline: "Connection lost",
       toastOfflineHint: "Pages you've already viewed are still available.",
       toastOnline: "Back online",
+      available: "Available offline",
     },
     push: {
       title: "Notifications on this device",
