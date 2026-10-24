@@ -34,7 +34,4 @@ export async function deleteMedia(actor: Actor, id: string) {
   return { id };
 }
 
-/** Identifiant d'un fichier à partir de son URL /api/media/:id (ou null pour une URL externe) */
-export const mediaIdFromUrl = (url: string | null | undefined) => url?.match(/^\/api\/media\/([a-f\d]{24})$/i)?.[1] ?? null;
-
 export { MEDIA_PURPOSES, type MediaPurpose } from "./domain/policy";
