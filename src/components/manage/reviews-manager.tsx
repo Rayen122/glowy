@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useI18n } from "@/i18n/client";
 import type { StaffReviewRow } from "@/modules/reviews";
+import { PaginatedList } from "@/components/ui/paginated-list";
 import { cn } from "@/lib/utils";
 import { api, FIELD, FormError, PRIMARY_BUTTON, useAction } from "./kit";
 
@@ -94,7 +95,7 @@ function ReplyBox({ review, canReply }: { review: StaffReviewRow; canReply: bool
   if (!canReply) return review.reply ? null : <p className="text-xs text-muted-foreground">{m.managerOnly}</p>;
   if (!editing) {
     return (
-      <button type="button" onClick={() => setEditing(true)} className="text-sm font-semibold text-plum-700 hover:underline">
+      <button type="button" onClick={() => setEditing(true)} className="inline-flex min-h-11 items-center text-sm font-semibold text-plum-700 hover:underline sm:min-h-0">
         {m.editReply}
       </button>
     );
@@ -121,7 +122,7 @@ export function ReviewsManager({ reviews, canReply }: { reviews: StaffReviewRow[
   const m = t.manage.reviews;
   if (!reviews.length) return <p className="rounded-3xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">{m.empty}</p>;
   return (
-    <ul className="space-y-3">
+    <PaginatedList pageSize={5} className="space-y-3">
       {reviews.map((r) => (
         <li key={r.id} className={cn("space-y-3 rounded-3xl bg-card p-5 ring-1 ring-border", r.status === "HIDDEN" && "opacity-70")}>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -169,6 +170,6 @@ export function ReviewsManager({ reviews, canReply }: { reviews: StaffReviewRow[
           </div>
         </li>
       ))}
-    </ul>
+    </PaginatedList>
   );
 }

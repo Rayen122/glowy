@@ -45,9 +45,12 @@ export async function AppShell({
   groups,
   user,
   action,
+  helpHref,
   children,
 }: {
   space: string;
+  /** Page d'aide de l'espace (support) */
+  helpHref: string;
   context: React.ReactNode;
   groups: NavGroup[];
   user: { name: string; role: string; avatar?: string };
@@ -69,7 +72,7 @@ export async function AppShell({
         <Nav groups={groups} label={s.mainNav} />
       </div>
       <div className="space-y-3">
-        <Link href="/pro#faq" className="flex items-center gap-3 rounded-2xl bg-muted/70 p-3 text-sm hover:bg-muted">
+        <Link href={helpHref} className="flex items-center gap-3 rounded-2xl bg-muted/70 p-3 text-sm hover:bg-muted">
           <CircleHelp className="size-5 shrink-0 text-plum-600" aria-hidden />
           <span className="min-w-0">
             <span className="block font-medium">{s.help}</span>
