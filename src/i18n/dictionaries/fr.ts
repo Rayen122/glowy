@@ -91,6 +91,7 @@ export const fr = {
       toastOffline: "Connexion perdue",
       toastOfflineHint: "Les pages déjà consultées restent accessibles.",
       toastOnline: "Connexion rétablie",
+      available: "Disponible sans connexion",
     },
     push: {
       title: "Notifications sur cet appareil",
