@@ -3,10 +3,12 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { BadgeCheck, Clock, MapPin, Sparkles, Star, TrendingDown, Zap } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
 import { useI18n } from "@/i18n/client";
 import type { Salon } from "@/lib/data";
+import { paginate } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
 import { AffluencePill, PointsBadge, Rating, VerifiedBadge } from "./badges";
 import { FavoriteButton } from "./favorite-button";
@@ -29,6 +31,9 @@ const FILTERS = [
 
 type FilterId = (typeof FILTERS)[number]["id"];
 
+/** Salons par page */
+const PAGE_SIZE = 6;
+
 export function SalonResults({
   salons,
   title,
@@ -43,6 +48,8 @@ export function SalonResults({
   const [sort, setSort] = useState<SortId>(initialSort);
   const [filters, setFilters] = useState<Set<FilterId>>(new Set());
   const [active, setActive] = useState<string | null>(null);
+  const [requestedPage, setRequestedPage] = useState(1);
+  const listTop = useRef<HTMLDivElement>(null);
 
   const results = useMemo(() => {
     let list = salons.filter((s) => {
@@ -61,13 +68,24 @@ export function SalonResults({
     return list;
   }, [salons, filters, sort]);
 
-  const toggle = (id: FilterId) =>
+  const { page, pages, start, end } = paginate(results.length, PAGE_SIZE, requestedPage);
+  // La carte montre les salons de la page affichée
+  const pageResults = results.slice(start, end);
+
+  const goToPage = (next: number) => {
+    setRequestedPage(next);
+    listTop.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const toggle = (id: FilterId) => {
+    setRequestedPage(1);
     setFilters((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
+  };
 
   const select = (slug: string) => {
     setActive(slug);
@@ -103,7 +121,7 @@ export function SalonResults({
           })}
         </div>
 
-        <div className="mt-6 flex flex-wrap items-end justify-between gap-3">
+        <div ref={listTop} className="mt-6 flex scroll-mt-28 flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="display text-3xl text-ink sm:text-4xl">{title}</h1>
             <p className="mt-1 text-sm text-muted-foreground" aria-live="polite">
@@ -114,7 +132,10 @@ export function SalonResults({
             {r.sortBy}
             <select
               value={sort}
-              onChange={(e) => setSort(e.target.value as SortId)}
+              onChange={(e) => {
+                setRequestedPage(1);
+                setSort(e.target.value as SortId);
+              }}
               className="h-10 rounded-full border border-border bg-card px-3 text-base font-medium text-foreground sm:h-9 lg:text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
             >
               {SORTS.map((id) => (
@@ -127,7 +148,7 @@ export function SalonResults({
         </div>
 
         <ul data-animate="stagger" data-stagger="0.08" className="mt-6 space-y-4">
-          {results.map((s) => (
+          {pageResults.map((s) => (
             <li key={s.slug} id={`salon-${s.slug}`}>
               <SalonRow
                 salon={s}
@@ -140,12 +161,20 @@ export function SalonResults({
           {results.length === 0 && (
             <li className="rounded-3xl border border-dashed border-border p-10 text-center">
               <p className="font-medium">{r.empty}</p>
-              <button type="button" onClick={() => setFilters(new Set())} className="mt-3 text-sm font-semibold text-plum-700 hover:underline">
+              <button
+                type="button"
+                onClick={() => {
+                  setRequestedPage(1);
+                  setFilters(new Set());
+                }}
+                className="mt-3 text-sm font-semibold text-plum-700 hover:underline"
+              >
                 {r.reset}
               </button>
             </li>
           )}
         </ul>
+        <Pagination page={page} pages={pages} onChange={goToPage} className="mt-8" />
       </div>
 
       <div
@@ -153,7 +182,7 @@ export function SalonResults({
         className="order-first h-[180px] sm:h-[300px] xl:sticky xl:top-[88px] xl:order-none xl:h-[calc(100dvh-112px)]"
       >
         <div dir="ltr" aria-label={r.mapLabel} role="region" className="relative isolate size-full overflow-hidden rounded-3xl ring-1 ring-border">
-          <SalonMap salons={results} activeSlug={active} onHover={setActive} onSelect={select} />
+          <SalonMap salons={pageResults} activeSlug={active} onHover={setActive} onSelect={select} />
         </div>
       </div>
 

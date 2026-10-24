@@ -30,6 +30,7 @@ export const en: Dictionary = {
     newSalon: "new salon",
     whySalon: "Why this salon?",
     salonInterior: "Inside {name}",
+    pagination: { label: "Pagination", previous: "Previous page", next: "Next page", page: "Page {page} of {pages}", goTo: "Go to page {n}" },
   },
 
   categories: {

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { demoLoginEnabled } from "@/auth";
+import { DemoRoleLink } from "@/components/auth/demo-role-link";
 import { Logo } from "@/components/brand/logo";
 import { getI18n } from "@/i18n/server";
 import { activeCities } from "@/modules/platform";
@@ -27,11 +29,12 @@ export async function SiteFooter() {
     },
     {
       title: f.demo,
+      // Espaces de démonstration : connexion au compte démo du rôle avant d'ouvrir l'espace
       links: [
-        { href: "/compte", label: f.clientSpace },
-        { href: "/dashboard", label: f.salonDashboard },
-        { href: "/admin", label: f.superAdmin },
-      ],
+        { href: "/compte", label: f.clientSpace, role: "CLIENT" },
+        { href: "/dashboard", label: f.salonDashboard, role: "MANAGER" },
+        { href: "/admin", label: f.superAdmin, role: "ADMIN" },
+      ] as const,
     },
   ];
 
@@ -53,13 +56,22 @@ export async function SiteFooter() {
           <div key={col.title}>
             <h2 className="text-sm font-semibold text-foreground">{col.title}</h2>
             <ul className="mt-2 sm:mt-4 sm:space-y-2.5">
-              {col.links.map((l) => (
-                <li key={l.href}>
-                  <Link href={l.href} className="inline-flex min-h-10 items-center text-sm text-muted-foreground transition-colors hover:text-foreground sm:min-h-0">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
+              {col.links.map((l) => {
+                const className = "inline-flex min-h-10 items-center text-sm text-muted-foreground transition-colors hover:text-foreground sm:min-h-0";
+                return (
+                  <li key={l.href}>
+                    {"role" in l ? (
+                      <DemoRoleLink role={l.role} href={l.href} demoEnabled={demoLoginEnabled} className={className}>
+                        {l.label}
+                      </DemoRoleLink>
+                    ) : (
+                      <Link href={l.href} className={className}>
+                        {l.label}
+                      </Link>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ))}

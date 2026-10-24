@@ -103,7 +103,7 @@ export function SettingsManager({ settings }: { settings: SalonSettings }) {
             {amenities.map((a) => (
               <li key={a} className="inline-flex items-center gap-1 rounded-full bg-muted py-1 ps-3 pe-1 text-sm">
                 {a}
-                <button type="button" onClick={() => setAmenities(amenities.filter((x) => x !== a))} aria-label={m.removeAmenity.replace("{name}", a)} className="inline-flex size-7 items-center justify-center rounded-full hover:bg-card">
+                <button type="button" onClick={() => setAmenities(amenities.filter((x) => x !== a))} aria-label={m.removeAmenity.replace("{name}", a)} className="inline-flex size-10 items-center justify-center rounded-full hover:bg-card sm:size-7">
                   <X className="size-3.5" aria-hidden />
                 </button>
               </li>

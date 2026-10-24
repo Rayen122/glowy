@@ -291,6 +291,14 @@ html[lang="ar"] [data-rotator] {
 .bh-tiles {
   filter: saturate(0.35) sepia(0.12) brightness(1.04) contrast(0.95);
 }
+/* Boutons + / − de la carte : cible de 44 px au doigt (30 px par défaut) */
+@media (max-width: 639px) {
+  .leaflet-container .leaflet-bar.leaflet-control-zoom a {
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+  }
+}
 .bh-pin {
   background: transparent;
   border: 0;
