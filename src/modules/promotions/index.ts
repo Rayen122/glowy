@@ -11,8 +11,6 @@ import { creditVisit } from "./infrastructure/salon-points";
 
 export const createPromotionsModule = (overrides: { clock?: Clock } = {}) => makePromotions({ promotions: mongoPromotions, clock: overrides.clock ?? systemClock });
 
-export const { quote: quotePromotion, consume: consumePromotion, release: releasePromotion } = createPromotionsModule();
-
 export const registerSubscribers = (bus: EventSubscriber) => registerPromotionSubscribers(bus, { creditVisit });
 
 export {
