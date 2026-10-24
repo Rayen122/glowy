@@ -52,6 +52,11 @@ export const mongoAccountRepository: AccountRepository = {
     await AccountToken.create({ user, purpose, tokenHash, expiresAt });
   },
 
+  lastTokenAt: async (userId, purpose) => {
+    const token = await AccountToken.findOne({ user: objectId(userId)!, purpose }, { createdAt: 1 }).sort({ createdAt: -1 }).lean();
+    return token?.createdAt ?? null;
+  },
+
   consumeToken: async (purpose, tokenHash, now) => {
     const token = await AccountToken.findOneAndUpdate({ tokenHash, purpose, usedAt: null, expiresAt: { $gt: now } }, { $set: { usedAt: now } }).lean();
     return token ? token.user.toString() : null;

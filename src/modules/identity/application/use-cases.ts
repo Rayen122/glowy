@@ -4,7 +4,7 @@ import type { Clock } from "@/core/domain/clock";
 import { badRequest, conflict, unauthorized } from "@/core/domain/errors";
 import type { EventPublisher } from "@/core/domain/events";
 import { slugify } from "@/core/domain/text";
-import { afterFailedLogin, coordsFor, isLocked, referralCandidate, temporaryPassword, TOKEN_TTL_MINUTES } from "../domain/account";
+import { afterFailedLogin, coordsFor, isLocked, referralCandidate, temporaryPassword, TOKEN_RESEND_DELAY_MS, TOKEN_TTL_MINUTES, type TokenPurpose } from "../domain/account";
 import type { AccountRepository, Mailer, PasswordHasher, TokenFactory, UserAccount } from "./ports";
 import type { RegisterInput } from "./schemas";
 
@@ -120,7 +120,12 @@ export function makeIdentity({ accounts, hasher, events, clock, tokens, mailer }
     return { id: user.id, email, temporaryPassword: password };
   }
 
-  async function issueLink(user: { id: string }, purpose: "reset" | "verify") {
+  async function sentRecently(userId: string, purpose: TokenPurpose) {
+    const last = await accounts.lastTokenAt(userId, purpose);
+    return last !== null && clock.now().getTime() - last.getTime() < TOKEN_RESEND_DELAY_MS;
+  }
+
+  async function issueLink(user: { id: string }, purpose: TokenPurpose) {
     const { token, hash } = tokens.create();
     await accounts.saveToken(user.id, purpose, hash, new Date(clock.now().getTime() + TOKEN_TTL_MINUTES[purpose] * 60_000));
     return token;
@@ -128,11 +133,11 @@ export function makeIdentity({ accounts, hasher, events, clock, tokens, mailer }
 
   /**
    * AUTH-05 : envoie un lien de réinitialisation valable 1 h. Même réponse que le compte existe ou non
-   * (pas d'énumération des adresses) ; rien n'est envoyé à un compte bloqué.
+   * (pas d'énumération des adresses) ; rien n'est envoyé à un compte bloqué, ni deux fois dans la même minute.
    */
   async function requestPasswordReset(email: string, origin: string) {
     const user = await accounts.findByEmail(email.trim().toLowerCase());
-    if (!user || user.status !== "ACTIVE") return { sent: true };
+    if (!user || user.status !== "ACTIVE" || (await sentRecently(user.id, "reset"))) return { sent: true };
     const token = await issueLink(user, "reset");
     await mailer.send(
       user.email,
@@ -156,6 +161,7 @@ export function makeIdentity({ accounts, hasher, events, clock, tokens, mailer }
   async function sendEmailVerification(userId: string, origin: string) {
     const user = await accounts.findById(userId);
     if (!user || (await accounts.isEmailVerified(userId))) return { sent: false };
+    if (await sentRecently(userId, "verify")) return { sent: true };
     const token = await issueLink(user, "verify");
     await mailer.send(
       user.email,
