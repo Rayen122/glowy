@@ -223,7 +223,7 @@ src/
 ├─ core/domain/          briques communes : erreurs, heure, événements, acteur
 ├─ infrastructure/       technique partagée : base MongoDB, bus d'événements, HTTP, session
 ├─ i18n/                 traductions + formatage (dates, nombres) fr / en / ar
-├─ lib/                  utilitaires : gsap.ts, data.ts (données mock), modules.ts, utils.ts
+├─ lib/                  utilitaires : api.ts (appels API côté client), data.ts (données de démo), gsap.ts, utils.ts
 ├─ auth.ts, auth.config.ts   configuration Auth.js
 ├─ proxy.ts              redirection par rôle
 tests/                   tests automatiques (node:test)
@@ -277,7 +277,7 @@ Un module **émet** un événement (`booking.completed`, `review.published`…) 
 
 ### 4.6 Données mock
 
-`src/lib/data.ts` contient les salons/avis de démonstration et `src/lib/modules.ts` la liste des exigences du cahier par module. Les pages `[module]` affichent ces exigences tant que le module n'est pas construit.
+`src/lib/data.ts` contient les images, catégories, plans et salons de démonstration : il alimente le seed (`npm run db:seed`) et les visuels de présentation. Toutes les pages lisent leurs données dans la base MongoDB.
 
 ---
 
@@ -475,11 +475,12 @@ Pour animer sans écrire de GSAP : **poser un attribut HTML** sur un élément d
 | Sujet | État |
 |---|---|
 | **Base de données** | **MongoDB + Mongoose**, migration terminée (octobre 2026). Modèles : `src/infrastructure/db/models.ts`. |
-| **Architecture** | tous les modules (`identity`, `booking`, `catalog`, `loyalty`, `reviews`, `notifications`, `admin`, `dashboard`, `account`) suivent `domain` → `application` → `infrastructure`. L'ancien dossier `src/server` et Prisma ont été retirés. |
+| **Architecture** | tous les modules (`identity`, `admin`, `platform`, `booking`, `catalog`, `assistant`, `dashboard`, `promotions`, `affluence`, `reviews`, `support`, `account`, `loyalty`, `notifications`, `subscription`, `beauty`, `media`) suivent `domain` → `application` → `infrastructure`. L'ancien dossier `src/server` et Prisma ont été retirés. |
 | **Données de démo** | `npm run db:seed` fonctionne (`scripts/seed.ts`). |
-| **Tests** | `npm test` : 14 tests (réservation, anti double réservation, fidélité, avis, admin) sur la base `MONGODB_URI_TEST`. |
-| **IA** | **toutes les IA sont simulées** (reco, affluence, analyse avis, analyse photo, chatbot). Les données viennent de `src/lib/data.ts`. |
-| **Stats du dashboard (30 jours)** | simulées. |
+| **Tests** | `npm test` : 73 tests (réservation, anti double réservation, fidélité, avis, admin, dashboard, IA…) sur la base `MONGODB_URI_TEST`. |
+| **IA** | **les 5 IA sont intégrées** (recommandation, affluence, assistante, analyse des avis, analyse photo) : fonctions pures testées, sans service externe, avec repli. Voir [`GESTIONS.md`](GESTIONS.md). |
+| **Stats du dashboard** | réelles, calculées depuis la base, export Excel / PDF. |
+| **PWA** | installable (manifest), hors connexion (service worker `public/sw.js`, à essayer avec `npm run build && npm start`). |
 | **Reste à faire côté architecture** | règles ESLint qui interdisent les imports entre couches, tests unitaires du `domain`, `docs/ARCHITECTURE.md`. |
 
 > Chacun peut travailler directement sur sa partie avec la vraie base (données de démo fournies par le seed).
@@ -490,14 +491,14 @@ Pour animer sans écrire de GSAP : **poser un attribut HTML** sur un élément d
 
 > **La répartition de référence est [`REPARTITION.md`](REPARTITION.md)**, établie à partir du cahier des charges (exigences, priorités, état, dossiers possédés). Elle prime sur les résumés ci-dessous, qui n'incluent pas tout le périmètre du cahier (par exemple : support pour P4, paiement et abonnements pour P5).
 
-Chaque personne = **1 tâche classique + 1 fonctionnalité IA**. Les pages et fichiers cités sont déjà créés (souvent en version « placeholder » qui affiche les exigences du cahier via `src/lib/modules.ts`) : **ne repartez pas de zéro**.
+Chaque personne = **1 tâche classique + 1 fonctionnalité IA**. Les fonctionnalités ci-dessous sont aujourd'hui construites (état détaillé : [`GESTIONS.md`](GESTIONS.md)) : chacun doit connaître le code de sa partie et savoir la présenter (démo de validation : [`VALIDATION-S8.md`](VALIDATION-S8.md)).
 
 ### 9.0 Prise en main (semaine 1, tous ensemble)
 
 Le socle technique est terminé (MongoDB, modules, auth, seed, tests). Chacun doit d'abord :
 
 1. Lancer le projet, se connecter avec les 4 comptes de démo (section 3.5).
-2. Faire `npm test` (14 tests verts) et `npm run lint`.
+2. Faire `npm test` (73 tests verts) et `npm run lint`.
 3. Lire le module de sa tâche en suivant le chemin d'une requête : page → route API → `application/use-cases.ts` → `infrastructure/`.
 4. Faire l'exercice GSAP de la section 6.
 
@@ -524,7 +525,7 @@ Le socle technique est terminé (MongoDB, modules, auth, seed, tests). Chacun do
 
 ### Personne 2 — Dashboard du salon + IA de prédiction d'affluence
 
-**Pages/fichiers** : `src/app/dashboard/*` (dont `agenda`), `src/app/api/dashboard/*`, `src/components/dashboard/*`, `src/components/charts/*`, `src/lib/modules.ts` (exigences dashboard).
+**Pages/fichiers** : `src/app/dashboard/*` (dont `agenda`), `src/app/api/dashboard/*`, `src/components/dashboard/*`, `src/components/charts/*`.
 
 **Tâche classique**
 1. Vue du jour : RDV par employé, statut (confirmé / terminé / annulé / absent), actions rapides.
@@ -642,4 +643,4 @@ Point d'équipe de 15 min deux fois par semaine : « fait / bloqué / prochain �
 | Texte arabe coupé en lettres | `SplitText` par `chars` en arabe |
 | Page blanche après modif | regarder le terminal `npm run dev` puis la console du navigateur |
 
-**Où chercher de l'aide** : `design-system/MASTER.md` (design + animations), `docs/API.md` (routes), `node_modules/next/dist/docs/` (Next 16), https://gsap.com/docs (GSAP), `src/lib/modules.ts` (exigences du cahier par module).
+**Où chercher de l'aide** : `design-system/MASTER.md` (design + animations), `docs/API.md` (routes), `node_modules/next/dist/docs/` (Next 16), https://gsap.com/docs (GSAP), `docs/REPARTITION.md` (exigences du cahier par personne).

@@ -188,8 +188,5 @@ Chorégraphies dédiées : `HeroMotion` (accueil), `AuthStage` + `AuthCard` (con
 | `/pro` | Offre salons + tarifs | Personne 5 |
 | `/connexion`, `/inscription` | Auth client / salon — scène sombre animée (arche, photos en boucle) | Personne 1 |
 | `/compte/*` | Espace client : aperçu, RDV, fidélité, favoris | Personne 5 |
-| `/dashboard`, `/dashboard/agenda`, `/dashboard/[module]` | Dashboard salon | Personne 2 |
-| `/admin`, `/admin/[module]` | Super Admin | Personne 1 · P4 |
-
-Les pages `[module]` affichent les exigences du cahier (réf., priorité, responsable)
-tant que le module n'est pas construit — voir `src/lib/modules.ts`.
+| `/dashboard/*` | Dashboard salon | Personne 2 |
+| `/admin/*` | Super Admin | Personne 1 · P4 |
