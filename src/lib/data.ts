@@ -394,8 +394,6 @@ export const SERVICE_GROUPS: { id: string; label: string; services: Service[] }[
   },
 ];
 
-export const ALL_SERVICES = SERVICE_GROUPS.flatMap((g) => g.services);
-
 /** Date ISO du jour de la semaine (0 = dimanche … 6 = samedi), pour en formater le nom */
 export const weekdayIso = (weekday: number) => new Date(Date.UTC(2026, 8, 27 + weekday)).toISOString().slice(0, 10);
 
@@ -571,14 +569,6 @@ export const POINT_HISTORY: { date: string; type: PointEvent; who?: string; poin
   { date: "2026-08-02", type: "offPeak", who: "Jasmin Spa", points: 10 },
 ];
 
-export const BADGES = [
-  { id: "explorateur", label: "Explorateur", goal: "5 salons différents", progress: 6, target: 5 },
-  { id: "ponctuel", label: "Ponctuel", goal: "10 RDV sans retard", progress: 10, target: 10 },
-  { id: "fidele", label: "Fidèle", goal: "10 RDV chez un salon", progress: 7, target: 10 },
-  { id: "critique", label: "Critique utile", goal: "10 avis", progress: 6, target: 10 },
-  { id: "ambassadeur", label: "Ambassadeur", goal: "3 parrainages", progress: 1, target: 3 },
-];
-
 export type BookingStatus = "confirme" | "termine" | "annule" | "en_attente";
 
 export const CLIENT_BOOKINGS: {
@@ -644,25 +634,7 @@ export const AFFLUENCE_FORECAST: number[][] = [
   [58, 72, 84, 90, 82, 94, 98, 99, 96, 86, 60],
 ];
 
-export const RECENT_REVIEWS_SALON = [
-  { author: "Meriem K.", rating: 5, text: "Chignon parfait, il a tenu toute la nuit.", sentiment: "positif", suspicion: 3 },
-  { author: "Yosra M.", rating: 4, text: "Très bonne coupe, un peu d'attente le samedi.", sentiment: "neutre", suspicion: 6 },
-  { author: "compte_8812", rating: 1, text: "Nul nul nul, à éviter absolument !!!", sentiment: "negatif", suspicion: 87 },
-] as const;
-
 /* ---------- Super Admin ---------- */
-
-export const ADMIN_KPIS = {
-  salons: 1342,
-  salonsDelta: 4.8,
-  clients: 18420,
-  clientsDelta: 9.1,
-  bookings30d: 12860,
-  bookingsDelta: 12.4,
-  revenue30d: 48200,
-  revenueDelta: 7.6,
-};
-
 
 export type PlanId = "gratuit" | "pro" | "premium";
 
