@@ -53,3 +53,6 @@ export function temporaryPassword(length = 12) {
 /** Durée de validité des liens envoyés par e-mail */
 export const TOKEN_TTL_MINUTES = { reset: 60, verify: 48 * 60 } as const;
 export type TokenPurpose = keyof typeof TOKEN_TTL_MINUTES;
+
+/** Au plus un lien par minute, par compte et par usage : une boîte e-mail ne peut pas être bombardée */
+export const TOKEN_RESEND_DELAY_MS = 60_000;
