@@ -5,4 +5,3 @@ export const objectId = (id: string | null | undefined) => (id && /^[a-f\d]{24}$
 
 export const idOf = (value: { _id: Types.ObjectId } | Types.ObjectId) => (value instanceof Types.ObjectId ? value : value._id).toString();
 
-export const optionalId = (value: Types.ObjectId | null | undefined) => (value ? value.toString() : null);
