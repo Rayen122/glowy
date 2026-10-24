@@ -192,7 +192,7 @@ Création : `POST /api/beauty-analysis` (type et taille limités).
 |---|---|
 | `src/i18n/dictionaries/{fr,en,ar}.ts` | ajouter vos clés dans un bloc à vous ; toujours les 3 langues ensemble (le propriétaire du dossier `i18n` est P5) |
 | `src/infrastructure/db/models.ts` | ajouter un modèle : petite PR dédiée, annoncée |
-| `src/lib/data.ts`, `src/lib/modules.ts` | données mock : ne supprimer que ce qui est remplacé par la vraie base |
+| `src/lib/data.ts` | données de démo (seed, visuels) : ne supprimer que ce qui n'est plus utilisé |
 | `globals.css`, `components/ui/`, `components/motion/`, `lib/gsap.ts` | design system : accord de l'équipe |
 | `components/app-shell/`, `components/site/` (header, footer), layouts racines | structure commune |
 | `src/modules/subscribers.ts`, `src/infrastructure/event-bus.ts`, `src/core/domain/` | ajout d'événement : petite PR dédiée |
@@ -203,7 +203,7 @@ Création : `POST /api/beauty-analysis` (type et taille limités).
 | Cahier | Code actuel | Décision à noter |
 |---|---|---|
 | PostgreSQL + Prisma (§6, §10) | **MongoDB + Mongoose**, migration faite le 18 octobre | confirmer, puis mettre à jour le cahier ; la protection contre les injections passe par Zod + Mongoose, pas « requêtes paramétrées Prisma » |
-| Tests : Jest + Playwright (§6) | `node:test` + `tsx` (14 tests) | garder `node:test` ou migrer ; Playwright pour les parcours complets à ajouter |
+| Tests : Jest + Playwright (§6) | `node:test` + `tsx` (73 tests) | garder `node:test` ou migrer ; Playwright pour les parcours complets à ajouter |
 | CI GitHub Actions (§13) | absente | à créer (lint, `tsc`, `npm test`) — proposition : P1 |
 | Images : Cloudinary ou S3 (§6) | URLs d'images externes uniquement | choisir un stockage avant l'envoi de photos (P2 portfolio, P4 avis, P5 analyse) |
 | Déploiement : Vercel + base hébergée (§6, §12) | non fait | MongoDB Atlas + Vercel ; à faire avant la démo |

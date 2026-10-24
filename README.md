@@ -72,7 +72,10 @@ tests/                   tests node:test (anti double réservation, fidélité, 
 - **Points de fidélité** : crédités uniquement après un rendez-vous **terminé par le salon** (grand livre `PointTransaction`). Barème réglable dans la collection `PointRule`.
 - **Sécurité** : chaque route API appelle `requireUser(...)` ; les écritures venant d'une autre origine sont refusées (CSRF) ; mots de passe hachés avec bcrypt ; actions sensibles journalisées dans `AuditLog`.
 - **Dates** : stockées en UTC, saisies et affichées en heure de Tunis (`src/core/domain/time.ts`).
-- **Données encore simulées** : modules IA (recommandation, prédiction d'affluence, analyse des avis et des photos, chatbot) et statistiques sur 30 jours du dashboard. Les champs correspondants restent dans `src/lib/data.ts` en attendant les modules de chaque personne.
+- **E-mails** (mot de passe oublié, vérification, rappels) : envoyés pour de vrai dès que `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` sont renseignés dans `.env` (Gmail : mot de passe d'application, voir `.env.example`), sinon simulés et visibles par le Super Admin dans « Messages envoyés ». En production, renseigner aussi `APP_URL` (adresse des liens envoyés). Les SMS restent simulés.
+- **Hors connexion (PWA)** : le service worker `public/sw.js` garde les pages consultées (et précharge les pages publiques liées) avec leurs fichiers ; sans réseau, elles s'ouvrent depuis l'appareil, sinon la page `/offline` liste celles qui sont disponibles. Les pages personnelles sont effacées à la déconnexion. Actif seulement en production : pour essayer, `npm run build && npm start`, puis couper le réseau (DevTools > Network > Offline).
+- **IA** : les 5 IA (recommandation, prédiction d'affluence, assistante de réservation, analyse des avis, analyse photo) sont intégrées, sans service externe : fonctions pures testées, avec repli. Détail : [`docs/GESTIONS.md`](docs/GESTIONS.md).
+- **Données de démonstration** : `src/lib/data.ts` (images, catégories, plans, salons de démo) alimente le seed (`npm run db:seed`) et les visuels de présentation ; tout le reste vient de la base.
 
 ## Ajouter une fonctionnalité
 
