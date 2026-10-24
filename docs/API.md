@@ -16,6 +16,8 @@ Dates : `AAAA-MM-JJ`, heures : `HH:MM`, en heure de Tunis. Montants en dinars en
 | Méthode | Route | Accès | Description |
 | --- | --- | --- | --- |
 | POST | `/api/auth/register` | public | Inscription. `type: "client"` (actif tout de suite) ou `type: "salon"` (gérant + salon en attente de validation). `409 EMAIL_TAKEN` |
+| POST | `/api/auth/password/forgot` | public | `{ email }` → lien de réinitialisation valable 1 h (au plus un par minute). Même réponse si le compte n'existe pas. Réponse `{ sent, simulated }` : `simulated` vaut `true` sans serveur SMTP |
+| POST | `/api/auth/password/reset` | public | `{ token, password }` → nouveau mot de passe. `400 INVALID_TOKEN` si le lien est expiré ou déjà utilisé |
 | GET/POST | `/api/auth/*` | public | Points d'accès Auth.js : `csrf`, `session`, `signout`, `callback/credentials`, `callback/demo` |
 
 Connexion côté interface : `signIn("credentials", { email, password, redirect: false })` (codes `invalid_credentials`, `account_locked`, `account_blocked`).
@@ -116,7 +118,7 @@ Un salon qui choisit un plan payant à l'inscription démarre en plan gratuit av
 | `salon.statusChanged` | Super Admin | Notification + e-mail au gérant |
 | `plan.paymentRequested` | gérant / inscription d'un salon | Notification aux Super Admins |
 | `plan.paymentDecided` | Super Admin | Notification + e-mail au gérant |
-| `booking.created` | réservation | Notifications cliente et salon, e-mail et SMS (simulés) |
+| `booking.created` | réservation | Notifications cliente et salon, e-mail (réel si SMTP est configuré) et SMS (simulé) |
 | `booking.cancelled` | annulation | Pénalité si tardive, notification |
 | `booking.completed` | salon | Points : +10, +30 nouveau salon, paliers 3/5/10 salons, heure creuse, paiement en ligne, réservation 48 h à l'avance, parrainage |
 | `booking.noShow` | salon | −20 pts |
