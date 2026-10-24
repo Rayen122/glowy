@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { demoLoginEnabled } from "@/auth";
+import { DemoRoleLink } from "@/components/auth/demo-role-link";
 import {
   BadgeCheck,
   CalendarDays,
@@ -52,9 +54,9 @@ export default async function ProPage() {
             >
               {p.ctaRegister}
             </Link>
-            <Link href="/dashboard" className="inline-flex h-12 items-center justify-center rounded-full border border-border bg-card px-6 text-sm font-semibold hover:bg-muted">
+            <DemoRoleLink role="MANAGER" href="/dashboard" demoEnabled={demoLoginEnabled} className="inline-flex h-12 items-center justify-center rounded-full border border-border bg-card px-6 text-sm font-semibold hover:bg-muted">
               {p.ctaDemo}
-            </Link>
+            </DemoRoleLink>
           </div>
           <p className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
             <BadgeCheck className="size-4 shrink-0 text-plum-600" aria-hidden /> {f(p.trust, { n: nf(1342) })}

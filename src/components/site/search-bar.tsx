@@ -106,7 +106,8 @@ export function SearchBar({
             value={when}
             onChange={(e) => setWhen(e.target.value as (typeof WHEN)[number])}
             aria-label={s.when}
-            className="w-full appearance-none bg-transparent pe-5 text-base text-foreground focus:outline-none lg:text-[15px]"
+            // Toute la hauteur du champ est cliquable au doigt
+            className={cn("w-full appearance-none bg-transparent pe-5 text-base text-foreground focus:outline-none lg:text-[15px]", hero ? "h-8" : "h-11")}
           >
             {WHEN.map((w) => (
               <option key={w} value={w}>

@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Ban, CheckCircle2, ChevronLeft, ChevronRight, Clock, KeyRound, LayoutDashboard, PauseCircle, PlayCircle, Unlock, XCircle } from "lucide-react";
+import { Ban, CheckCircle2, Clock, KeyRound, LayoutDashboard, PauseCircle, PlayCircle, Unlock, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Pagination } from "@/components/ui/pagination";
 import { useI18n } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import { api, FIELD, FormError, PRIMARY_BUTTON, SECONDARY_BUTTON, useAction } from "./kit";
@@ -116,29 +116,8 @@ export function UserActions({ id, status, isSelf }: { id: string; status: string
 
 /** Pagination par liens (garde les filtres de l'adresse) */
 export function Pager({ page, pages, params }: { page: number; pages: number; params: Record<string, string | undefined> }) {
-  const { t, f } = useI18n();
-  const m = t.manage.admin;
-  if (pages <= 1) return null;
   const href = (p: number) => `?${new URLSearchParams(Object.entries({ ...params, page: String(p) }).filter((e): e is [string, string] => Boolean(e[1]))).toString()}`;
-  return (
-    <nav className="flex items-center justify-between gap-3 text-sm" aria-label={f(m.page, { page, pages })}>
-      {page > 1 ? (
-        <Link href={href(page - 1)} className={SMALL}>
-          <ChevronLeft className="size-3.5 rtl:rotate-180" aria-hidden /> {m.previous}
-        </Link>
-      ) : (
-        <span />
-      )}
-      <span className="text-muted-foreground">{f(m.page, { page, pages })}</span>
-      {page < pages ? (
-        <Link href={href(page + 1)} className={SMALL}>
-          {m.next} <ChevronRight className="size-3.5 rtl:rotate-180" aria-hidden />
-        </Link>
-      ) : (
-        <span />
-      )}
-    </nav>
-  );
+  return <Pagination page={page} pages={pages} href={href} />;
 }
 
 /** RES-07 / FID-07 : lancement manuel des tâches planifiées (démonstration) */

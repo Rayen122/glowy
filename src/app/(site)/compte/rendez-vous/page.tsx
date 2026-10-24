@@ -6,6 +6,7 @@ import { rebookHref } from "@/lib/rebook";
 import { addDays, tunisToday } from "@/core/domain/time";
 import { CancelBookingButton, LeaveWaitlistButton, RescheduleButton, ReviewDialog } from "@/components/account/booking-actions";
 import { myWaitlist } from "@/modules/booking";
+import { PaginatedList } from "@/components/ui/paginated-list";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { BookingStatus } from "@/core/domain/enums";
 import type { I18n } from "@/i18n/format";
@@ -36,7 +37,7 @@ function BookingList({ bookings, i18n }: { bookings: AccountBooking[]; i18n: I18
     return <p className="rounded-3xl border border-dashed border-border p-10 text-center text-muted-foreground">{bk.empty}</p>;
   }
   return (
-    <ul className="space-y-3">
+    <PaginatedList pageSize={5} className="space-y-3">
       {bookings.map((b) => {
         const st = STATUS_UI[b.status];
         const service = b.items.map((i) => tc(i.name)).join(" + ");
@@ -105,7 +106,7 @@ function BookingList({ bookings, i18n }: { bookings: AccountBooking[]; i18n: I18
           </li>
         );
       })}
-    </ul>
+    </PaginatedList>
   );
 }
 

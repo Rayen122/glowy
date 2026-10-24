@@ -58,6 +58,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <AppShell
       space={d.space}
+      helpHref="/dashboard/support"
       groups={groups}
       user={{ name: `${user.firstName} ${user.lastName}`.trim(), role: user.role === "EMPLOYEE" ? t.auth.form.roles.employee : user.role === "ADMIN" ? t.admin.metaTitle : d.managerRole }}
       context={
