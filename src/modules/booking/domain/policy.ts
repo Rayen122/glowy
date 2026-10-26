@@ -49,6 +49,24 @@ export function nextStatus(action: StaffAction, current: BookingStatus): Booking
   return (transition.from as readonly BookingStatus[]).includes(current) ? transition.to : null;
 }
 
+/** « Commencer » un rendez-vous est possible au plus tôt 30 minutes avant l'heure prévue */
+export const EARLY_START_MIN = 30;
+
+/**
+ * Le salon agit-il trop tôt ? On ne commence pas un rendez-vous plus de 30 min à l'avance, et on ne le marque
+ * « terminé » ou « absente » qu'une fois l'heure passée (sinon : points crédités ou pénalité de −20 pts à tort).
+ * Un rendez-vous déjà commencé peut être terminé à tout moment.
+ */
+export function isTooEarly(action: StaffAction, current: BookingStatus, startsAt: Date, now: Date) {
+  if (action === "complete" && current === "IN_PROGRESS") return false;
+  const opensAt = startsAt.getTime() - (action === "start" ? EARLY_START_MIN * 60_000 : 0);
+  return now.getTime() < opensAt;
+}
+
+/** Actions proposées au salon pour un rendez-vous, à l'instant `now` (boutons du dashboard) */
+export const staffActions = (current: BookingStatus, startsAt: Date, now: Date) =>
+  (Object.keys(TRANSITIONS) as StaffAction[]).filter((action) => nextStatus(action, current) && !isTooEarly(action, current, startsAt, now));
+
 /** Tranches de LOCK_GRAIN_MIN minutes couvertes par [start, end[ — clés du verrou en base */
 export function lockSlices(start: Date, end: Date) {
   const grain = LOCK_GRAIN_MIN * 60_000;

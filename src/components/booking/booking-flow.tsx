@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, CalendarPlus, Check, Clock, CreditCard, Lock, MapPin, Store, Tag, TimerReset, Users, X } from "lucide-react";
+import { ArrowLeft, CalendarPlus, Check, Clock, CreditCard, MapPin, Store, Tag, TimerReset, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { depositFor } from "@/modules/booking/domain/policy";
 import { PointsBadge, Rating } from "@/components/salon/badges";
@@ -101,6 +101,8 @@ export function BookingFlow({
   const total = services.reduce((a, s) => a + s.price, 0);
   const duration = services.reduce((a, s) => a + s.duration, 0);
   const emp = employees.find((e) => e.id === employee);
+  /** Professionnel attribué par le serveur (choix « peu importe ») */
+  const [assigned, setAssigned] = useState<string | null>(null);
 
   // Disponibilités réelles du jour choisi ; `refresh` force un rechargement (créneau pris entre-temps)
   const [refresh, setRefresh] = useState(0);
@@ -198,7 +200,7 @@ export function BookingFlow({
     if (!user) return goToLogin();
     setSubmitting(true);
     try {
-      await api("/api/bookings", {
+      const created = await api<{ employeeKey?: string }>("/api/bookings", {
         method: "POST",
         body: {
           salonSlug: salon.slug,
@@ -211,6 +213,7 @@ export function BookingFlow({
           promoCode: promoCode ?? undefined,
         },
       });
+      setAssigned(created.employeeKey ?? null);
       setDone(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
@@ -278,7 +281,7 @@ export function BookingFlow({
             </div>
             <div>
               <dt className="text-muted-foreground">{b.with}</dt>
-              <dd className="font-semibold">{emp?.name ?? b.anyPro}</dd>
+              <dd className="font-semibold">{emp?.name ?? employees.find((e) => e.id === assigned)?.name ?? b.anyPro}</dd>
             </div>
             <div className="sm:col-span-2">
               <dt className="text-muted-foreground">{b.services}</dt>
@@ -551,7 +554,7 @@ export function BookingFlow({
                 </div>
               ) : (
                 <div className="flex items-center gap-3 rounded-2xl bg-plum-50 p-4 text-sm text-plum-800 ring-1 ring-plum-200" role="status">
-                  <Lock className="size-4 shrink-0" aria-hidden />
+                  <Clock className="size-4 shrink-0" aria-hidden />
                   <span>
                     {rich(b.lockActive, {
                       slot: <strong key="slot">{f(b.at, { date: dayLong, time })}</strong>,

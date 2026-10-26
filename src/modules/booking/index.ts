@@ -31,7 +31,7 @@ export const { resolveServices, getAvailability, availabilityForSalon, quoteBook
 export { listClientBookings, salonAgenda, type ClientBooking } from "./infrastructure/queries";
 export { createTimeOff, deleteTimeOff } from "./infrastructure/mongo-booking-repository";
 export { availabilityQuery, bookingActionInput, bookingQuoteInput, createBookingInput, type CreateBookingInput } from "./application/schemas";
-export { ACTIVE_STATUSES, depositFor, isOffPeak } from "./domain/policy";
+export { ACTIVE_STATUSES, depositFor, isOffPeak, staffActions, type StaffAction } from "./domain/policy";
 export type { BookingRecord } from "./application/ports";
 
 /** RES-09 : une annulation libère un créneau → les clientes en liste d'attente de ce jour sont prévenues */

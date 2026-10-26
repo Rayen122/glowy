@@ -6,7 +6,7 @@ import { AppError } from "@/core/domain/errors";
 import { manualClock } from "@/core/domain/clock";
 import { Booking, Employee, isDuplicateKey, SlotLock, TimeOff, User } from "@/infrastructure/db";
 import { cancelBooking, createBooking, createBookingModule, createTimeOff, getAvailability, setBookingStatus } from "@/modules/booking";
-import { closeDb, FUTURE_MONDAY, makeSalon, makeUser, resetDb } from "./helpers";
+import { afterVisit, closeDb, FUTURE_MONDAY, makeSalon, makeUser, resetDb } from "./helpers";
 
 const input = (over: Partial<Parameters<typeof createBooking>[1]> = {}) => ({
   salonSlug: "salon-test",
@@ -102,13 +102,17 @@ describe("Réservation et anti double réservation (RES-03, RES-04)", () => {
     assert.equal(late2, false);
   });
 
-  test("seul le personnel du salon peut terminer un rendez-vous", async () => {
+  test("seul le personnel du salon peut terminer un rendez-vous, et seulement après son heure", async () => {
     const { owner } = await makeSalon();
     const [client, stranger] = await Promise.all([makeUser(), makeUser("MANAGER")]);
     const booking = await createBooking(client.id, input());
-    await assert.rejects(setBookingStatus(booking.id, { id: stranger.id, role: "MANAGER" }, "complete"), (e: AppError) => e.status === 403);
-    await assert.rejects(setBookingStatus(booking.id, { id: client.id, role: "CLIENT" }, "complete"), (e: AppError) => e.status === 403);
-    const done = await setBookingStatus(booking.id, { id: owner.id, role: "MANAGER" }, "complete");
+    await assert.rejects(afterVisit.setBookingStatus(booking.id, { id: stranger.id, role: "MANAGER" }, "complete"), (e: AppError) => e.status === 403);
+    await assert.rejects(afterVisit.setBookingStatus(booking.id, { id: client.id, role: "CLIENT" }, "complete"), (e: AppError) => e.status === 403);
+    // Avant l'heure du rendez-vous : ni terminé, ni absente ; « commencer » au plus tôt 30 min avant
+    for (const action of ["complete", "noShow", "start"] as const) {
+      await assert.rejects(setBookingStatus(booking.id, { id: owner.id, role: "MANAGER" }, action), (e: AppError) => e.code === "TOO_EARLY");
+    }
+    const done = await afterVisit.setBookingStatus(booking.id, { id: owner.id, role: "MANAGER" }, "complete");
     assert.equal(done.status, "COMPLETED");
   });
 });

@@ -1,23 +1,4 @@
-/**
- * Service worker Glowy (PWA) : fonctionnement hors connexion + notifications push.
- *
- * Stratégies de cache (production uniquement) :
- *  - fichiers versionnés (/_next/static, /icons) : cache d'abord (ils ne changent jamais) ;
- *  - images optimisées (/_next/image) : cache puis mise à jour en arrière-plan ;
- *  - autres scripts, styles, polices, images du site : réseau d'abord, copie pour le hors-ligne ;
- *  - pages : réseau d'abord ; sans réponse au bout de 4 s (réseau faible), la copie enregistrée est servie.
- *      · pages publiques (accueil, salons, fiches…) → bh-pages ; préchargées en arrière-plan quand la page
- *        ouverte y fait un lien (message « warm » envoyé par src/components/pwa/pwa.tsx) ;
- *      · espace personnel (/compte, /dashboard, /admin) → bh-private, visible seulement sur cet appareil ;
- *    Les pages enregistrées sont effacées à la déconnexion, à l'ouverture de la page de connexion
- *    (changement de compte) et dès que la session a expiré ;
- *  - navigations internes de Next.js (clic sur un lien, en-tête RSC) : réseau ; sans connexion, une réponse 503
- *    fait recharger la page entière, servie alors par le cache ;
- *  - API : réseau uniquement (réserver, payer, modifier demandent une connexion) ;
- *  - page jamais consultée et sans réseau : /offline.
- * En développement (?dev=1), aucun cache : React y démarre grâce à sa connexion au serveur de développement,
- * impossible hors ligne. Pour essayer le hors-ligne : `npm run build && npm start`.
- */
+
 const VERSION = "v3";
 const STATIC_CACHE = `bh-static-${VERSION}`;
 const PAGES_CACHE = `bh-pages-${VERSION}`;

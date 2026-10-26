@@ -28,6 +28,38 @@ export async function salonForecast(salonId: string, date = tunisToday(), now = 
 
 export type SalonForecast = Awaited<ReturnType<typeof salonForecast>>;
 
+/** Fenêtre de `size` heures consécutives (ouvertes) dont l'affluence cumulée est la plus forte (max) ou la plus faible (min) */
+function window(rows: { weekday: number; points: { hour: number; value: number }[] }[], size: number, pick: "max" | "min") {
+  let best: { weekday: number; from: number; to: number; score: number } | null = null;
+  for (const row of rows) {
+    for (let i = 0; i + size <= row.points.length; i++) {
+      const slice = row.points.slice(i, i + size);
+      if (slice.some((p, k) => k > 0 && p.hour !== slice[k - 1].hour + 1)) continue;
+      const score = slice.reduce((sum, p) => sum + p.value, 0);
+      if (!best || (pick === "max" ? score > best.score : score < best.score)) best = { weekday: row.weekday, from: slice[0].hour, to: slice[size - 1].hour + 1, score };
+    }
+  }
+  return best;
+}
+
+/**
+ * IA P2 (dashboard) : prévision des 6 prochains jours ouvrés (lundi → samedi) heure par heure,
+ * avec le créneau le plus chargé (3 h) et le plus calme (2 h) — calculés, pas écrits en dur.
+ */
+export async function salonWeekForecast(salonId: string, hours: readonly number[], now = new Date()) {
+  const today = tunisToday(now);
+  const todayWeekday = weekdayOf(today);
+  const rows = await Promise.all(
+    [1, 2, 3, 4, 5, 6].map(async (weekday) => {
+      const date = addDays(today, (weekday - todayWeekday + 7) % 7);
+      const forecast = await salonForecast(salonId, date, now);
+      return { weekday, date, points: forecast.points, source: forecast.source };
+    })
+  );
+  const values = rows.map((row) => hours.map((h) => row.points.find((p) => p.hour === h)?.value ?? 0));
+  return { days: rows.map((r) => r.weekday), values, peak: window(rows, 3, "max"), low: window(rows, 2, "min"), source: rows[0]?.source ?? null };
+}
+
 const avgDuration = (services: { durationMin: number; active: boolean }[]) => {
   const active = services.filter((s) => s.active);
   return active.length ? Math.round(active.reduce((a, s) => a + s.durationMin, 0) / active.length) : 30;

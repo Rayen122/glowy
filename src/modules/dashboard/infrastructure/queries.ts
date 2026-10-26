@@ -4,7 +4,7 @@ import { notFound } from "@/core/domain/errors";
 import { shortName } from "@/core/domain/text";
 import { addDays, toMinutes, tunisDayRange, tunisToday, utcToTunis, weekdayOf } from "@/core/domain/time";
 import { Booking, Employee, idOf, objectId, Review, Salon, User } from "@/infrastructure/db";
-import { salonAgenda } from "@/modules/booking";
+import { salonAgenda, staffActions } from "@/modules/booking";
 import { currentSalonId } from "./current-salon";
 
 /** Dashboard salon (P2, SAL-01) : vue du jour calculée depuis les réservations. */
@@ -19,7 +19,7 @@ export const staffSalon = cache(async (actor: Actor) => {
   return { id: idOf(salon), slug: salon.slug, name: salon.name, city: salon.city, coverUrl: salon.coverUrl ?? null, plan: salon.plan, status: salon.status };
 });
 
-export async function salonDay(salonId: string, date = tunisToday()) {
+export async function salonDay(salonId: string, date = tunisToday(), now = new Date()) {
   const agenda = await salonAgenda(salonId, date);
   const keyOf = new Map(agenda.employees.map((e) => [e.id, e]));
   const bookings = agenda.bookings.map((b) => ({
@@ -28,6 +28,8 @@ export async function salonDay(salonId: string, date = tunisToday()) {
     employeeName: keyOf.get(b.employeeId)?.name ?? "",
     color: keyOf.get(b.employeeId)?.color ?? 1,
     uiStatus: UI_STATUS[b.status],
+    /** Boutons proposés au salon maintenant (pas de « terminé » / « absente » avant l'heure) */
+    actions: staffActions(b.status, b.startsAt, now),
   }));
   return { ...agenda, bookings };
 }
@@ -37,7 +39,7 @@ export async function salonKpis(salonId: string, now = new Date()) {
   const date = tunisToday(now);
   const salon = objectId(salonId);
   const [day, salonDoc, noShows30] = await Promise.all([
-    salonDay(salonId, date),
+    salonDay(salonId, date, now),
     Salon.findById(salon, { openingHours: 1 }).lean(),
     Booking.countDocuments({ salon, status: "NO_SHOW", startsAt: { $gte: new Date(now.getTime() - 30 * 86_400_000) } }),
   ]);

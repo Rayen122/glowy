@@ -65,6 +65,7 @@ export const ar: Dictionary = {
     alreadyReviewed: "سبق أن قيّمت هذا الموعد.",
     insufficientPoints: "رصيد النقاط غير كافٍ.",
     tooLate: "انتهت مهلة التعديل.",
+    tooEarly: "لم يبدأ هذا الموعد بعد: هذا الإجراء ممكن ابتداءً من وقته.",
   },
 
   pwa: {
@@ -206,6 +207,7 @@ export const ar: Dictionary = {
   },
 
   results: {
+    featured: "مميز",
     filters: {
       today: "متاح اليوم",
       verified: "صالونات موثّقة",
@@ -471,7 +473,7 @@ export const ar: Dictionary = {
     heatIdle: "مرّر المؤشر أو المس خانة لعرض التوقع.",
     heatDetail: "إشغال متوقع · {day} {hour} · {level}",
     heatCellAria: "{day} {hour}: {n}% إشغال متوقع",
-    heatCaption: "الإشغال المتوقع لكل فترة · نموذج مدرَّب على 12 شهرًا من الحجوزات",
+    heatCaption: "الإشغال المتوقع لكل فترة · متوسط مرجّح لآخر 8 أسابيع",
     heatTableCaption: "الإشغال المتوقع (%) حسب اليوم والساعة",
     day: "اليوم",
     revenue: "رقم المعاملات",
@@ -524,9 +526,9 @@ export const ar: Dictionary = {
     waitlist: "انضم إلى قائمة الانتظار",
     waitlistToast: "أنت في قائمة الانتظار",
     waitlistToastDesc: "سنُعلمك فور توفّر موعد.",
-    lockExpired: "انتهت مهلة الـ10 دقائق: تم تحرير موعد الساعة {time}.",
+    lockExpired: "انتهت الدقائق العشر: تحقق من أن موعد الساعة {time} ما زال متاحًا.",
     chooseOther: "اختر موعدًا آخر",
-    lockActive: "الموعد {slot} محجوز لك لمدة {time}",
+    lockActive: "الموعد {slot} ما زال متاحًا: لا يُحجز إلا عند التأكيد. الوقت المتبقي للتأكيد: {time}",
     contact: "بياناتك",
     noteLabel: "ملاحظة للصالون",
     noteHint: "(حساسية، تفضيلات…)",
@@ -1060,6 +1062,24 @@ export const ar: Dictionary = {
   },
 
   dashboard: {
+    planGate: {
+      title: "متاح مع خطة {plan}",
+      text: "{feature}: ميزة ضمن خطة {plan}. بياناتك محفوظة: انتقل إلى هذه الخطة لاستعادتها.",
+      cta: "الانتقال إلى خطة {plan}",
+      askManager: "اطلب من مديرة الصالون الانتقال إلى خطة {plan}.",
+      employees: "تسمح خطتك {plan} بـ {max} محترف(ين) نشط(ين). انتقل إلى خطة أعلى لإضافة المزيد.",
+      seePlans: "عرض الخطط",
+      features: {
+        agendaViews: "عرض الأسبوع والشهر في الأجندة",
+        crm: "ملف الزبونات (CRM مصغر)",
+        stats: "الإحصائيات وتصديرها",
+        promotions: "العروض وأكواد الخصم",
+        affluence: "توقع الازدحام بالذكاء الاصطناعي",
+        stocks: "إدارة المخزون",
+        branches: "إدارة عدة فروع",
+        highlight: "الإبراز في نتائج البحث",
+      },
+    },
     metaTitle: "لوحة تحكم الصالون",
     metaShort: "لوحة التحكم",
     pendingBanner: "صالونك في انتظار مصادقة فريق Glowy (24 إلى 48 ساعة). لا يظهر في البحث بعد.",
@@ -1118,7 +1138,7 @@ export const ar: Dictionary = {
       forecastTitle: "توقّع الازدحام · أسبوع {date}",
       forecastHint: "توقّع بالذكاء الاصطناعي انطلاقًا من سجل الحجوزات",
       peakTitle: "{day} {range}: ازدحام شديد.",
-      peakText: "خطّط لموظف إضافي (5 بدل 4).",
+      peakText: "خطّط لدعم إضافي في هذه الفترة.",
       lowTitle: "{day} {range}: ركود.",
       lowText: "الساعات الهادئة مُرسلة: {pts} للحرفاء.",
       createOffer: "أنشئ عرضًا",
@@ -1236,6 +1256,7 @@ export const ar: Dictionary = {
         "salon.suspend": "علّق «{target}»",
         "salon.reactivate": "أعاد تفعيل «{target}»",
         "user.block": "حظر حساب مستخدم",
+        "plan.expired": "أعاد « {target} » إلى الخطة المجانية (انتهاء المدة)",
         "user.unblock": "رفع الحظر عن حساب مستخدم",
         "review.hide": "أخفى تقييمًا مُبلغًا عنه",
         "review.keep": "أبقى على تقييم مُبلغ عنه",

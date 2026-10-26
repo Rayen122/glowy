@@ -108,6 +108,8 @@ const salonSchema = new Schema(
     plan: { type: String, enum: PLANS, default: "gratuit" },
     /** Fin de la période payée du plan Pro / Premium (null pour le plan gratuit) */
     planUntil: optional(Date),
+    /** Échéance pour laquelle le rappel « votre plan expire bientôt » a déjà été envoyé (une seule fois) */
+    planReminderFor: optional(Date),
     documentUrl: optional(String),
     depositAmount: { type: Number, default: 20 },
     cancellationHours: { type: Number, default: 24 },

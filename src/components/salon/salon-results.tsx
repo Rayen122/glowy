@@ -217,6 +217,7 @@ function SalonRow({
         <Image src={salon.cover} alt={f(t.common.salonInterior, { name: salon.name })} fill sizes="(min-width: 640px) 240px, 100vw" className="object-cover" />
         <div className="absolute start-3 top-3 flex flex-wrap gap-1.5">
           {salon.verified && <VerifiedBadge />}
+          {salon.featured && <span className="inline-flex h-6 items-center rounded-full bg-sand/95 px-2 text-[11px] font-semibold text-plum-800 shadow-sm">{t.results.featured}</span>}
         </div>
         <FavoriteButton salonName={salon.name} salonSlug={salon.slug} initial={salon.favorite} className="absolute end-3 top-3" />
       </div>

@@ -66,6 +66,8 @@ export type Salon = {
   offPeak?: string;
   aiReason: string;
   matchScore: number;
+  /** Salon mis en avant dans la recherche (plan Premium en cours) */
+  featured?: boolean;
   /** IA P1 : raison de la recommandation (clé du dictionnaire t.reco + paramètres) */
   reason?: { key: string; params: Record<string, string | number> };
   topServices: { name: string; price: number; duration: number }[];
@@ -620,19 +622,8 @@ export const SALON_BLOCKS = [
   { employee: "sami", time: "11:00", end: "13:30", label: "Formation" },
 ];
 
-/** Jours (1 = lundi … 6 = samedi) et heures de la prévision d'affluence */
-export const HEATMAP_DAYS = [1, 2, 3, 4, 5, 6];
+/** Heures affichées dans la prévision d'affluence du dashboard */
 export const HEATMAP_HOURS = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
-
-/** Taux d'occupation prévu (0–100) par jour × heure — IA prédiction d'affluence */
-export const AFFLUENCE_FORECAST: number[][] = [
-  [20, 18, 30, 44, 36, 50, 68, 80, 88, 74, 38],
-  [12, 10, 16, 30, 28, 34, 46, 58, 66, 54, 26],
-  [18, 22, 28, 40, 34, 42, 56, 70, 76, 62, 30],
-  [24, 28, 36, 50, 42, 54, 70, 82, 90, 84, 52],
-  [30, 34, 44, 58, 50, 64, 80, 92, 96, 90, 64],
-  [58, 72, 84, 90, 82, 94, 98, 99, 96, 86, 60],
-];
 
 /* ---------- Super Admin ---------- */
 

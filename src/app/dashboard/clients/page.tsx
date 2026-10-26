@@ -7,6 +7,8 @@ import { requirePageUser } from "@/infrastructure/session";
 import { getI18n } from "@/i18n/server";
 import { cn } from "@/lib/utils";
 import { CRM_FILTERS, listSalonClients, staffSalon, type CrmFilter } from "@/modules/dashboard";
+import { PlanUpsell } from "@/components/dashboard/plan-upsell";
+import { planAccess } from "@/modules/subscription";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -24,6 +26,8 @@ export default async function ClientsPage({ searchParams }: PageProps<"/dashboar
   const filter: CrmFilter = (CRM_FILTERS as readonly string[]).includes(asked ?? "") ? (asked as CrmFilter) : "all";
   const page = Math.max(1, Number(one(sp.page)) || 1);
   const salon = await staffSalon(user);
+  // Fonction réservée à un plan supérieur : présentation du plan à la place de la page
+  if (!(await planAccess(salon.id)).features.includes("crm")) return <PlanUpsell feature="crm" canUpgrade={user.role !== "EMPLOYEE"} />;
   const [{ t, f, nf, money, df }, list] = await Promise.all([getI18n(), listSalonClients(salon.id, { q, filter, page })]);
   const m = t.manage.crm;
   return (

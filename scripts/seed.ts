@@ -216,7 +216,8 @@ async function main() {
       status: "ACTIVE",
       verified: s.verified,
       plan: (["premium", "pro", "gratuit"] as PlanId[])[index % 3],
-      planUntil: index % 3 === 2 ? null : new Date(Date.now() + (12 + index) * 86_400_000),
+      // Salon de démonstration (Yasmine) : Premium pour 90 jours, toutes les fonctions visibles pendant les démos
+      planUntil: index % 3 === 2 ? null : new Date(Date.now() + (index === 0 ? 90 : 12 + index) * 86_400_000),
       owner: owner._id,
       createdAt: new Date(Date.parse(`${addDays(TODAY, -300 + index * 20)}T09:00:00Z`)),
       photos: s.gallery.map((url, position) => ({ url, position })),

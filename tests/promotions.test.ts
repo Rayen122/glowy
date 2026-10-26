@@ -5,10 +5,10 @@ import { manualClock } from "@/core/domain/clock";
 import { AppError } from "@/core/domain/errors";
 import { tunisToUtc } from "@/core/domain/time";
 import { Booking, Promotion, Redemption, Reward, SalonWallet, User } from "@/infrastructure/db";
-import { cancelBooking, createBooking, createBookingModule, setBookingStatus } from "@/modules/booking";
+import { cancelBooking, createBooking, createBookingModule } from "@/modules/booking";
 import { redeem } from "@/modules/loyalty";
 import { checkPromotion, createPromotion, discountFor, promotionInput, redeemAtCounter, redeemSalonReward, salonWallets, setSalonPointsPerVisit, type PromotionRule } from "@/modules/promotions";
-import { closeDb, FUTURE_MONDAY, makeSalon, makeUser, resetDb } from "./helpers";
+import { afterVisit, closeDb, FUTURE_MONDAY, makeSalon, makeUser, resetDb } from "./helpers";
 
 const rule = (extra: Partial<PromotionRule> = {}): PromotionRule => ({
   id: "x",
@@ -120,7 +120,7 @@ describe("Promotions et récompenses du salon (SAL-10, FID-06)", () => {
 
     for (const time of ["10:00", "14:00"]) {
       const b = await createBooking(client.id, booking("salon-a", { time, paymentMethod: "ONSITE" }));
-      await setBookingStatus(b.id, owner, "complete");
+      await afterVisit.setBookingStatus(b.id, owner, "complete");
     }
     const [wallet] = await salonWallets(client.id);
     assert.equal(wallet.balance, 120);

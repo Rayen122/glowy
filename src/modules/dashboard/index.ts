@@ -1,8 +1,10 @@
 /** Module Dashboard salon (P2) — API publique */
 import type { Actor } from "@/core/domain/actor";
+import { requirePlanFeature, type PlanFeature } from "@/modules/subscription";
 import { notify } from "@/modules/notifications";
 import type { StockMoveInput } from "./application/schemas";
 import { moveStock as applyStockMove } from "./infrastructure/stocks";
+import { currentSalonId } from "./infrastructure/current-salon";
 import { eventBus } from "@/infrastructure/event-bus";
 import type { BranchInput } from "./application/schemas";
 import { createBranch as applyCreateBranch } from "./infrastructure/branches";
@@ -39,6 +41,9 @@ export { salonSettings, updateSalonSettings, type SalonSettings } from "./infras
 export { createService, deleteService, listSalonServices, updateService, type ManagedService } from "./infrastructure/services";
 export { salonBookingsCsv, salonStats, STAT_PERIODS, type SalonStats, type StatPeriod } from "./infrastructure/stats";
 export { ADMIN_SALON_COOKIE, BRANCH_COOKIE, currentSalonId } from "./infrastructure/current-salon";
+
+/** Fonction réservée à un plan (CRM, statistiques, promotions, stocks, succursales) : 403 PLAN_REQUIRED sinon */
+export const requireFeature = async (actor: Actor, feature: PlanFeature) => requirePlanFeature(await currentSalonId(actor), feature);
 export { addClientNote, CRM_FILTERS, deleteClientNote, listSalonClients, salonClientCard, type CrmFilter, type SalonClientCard, type SalonClientRow } from "./infrastructure/crm";
 export { cashierDay, checkout, invoiceDetail, voidInvoice, type CashierDay, type InvoiceDetail } from "./infrastructure/cashier";
 export { invoiceNumber, invoicePrefix, invoiceTotals } from "./domain/invoice";

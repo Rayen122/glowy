@@ -86,6 +86,7 @@ export async function salonAgenda(salonId: string, date: string) {
         id: idOf(b),
         employeeId: b.employee.toString(),
         status: b.status,
+        startsAt: b.startsAt,
         time: utcToTunis(b.startsAt).time,
         end: utcToTunis(b.endsAt).time,
         client: client ? shortName(client.firstName, client.lastName) : "",

@@ -70,6 +70,7 @@ export const fr = {
     alreadyReviewed: "Vous avez déjà donné votre avis sur ce rendez-vous.",
     insufficientPoints: "Solde de points insuffisant.",
     tooLate: "Le délai de modification est dépassé.",
+    tooEarly: "Ce rendez-vous n'a pas encore commencé : action possible à partir de son heure.",
   },
 
   /** Application installable (PWA) */
@@ -212,6 +213,7 @@ export const fr = {
   },
 
   results: {
+    featured: "Mis en avant",
     filters: {
       today: "Dispo aujourd'hui",
       verified: "Salons vérifiés",
@@ -477,7 +479,7 @@ export const fr = {
     heatIdle: "Survolez ou touchez une case pour voir la prévision.",
     heatDetail: "d'occupation prévue · {day} {hour} · {level}",
     heatCellAria: "{day} {hour} : {n} % d'occupation prévue",
-    heatCaption: "Occupation prévue par créneau · modèle entraîné sur 12 mois de réservations",
+    heatCaption: "Occupation prévue par créneau · moyenne pondérée des 8 dernières semaines",
     heatTableCaption: "Occupation prévue (%) par jour et par heure",
     day: "Jour",
     revenue: "Chiffre d'affaires",
@@ -530,9 +532,9 @@ export const fr = {
     waitlist: "Rejoindre la liste d'attente",
     waitlistToast: "Vous êtes sur liste d'attente",
     waitlistToastDesc: "Nous vous prévenons dès qu'un créneau se libère.",
-    lockExpired: "Le délai de 10 minutes est dépassé : le créneau de {time} a été libéré.",
+    lockExpired: "Les 10 minutes sont écoulées : vérifiez que le créneau de {time} est toujours libre.",
     chooseOther: "Choisir un autre créneau",
-    lockActive: "Créneau {slot} bloqué pour vous pendant {time}",
+    lockActive: "Créneau {slot} encore libre : il n'est réservé qu'à la confirmation. Temps pour confirmer : {time}",
     contact: "Vos coordonnées",
     noteLabel: "Note pour le salon",
     noteHint: "(allergies, préférences…)",
@@ -1067,6 +1069,24 @@ export const fr = {
   },
 
   dashboard: {
+    planGate: {
+      title: "Disponible avec le plan {plan}",
+      text: "{feature} : fonction incluse dans le plan {plan}. Vos données sont conservées : passez à ce plan pour les retrouver.",
+      cta: "Passer au plan {plan}",
+      askManager: "Demandez à la gérante du salon de passer au plan {plan}.",
+      employees: "Votre plan {plan} permet {max} professionnel(s) actif(s). Pour en ajouter, passez au plan supérieur.",
+      seePlans: "Voir les plans",
+      features: {
+        agendaViews: "Les vues semaine et mois de l'agenda",
+        crm: "Le fichier clientes (mini-CRM)",
+        stats: "Les statistiques et leurs exports",
+        promotions: "Les promotions et codes promo",
+        affluence: "La prédiction d'affluence par l'IA",
+        stocks: "La gestion des stocks",
+        branches: "La gestion de plusieurs succursales",
+        highlight: "La mise en avant dans la recherche",
+      },
+    },
     metaTitle: "Dashboard salon",
     metaShort: "Dashboard",
     pendingBanner: "Votre salon est en attente de validation par l'équipe Glowy (24 à 48 h). Il n'apparaît pas encore dans la recherche.",
@@ -1125,7 +1145,7 @@ export const fr = {
       forecastTitle: "Prévision d'affluence · semaine du {date}",
       forecastHint: "Prédiction IA à partir de l'historique des réservations",
       peakTitle: "{day} {range} : affluence forte.",
-      peakText: "Prévoyez 1 employé de plus (5 au lieu de 4).",
+      peakText: "Prévoyez du renfort sur ce créneau.",
       lowTitle: "{day} {range} : creux.",
       lowText: "Heures creuses transmises : {pts} aux clients.",
       createOffer: "Créer une offre",
@@ -1243,6 +1263,7 @@ export const fr = {
         "salon.suspend": "a suspendu « {target} »",
         "salon.reactivate": "a réactivé « {target} »",
         "user.block": "a bloqué un compte utilisateur",
+        "plan.expired": "a fait repasser « {target} » au plan Gratuit (fin de période)",
         "user.unblock": "a débloqué un compte utilisateur",
         "review.hide": "a masqué un avis signalé",
         "review.keep": "a conservé un avis signalé",

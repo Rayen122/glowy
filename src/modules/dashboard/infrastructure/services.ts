@@ -1,3 +1,4 @@
+import { Types } from "mongoose";
 import type { Actor } from "@/core/domain/actor";
 import { conflict, notFound } from "@/core/domain/errors";
 import { slugify } from "@/core/domain/text";
@@ -56,8 +57,9 @@ export async function createService(actor: Actor, input: ServiceInput) {
   if (salon.services.some((s) => s.name.toLowerCase() === input.name.toLowerCase())) throw conflict("SERVICE_EXISTS", "Une prestation porte déjà ce nom.");
   const key = uniqueKey(input.name, salon.services.map((s) => s.key));
   const position = Math.max(-1, ...salon.services.map((s) => s.position)) + 1;
-  await Salon.updateOne({ _id }, { $push: { services: { ...input, description: input.description || null, oldPrice: input.oldPrice ?? null, key, position } } });
-  return { key };
+  const id = new Types.ObjectId();
+  await Salon.updateOne({ _id }, { $push: { services: { _id: id, ...input, description: input.description || null, oldPrice: input.oldPrice ?? null, key, position } } });
+  return { id: id.toString(), key };
 }
 
 export async function updateService(actor: Actor, serviceId: string, input: ServiceInput) {

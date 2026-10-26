@@ -1,4 +1,5 @@
 import { disconnectDb, Employee, resetAll, Salon, User } from "@/infrastructure/db";
+import { createBookingModule } from "@/modules/booking";
 
 /** Vide toutes les collections de la base de test et recrée les index (dont l'index unique des tranches) */
 export const resetDb = resetAll;
@@ -42,3 +43,6 @@ export async function makeSalon(slug = "salon-test") {
 
 /** Lundi lointain : jamais « dans le passé » quel que soit le jour où les tests tournent */
 export const FUTURE_MONDAY = "2030-01-07";
+
+/** Module réservation avec une horloge après les rendez-vous de test : le salon peut les commencer, terminer, marquer absents */
+export const afterVisit = createBookingModule({ clock: { now: () => new Date("2030-02-01T12:00:00Z") } });

@@ -10,6 +10,8 @@ import { requirePageUser } from "@/infrastructure/session";
 import { getI18n } from "@/i18n/server";
 import { cn } from "@/lib/utils";
 import { salonStats, STAT_PERIODS, staffSalon, type StatPeriod } from "@/modules/dashboard";
+import { PlanUpsell } from "@/components/dashboard/plan-upsell";
+import { planAccess } from "@/modules/subscription";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -25,6 +27,8 @@ export default async function StatisticsPage({ searchParams }: PageProps<"/dashb
   const asked = Number(Array.isArray(sp.periode) ? sp.periode[0] : sp.periode);
   const days: StatPeriod = (STAT_PERIODS as readonly number[]).includes(asked) ? (asked as StatPeriod) : 30;
   const salon = await staffSalon(user);
+  // Fonction réservée à un plan supérieur : présentation du plan à la place de la page
+  if (!(await planAccess(salon.id)).features.includes("stats")) return <PlanUpsell feature="stats" canUpgrade={user.role !== "EMPLOYEE"} />;
   const [{ t, f, tc, nf, money }, stats] = await Promise.all([getI18n(), salonStats(salon.id, days)]);
   const m = t.manage.stats;
   const period = m.periods[String(days) as keyof typeof m.periods];

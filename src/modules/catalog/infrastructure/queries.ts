@@ -7,6 +7,10 @@ import { getSalon as getMockSalon, type CategoryId, type Salon as SalonView } fr
 import { liveAffluence } from "@/modules/affluence";
 import { getAvailability } from "@/modules/booking";
 import { buildProfile, emptyProfile, recommend, type TasteProfile } from "../domain/recommend";
+import { effectivePlan } from "@/modules/subscription";
+
+/** Bonus de recommandation d'un salon Premium (score sur 100) */
+const FEATURED_BOOST = 10;
 
 /**
  * Lecture des salons pour l'interface (P3, RES-01 et RES-02).
@@ -144,6 +148,10 @@ export async function searchSalons(params: SalonSearch, userId?: string, now = n
   rows.forEach((row, i) => {
     const r = scores.get(idOf(row));
     if (r) Object.assign(salons[i], { matchScore: r.score, reason: r.reason });
+    // Plan Premium en cours : mise en avant (bonus sur le score de recommandation et étiquette)
+    if (effectivePlan(row.plan, row.planUntil ?? null, now) === "premium") {
+      Object.assign(salons[i], { featured: true, matchScore: Math.min(100, salons[i].matchScore + FEATURED_BOOST) });
+    }
   });
 
   const sorters: Record<NonNullable<SalonSearch["sort"]>, (a: SalonView, b: SalonView) => number> = {

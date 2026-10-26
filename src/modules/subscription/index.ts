@@ -18,4 +18,7 @@ export const registerSubscribers = (bus: EventSubscriber) => registerSubscriptio
 export { decidePaymentInput, requestPlanInput } from "./application/schemas";
 export { adminCounts, adminSubscriptions, planRevenue, salonSubscription, type AdminPaymentRow } from "./infrastructure/queries";
 export { daysLeft } from "./domain/rules";
+export { canAddEmployee, effectivePlan, minimumPlanFor, PLAN_LIMITS, planAllows, type PlanFeature } from "./domain/plans";
+export { planAccess, requireEmployeeSlot, requirePlanFeature, salonPlan } from "./infrastructure/plan-access";
+export { expirePlans, remindExpiringPlans } from "./infrastructure/plan-expiry";
 export type { PlanPaymentRecord } from "./application/ports";

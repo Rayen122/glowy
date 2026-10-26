@@ -6,11 +6,14 @@ import { RevenueBars } from "@/components/charts/revenue-bars";
 import { StatTile } from "@/components/charts/stat-tile";
 import { BookingStatusActions } from "@/components/dashboard/booking-status";
 import { getI18n } from "@/i18n/server";
-import { AFFLUENCE_FORECAST, HEATMAP_DAYS, HEATMAP_HOURS, weekdayIso } from "@/lib/data";
+import { HEATMAP_HOURS, weekdayIso } from "@/lib/data";
 import { recentSalonReviews, salonKpis, salonStats, staffSalon } from "@/modules/dashboard";
 import { requirePageUser } from "@/infrastructure/session";
 import { tunisToday } from "@/core/domain/time";
 import { cn } from "@/lib/utils";
+import { PlanUpsell } from "@/components/dashboard/plan-upsell";
+import { salonWeekForecast } from "@/modules/affluence";
+import { planAccess } from "@/modules/subscription";
 
 const STATUS_STYLE = {
   termine: { className: "text-muted-foreground", icon: CircleCheck },
@@ -25,7 +28,15 @@ const PERIODS = ["today", "d7", "d30", "month"] as const;
 export default async function DashboardPage() {
   const user = await requirePageUser("MANAGER", "EMPLOYEE", "ADMIN");
   const salon = await staffSalon(user);
-  const [{ t, tc, f, nf, money, df, hour }, kpis, reviews, stats30] = await Promise.all([getI18n(), salonKpis(salon.id), recentSalonReviews(salon.id), salonStats(salon.id, 30)]);
+  const access = await planAccess(salon.id);
+  const [{ t, tc, f, nf, money, df, hour }, kpis, reviews, stats30, week] = await Promise.all([
+    getI18n(),
+    salonKpis(salon.id),
+    recentSalonReviews(salon.id),
+    salonStats(salon.id, 30),
+    // IA P2 : vraie prévision de la semaine (plan Pro et Premium)
+    access.features.includes("affluence") ? salonWeekForecast(salon.id, HEATMAP_HOURS) : null,
+  ]);
   const d = t.dashboard;
   const o = d.overview;
   const today = tunisToday();
@@ -84,28 +95,38 @@ export default async function DashboardPage() {
             </div>
             <span className="rounded-full bg-blush px-2.5 py-1 text-xs font-semibold text-plum-700">{t.common.ai}</span>
           </div>
-          <div className="mt-5">
-            <AffluenceHeatmap days={HEATMAP_DAYS} hours={HEATMAP_HOURS} values={AFFLUENCE_FORECAST} />
-          </div>
-          <ul className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-            <li className="flex gap-3 rounded-2xl bg-muted/60 p-4 text-sm">
-              <Users className="mt-0.5 size-4 shrink-0 text-plum-700" aria-hidden />
-              <span>
-                <span className="font-semibold">{f(o.peakTitle, { day: weekday(6), range: f(t.common.range, { from: hour(14), to: hour(17) }) })}</span>{" "}
-                <span className="text-muted-foreground">{o.peakText}</span>
-              </span>
-            </li>
-            <li className="flex gap-3 rounded-2xl bg-muted/60 p-4 text-sm">
-              <TrendingDown className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
-              <span>
-                <span className="font-semibold">{f(o.lowTitle, { day: weekday(2), range: f(t.common.range, { from: hour(9), to: hour(12) }) })}</span>{" "}
-                <span className="text-muted-foreground">{f(o.lowText, { pts: f(t.common.plusPoints, { n: 10 }) })}</span>{" "}
-                <Link href="/dashboard/promotions" className="font-semibold text-plum-700 hover:underline">
-                  {o.createOffer}
-                </Link>
-              </span>
-            </li>
-          </ul>
+          {week ? (
+            <>
+              <div className="mt-5">
+                <AffluenceHeatmap days={week.days} hours={HEATMAP_HOURS} values={week.values} />
+              </div>
+              <ul className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                {week.peak && (
+                  <li className="flex gap-3 rounded-2xl bg-muted/60 p-4 text-sm">
+                    <Users className="mt-0.5 size-4 shrink-0 text-plum-700" aria-hidden />
+                    <span>
+                      <span className="font-semibold">{f(o.peakTitle, { day: weekday(week.peak.weekday), range: f(t.common.range, { from: hour(week.peak.from), to: hour(week.peak.to) }) })}</span>{" "}
+                      <span className="text-muted-foreground">{o.peakText}</span>
+                    </span>
+                  </li>
+                )}
+                {week.low && (
+                  <li className="flex gap-3 rounded-2xl bg-muted/60 p-4 text-sm">
+                    <TrendingDown className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
+                    <span>
+                      <span className="font-semibold">{f(o.lowTitle, { day: weekday(week.low.weekday), range: f(t.common.range, { from: hour(week.low.from), to: hour(week.low.to) }) })}</span>{" "}
+                      <span className="text-muted-foreground">{f(o.lowText, { pts: f(t.common.plusPoints, { n: 10 }) })}</span>{" "}
+                      <Link href="/dashboard/promotions" className="font-semibold text-plum-700 hover:underline">
+                        {o.createOffer}
+                      </Link>
+                    </span>
+                  </li>
+                )}
+              </ul>
+            </>
+          ) : (
+            <PlanUpsell feature="affluence" canUpgrade={user.role !== "EMPLOYEE"} compact className="mt-5" />
+          )}
         </section>
 
         {/* Prochains rendez-vous */}
@@ -136,7 +157,7 @@ export default async function DashboardPage() {
                     {d.bookingStatus[b.uiStatus]}
                   </span>
                   <div className="ms-auto">
-                    <BookingStatusActions bookingId={b.id} status={b.status} />
+                    <BookingStatusActions bookingId={b.id} actions={b.actions} />
                   </div>
                 </li>
               );

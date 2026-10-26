@@ -95,6 +95,22 @@ export const pointsExpired = (points: number): Message => ({
   link: "/compte/fidelite",
 });
 
+const PLAN_NAMES: Record<string, string> = { pro: "Pro", premium: "Premium" };
+
+export const planExpiring = (plan: string, until: Date): Message => ({
+  type: "plan.expiring",
+  title: `Votre plan ${PLAN_NAMES[plan] ?? plan} se termine bientôt`,
+  body: `Il prend fin le ${longDate(until)}. Renouvelez-le pour garder ses fonctions (sinon le salon repasse au plan Gratuit).`,
+  link: "/dashboard/abonnement",
+});
+
+export const planExpired = (plan: string): Message => ({
+  type: "plan.expired",
+  title: `Plan ${PLAN_NAMES[plan] ?? plan} terminé`,
+  body: "Votre salon est repassé au plan Gratuit. Vos données sont conservées : renouvelez le plan pour retrouver toutes ses fonctions.",
+  link: "/dashboard/abonnement",
+});
+
 const REMINDER_TITLE = { soon: "Rendez-vous dans moins de 2 heures", today: "Rendez-vous aujourd'hui", tomorrow: "Rendez-vous demain" } as const;
 
 /** RES-07 : rappel la veille (ou le jour même) et moins de 2 h avant le rendez-vous */

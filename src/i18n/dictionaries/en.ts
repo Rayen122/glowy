@@ -66,6 +66,7 @@ export const en: Dictionary = {
     alreadyReviewed: "You have already reviewed this appointment.",
     insufficientPoints: "Not enough points.",
     tooLate: "The deadline for changes has passed.",
+    tooEarly: "This appointment has not started yet: this action is possible from its start time.",
   },
 
   pwa: {
@@ -207,6 +208,7 @@ export const en: Dictionary = {
   },
 
   results: {
+    featured: "Featured",
     filters: {
       today: "Available today",
       verified: "Verified salons",
@@ -472,7 +474,7 @@ export const en: Dictionary = {
     heatIdle: "Hover over or tap a cell to see the forecast.",
     heatDetail: "expected occupancy · {day} {hour} · {level}",
     heatCellAria: "{day} {hour}: {n}% expected occupancy",
-    heatCaption: "Expected occupancy per slot · model trained on 12 months of bookings",
+    heatCaption: "Expected occupancy per slot · weighted average of the last 8 weeks",
     heatTableCaption: "Expected occupancy (%) by day and hour",
     day: "Day",
     revenue: "Revenue",
@@ -525,9 +527,9 @@ export const en: Dictionary = {
     waitlist: "Join the waiting list",
     waitlistToast: "You're on the waiting list",
     waitlistToastDesc: "We'll let you know as soon as a slot opens up.",
-    lockExpired: "The 10-minute hold has expired: the {time} slot has been released.",
+    lockExpired: "The 10 minutes are up: check that the {time} slot is still free.",
     chooseOther: "Choose another slot",
-    lockActive: "Slot {slot} held for you for {time}",
+    lockActive: "Slot {slot} still free: it is only booked once you confirm. Time left to confirm: {time}",
     contact: "Your details",
     noteLabel: "Note for the salon",
     noteHint: "(allergies, preferences…)",
@@ -1061,6 +1063,24 @@ export const en: Dictionary = {
   },
 
   dashboard: {
+    planGate: {
+      title: "Available with the {plan} plan",
+      text: "{feature}: included in the {plan} plan. Your data is kept: upgrade to get it back.",
+      cta: "Upgrade to {plan}",
+      askManager: "Ask the salon manager to upgrade to the {plan} plan.",
+      employees: "Your {plan} plan allows {max} active professional(s). Upgrade to add more.",
+      seePlans: "See the plans",
+      features: {
+        agendaViews: "Week and month agenda views",
+        crm: "The client file (mini-CRM)",
+        stats: "Statistics and exports",
+        promotions: "Promotions and promo codes",
+        affluence: "AI crowd forecast",
+        stocks: "Stock management",
+        branches: "Managing several branches",
+        highlight: "Featured placement in search",
+      },
+    },
     metaTitle: "Salon dashboard",
     metaShort: "Dashboard",
     pendingBanner: "Your salon is awaiting approval by the Glowy team (24 to 48 h). It does not appear in search yet.",
@@ -1119,7 +1139,7 @@ export const en: Dictionary = {
       forecastTitle: "Crowd forecast · week of {date}",
       forecastHint: "AI prediction based on booking history",
       peakTitle: "{day} {range}: busy.",
-      peakText: "Plan 1 extra employee (5 instead of 4).",
+      peakText: "Plan extra staff for this slot.",
       lowTitle: "{day} {range}: quiet.",
       lowText: "Off-peak hours shared: {pts} for clients.",
       createOffer: "Create an offer",
@@ -1237,6 +1257,7 @@ export const en: Dictionary = {
         "salon.suspend": "suspended “{target}”",
         "salon.reactivate": "reactivated “{target}”",
         "user.block": "blocked a user account",
+        "plan.expired": "moved “{target}” back to the Free plan (period ended)",
         "user.unblock": "unblocked a user account",
         "review.hide": "hid a reported review",
         "review.keep": "kept a reported review",

@@ -258,6 +258,8 @@ Le projet est découpé en **5 gestions**, une par membre de l'équipe. Chaque g
 - Plans Gratuit, Pro (79 DT) et Premium (149 DT).
 - Le gérant déclare son paiement (virement, D17 ou espèces). Le Super Admin l'accepte ou le refuse.
 - Le plan accepté est actif **30 jours** et se renouvelle à partir de 7 jours avant l'échéance.
+- **Limites appliquées par le serveur** : Gratuit 1 professionnel actif, Pro 8 (avec CRM, statistiques, promotions, vues semaine / mois, prévision d'affluence), Premium illimité (avec stocks, succursales, mise en avant dans la recherche). Une fonction non comprise affiche « Disponible avec le plan … ».
+- **Échéance** : rappel au gérant 5 jours avant, puis retour automatique au plan Gratuit (tâche planifiée).
 - La page `/pro` présente l'offre aux salons.
 
 **Application installable (PWA) et langues**

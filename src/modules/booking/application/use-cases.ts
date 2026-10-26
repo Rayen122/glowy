@@ -4,7 +4,7 @@ import { badRequest, conflict, forbidden, notFound } from "@/core/domain/errors"
 import type { EventPublisher } from "@/core/domain/events";
 import { toMinutes, tunisToUtc, weekdayOf } from "@/core/domain/time";
 import { computeSlots, freeEmployees, isFree } from "../domain/availability";
-import { depositFor, isActive, isOffPeak, isWithinCancellationWindow, nextStatus, startsTooSoon, type StaffAction } from "../domain/policy";
+import { depositFor, EARLY_START_MIN, isActive, isOffPeak, isTooEarly, isWithinCancellationWindow, nextStatus, startsTooSoon, type StaffAction } from "../domain/policy";
 import type { BookingRepository, OffPeakPort, PromotionPort, SalonAccessPort } from "./ports";
 import type { AvailabilityQuery, BookingQuoteInput, CreateBookingInput } from "./schemas";
 
@@ -93,7 +93,8 @@ export function makeBooking({ bookings, access, promotions, events, clock, offPe
       });
       if (booking) {
         await events.publish("booking.created", { bookingId: booking.id });
-        return booking;
+        // Clé du professionnel attribué : affiché à la cliente même quand elle a choisi « peu importe »
+        return { ...booking, employeeKey: employee.key };
       }
     }
     if (promo) await promotions.release(promo.promotionId);
@@ -155,6 +156,12 @@ export function makeBooking({ bookings, access, promotions, events, clock, offPe
     if (!(await access.canManageSalon(actor, booking.salonId))) throw forbidden();
     const to = nextStatus(action, booking.status);
     if (!to) throw conflict("INVALID_TRANSITION", "Changement de statut impossible.");
+    if (isTooEarly(action, booking.status, booking.startsAt, clock.now())) {
+      throw conflict(
+        "TOO_EARLY",
+        action === "start" ? `Ce rendez-vous peut être commencé au plus tôt ${EARLY_START_MIN} minutes avant l'heure prévue.` : "Ce rendez-vous n'a pas encore eu lieu."
+      );
+    }
 
     const updated = await bookings.setStatus(bookingId, booking.status, to, clock.now());
     if (!updated) throw conflict("INVALID_TRANSITION", "Changement de statut impossible.");

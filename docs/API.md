@@ -57,6 +57,11 @@ Actions de `PATCH /api/bookings/:id` :
 | `complete` | salon | Terminé → événement `booking.completed` (points, droit à l'avis) |
 | `noShow` | salon | Absente → −20 pts |
 
+`start` est possible au plus tôt 30 min avant le rendez-vous ; `complete` (sauf rendez-vous déjà commencé) et `noShow` seulement après son heure : sinon `409 TOO_EARLY`.
+La réponse de `POST /api/bookings` contient aussi `employeeKey` : le professionnel attribué, même avec `employee: "any"`.
+
+**Fonctions réservées aux plans** (routes du dashboard) : `403 PLAN_REQUIRED` (`details.plan` = plan minimal) pour le CRM, les statistiques et exports, les promotions (Pro) et les stocks et succursales (Premium) ; `409 PLAN_LIMIT` au-delà du nombre de professionnels actifs du plan (Gratuit 1, Pro 8, Premium illimité).
+
 ## Espace client (P5)
 
 | Méthode | Route | Accès | Description |

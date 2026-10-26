@@ -7,6 +7,7 @@ import { Booking, Employee, objectId, TimeOff, User } from "@/infrastructure/db"
 import { createTimeOff, deleteTimeOff } from "@/modules/booking";
 import { createStaffAccount } from "@/modules/identity";
 import { sendEmail } from "@/modules/notifications";
+import { requireEmployeeSlot } from "@/modules/subscription";
 import type { EmployeeInput, LeaveInput } from "../application/schemas";
 import { currentSalonId } from "./current-salon";
 
@@ -67,12 +68,15 @@ async function uniqueKey(salon: Types.ObjectId, name: string) {
 
 export async function createEmployee(actor: Actor, input: EmployeeInput) {
   const salon = await managedSalon(actor);
+  // Nombre de professionnels actifs limité par le plan (Gratuit 1, Pro 8, Premium illimité)
+  if (input.active) await requireEmployeeSlot(salon.toString());
   const created = await Employee.create({ ...input, salon, key: await uniqueKey(salon, input.name) });
   return { id: created._id.toString() };
 }
 
 export async function updateEmployee(actor: Actor, employeeId: string, input: EmployeeInput) {
   const employee = await ownEmployee(actor, employeeId);
+  if (input.active && !employee.active) await requireEmployeeSlot(employee.salon.toString());
   await Employee.updateOne({ _id: employee._id }, { $set: input });
   return { id: employeeId };
 }

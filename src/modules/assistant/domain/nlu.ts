@@ -2,20 +2,21 @@ import { addDays, tunisToday, utcToTunis } from "@/core/domain/time";
 
 /**
  * IA P3 — compréhension des messages de l'assistante (fonctions pures, testées), sans service externe.
- * Français, arabe (dont darija courante) et anglais : prestation, date, moment de la journée, heure, ville,
+ * Français, arabe (dont darija courante, aussi écrite en lettres latines : « nheb n9os cha3ri ghodwa ») et anglais :
+ * prestation, date, moment de la journée, heure, ville,
  * questions fréquentes. Ce qui n'est pas compris renvoie vers le formulaire de réservation (repli).
  */
 
 export const SERVICES = {
-  chignon: { words: ["chignon", "mariage", "mariée", "wedding", "bride", "bridal", "عرس", "عروسة", "عروس"], category: "coiffure", search: ["chignon", "mariée"] },
-  coupe: { words: ["coupe", "couper", "cut", "haircut", "trim", "قص", "قصة"], category: "coiffure", search: ["coupe"] },
-  brushing: { words: ["brushing", "blow", "blowdry", "سشوار", "بروشينغ"], category: "coiffure", search: ["brushing"] },
-  couleur: { words: ["couleur", "coloration", "color", "colour", "balayage", "mèches", "racines", "highlights", "صبغة", "ميش"], category: "coiffure", search: ["coloration", "balayage", "couleur"] },
-  barbe: { words: ["barbe", "barbier", "beard", "rasage", "shave", "لحية", "حلاق"], category: "barbier", search: ["barbe", "rasage"] },
-  ongles: { words: ["manucure", "ongles", "nails", "manicure", "pédicure", "pedicure", "vernis", "gel", "أظافر", "مانيكير"], category: "ongles", search: ["manucure", "ongles", "pose"] },
-  soin: { words: ["soin", "visage", "facial", "hydratant", "peau", "skin", "بشرة", "وجه"], category: "visage", search: ["soin"] },
-  massage: { words: ["massage", "hammam", "spa", "gommage", "مساج", "حمام", "تدليك"], category: "spa", search: ["massage", "hammam"] },
-  maquillage: { words: ["maquillage", "makeup", "make-up", "مكياج", "ماكياج"], category: "maquillage", search: ["maquillage"] },
+  chignon: { words: ["chignon", "mariage", "mariée", "wedding", "bride", "bridal", "عرس", "عروسة", "عروس", "3ers", "aers", "3rousa", "arousa", "3arousa"], category: "coiffure", search: ["chignon", "mariée"] },
+  coupe: { words: ["coupe", "couper", "cut", "haircut", "trim", "قص", "قصة", "n9os", "nqos", "n9ossou", "9os", "9assa", "qassa", "ta7fifa", "tahfifa", "nkoupi"], category: "coiffure", search: ["coupe"] },
+  brushing: { words: ["brushing", "blow", "blowdry", "سشوار", "بروشينغ", "brouching", "brochin", "sechwar", "nsachwer"], category: "coiffure", search: ["brushing"] },
+  couleur: { words: ["couleur", "coloration", "color", "colour", "balayage", "mèches", "racines", "highlights", "صبغة", "ميش", "sbigha", "sbegha", "sbagh", "nsabbagh", "meches"], category: "coiffure", search: ["coloration", "balayage", "couleur"] },
+  barbe: { words: ["barbe", "barbier", "beard", "rasage", "shave", "لحية", "حلاق", "l7ya", "le7ya", "lehya", "la7ya", "7ajjem", "hajjem", "7ajem"], category: "barbier", search: ["barbe", "rasage"] },
+  ongles: { words: ["manucure", "ongles", "nails", "manicure", "pédicure", "pedicure", "vernis", "gel", "أظافر", "مانيكير", "dhfer", "dhafer", "adhafer", "dwafer", "manikir"], category: "ongles", search: ["manucure", "ongles", "pose"] },
+  soin: { words: ["soin", "visage", "facial", "hydratant", "peau", "skin", "بشرة", "وجه", "wejh", "wajh", "bachra", "bechra"], category: "visage", search: ["soin"] },
+  massage: { words: ["massage", "hammam", "spa", "gommage", "مساج", "حمام", "تدليك", "massaj", "7ammam", "hammem", "7ammem"], category: "spa", search: ["massage", "hammam"] },
+  maquillage: { words: ["maquillage", "makeup", "make-up", "مكياج", "ماكياج", "makiyaj", "makyaj", "maquiyage"], category: "maquillage", search: ["maquillage"] },
   epilation: { words: ["épilation", "epilation", "waxing", "wax", "سير", "إزالة"], category: "visage", search: ["épilation"] },
 } as const;
 export type ServiceIntent = keyof typeof SERVICES;
@@ -31,22 +32,22 @@ export const FAQ_TOPICS = {
 export type FaqTopic = keyof typeof FAQ_TOPICS;
 
 const WEEKDAYS: [number, string[]][] = [
-  [0, ["dimanche", "sunday", "الأحد", "الاحد", "احد"]],
-  [1, ["lundi", "monday", "الاثنين", "الإثنين", "اثنين"]],
-  [2, ["mardi", "tuesday", "الثلاثاء", "ثلاثاء"]],
-  [3, ["mercredi", "wednesday", "الأربعاء", "الاربعاء", "اربعاء"]],
-  [4, ["jeudi", "thursday", "الخميس", "خميس"]],
-  [5, ["vendredi", "friday", "الجمعة", "جمعة"]],
-  [6, ["samedi", "saturday", "السبت", "سبت"]],
+  [0, ["dimanche", "sunday", "الأحد", "الاحد", "احد", "a7ad", "ahad", "l7ad"]],
+  [1, ["lundi", "monday", "الاثنين", "الإثنين", "اثنين", "thnin", "tnin", "ethnin", "lethnin"]],
+  [2, ["mardi", "tuesday", "الثلاثاء", "ثلاثاء", "thleth", "tleta", "thletha", "ethleth"]],
+  [3, ["mercredi", "wednesday", "الأربعاء", "الاربعاء", "اربعاء", "erb3a", "arb3a", "larb3a"]],
+  [4, ["jeudi", "thursday", "الخميس", "خميس", "khmis", "lekhmis"]],
+  [5, ["vendredi", "friday", "الجمعة", "جمعة", "jom3a", "jem3a", "ljem3a", "jemaa"]],
+  [6, ["samedi", "saturday", "السبت", "سبت", "sebt", "essebt", "sabt"]],
 ];
 const PARTS = {
-  morning: ["matin", "matinée", "morning", "صباح", "الصباح", "الصبح"],
-  afternoon: ["après-midi", "aprem", "afternoon", "بعد الظهر", "العشية", "عشية"],
-  evening: ["soir", "soirée", "evening", "tonight", "مساء", "الليل", "ليلا"],
+  morning: ["matin", "matinée", "morning", "صباح", "الصباح", "الصبح", "sbe7", "sba7", "sbah", "esbe7"],
+  afternoon: ["après-midi", "aprem", "afternoon", "بعد الظهر", "العشية", "عشية", "3chiya", "achiya", "l3chiya", "la3chiya", "ba3d dhohr", "baad dhohr"],
+  evening: ["soir", "soirée", "evening", "tonight", "مساء", "الليل", "ليلا", "fel lil", "el mse", "mse"],
 } as const;
 export type DayPart = keyof typeof PARTS;
-const GREETINGS = ["bonjour", "salut", "bonsoir", "hello", "hi", "hey", "salam", "السلام", "مرحبا", "عسلامة", "أهلا"];
-const THANKS = ["merci", "thanks", "thank you", "شكرا", "يعطيك الصحة", "بارك الله"];
+const GREETINGS = ["bonjour", "salut", "bonsoir", "hello", "hi", "hey", "salam", "السلام", "مرحبا", "عسلامة", "أهلا", "aslema", "3aslema", "ahla", "marhba"];
+const THANKS = ["merci", "thanks", "thank you", "شكرا", "يعطيك الصحة", "بارك الله", "ya3tik saha", "yaatik saha", "barcha merci"];
 
 export type Parsed = {
   intent: "book" | "faq" | "greeting" | "thanks" | "unknown";
@@ -64,9 +65,9 @@ const hasWord = (text: string, word: string) => text.includes(` ${word} `) || (w
 function parseDate(text: string, now: Date): string | null {
   const today = tunisToday(now);
   const weekday = utcToTunis(now).weekday;
-  if (["après-demain", "apres-demain", "بعد غدوة", "بعد غد"].some((w) => text.includes(w))) return addDays(today, 2);
-  if (["demain", "tomorrow", "غدوة", "غدا"].some((w) => hasWord(text, w))) return addDays(today, 1);
-  if (["aujourd'hui", "aujourdhui", "today", "اليوم", "tonight", "ce soir"].some((w) => text.includes(w))) return today;
+  if (["après-demain", "apres-demain", "بعد غدوة", "بعد غد", "ba3d ghodwa", "baad ghodwa", "b3d ghodwa"].some((w) => text.includes(w))) return addDays(today, 2);
+  if (["demain", "tomorrow", "غدوة", "غدا", "ghodwa", "ghodwe", "ghadwa", "ghedwa"].some((w) => hasWord(text, w))) return addDays(today, 1);
+  if (["aujourd'hui", "aujourdhui", "today", "اليوم", "tonight", "ce soir"].some((w) => text.includes(w)) || ["lyoum", "elyoum", "lyouma"].some((w) => hasWord(text, w))) return today;
   if (["week-end", "weekend", "wikend", "الويكاند", "نهاية الأسبوع"].some((w) => text.includes(w))) return addDays(today, (6 - weekday + 7) % 7);
   for (const [day, words] of WEEKDAYS) {
     if (words.some((w) => hasWord(text, w))) return addDays(today, (day - weekday + 7) % 7);
@@ -107,7 +108,7 @@ export function parseMessage(message: string, now: Date, cities: string[]): Pars
   const city = cities.find((c) => text.includes(` ${c.toLowerCase()} `) || text.includes(c.toLowerCase())) ?? null;
   const date = parseDate(text, now);
   const time = parseTime(text);
-  const wantsBooking = service !== null || /(réserver|reserver|rendez-vous|rdv|book|appointment|موعد|نحجز|حجز)/.test(text);
+  const wantsBooking = service !== null || /(réserver|reserver|rendez-vous|rdv|book|appointment|موعد|نحجز|حجز|n7jez|nhjez|na7jez|maw3ed|mou3ed)/.test(text);
 
   let intent: Parsed["intent"] = "unknown";
   if (topic && !service) intent = "faq";

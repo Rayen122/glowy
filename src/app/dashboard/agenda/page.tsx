@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { salonDay, staffSalon } from "@/modules/dashboard";
 import { requirePageUser } from "@/infrastructure/session";
 import { addDays, tunisToday, utcToTunis } from "@/core/domain/time";
+import { PlanUpsell } from "@/components/dashboard/plan-upsell";
+import { planAccess } from "@/modules/subscription";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -41,7 +43,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
   const today = tunisToday();
   const date = typeof requested === "string" && /^\d{4}-\d{2}-\d{2}$/.test(requested) ? requested : today;
   const salon = await staffSalon(user);
-  const [{ t, tc, f, df }, day] = await Promise.all([getI18n(), salonDay(salon.id, date)]);
+  const [{ t, tc, f, df }, day, access] = await Promise.all([getI18n(), salonDay(salon.id, date), planAccess(salon.id)]);
   const a = t.dashboard.agenda;
   const EMPLOYEES = day.employees.map((e) => ({ id: e.id, name: e.name, avatar: e.avatarUrl, color: e.color, hours: e.workingHours }));
   const clamp = (minutes: number) => Math.min(END, Math.max(START, minutes));
@@ -84,8 +86,9 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
         </div>
       </header>
 
-      {view === "week" && <AgendaWeek salonId={salon.id} date={date} />}
-      {view === "month" && <AgendaMonth salonId={salon.id} date={date} />}
+      {view !== "day" && !access.features.includes("agendaViews") && <PlanUpsell feature="agendaViews" canUpgrade={user.role !== "EMPLOYEE"} compact />}
+      {view === "week" && access.features.includes("agendaViews") && <AgendaWeek salonId={salon.id} date={date} />}
+      {view === "month" && access.features.includes("agendaViews") && <AgendaMonth salonId={salon.id} date={date} />}
       {view === "day" && (
       <>
       <div className="flex flex-wrap items-center justify-between gap-3">

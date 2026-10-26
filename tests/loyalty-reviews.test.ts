@@ -2,19 +2,19 @@ import "./setup";
 import assert from "node:assert/strict";
 import { after, beforeEach, describe, test } from "node:test";
 import { setSalonStatus } from "@/modules/admin";
-import { createBooking, setBookingStatus } from "@/modules/booking";
+import { createBooking } from "@/modules/booking";
 import { AppError } from "@/core/domain/errors";
 import { redeem } from "@/modules/loyalty";
 import { createReview } from "@/modules/reviews";
 import { AuditLog, Booking, Reward, Salon, User } from "@/infrastructure/db";
-import { closeDb, FUTURE_MONDAY, makeSalon, makeUser, resetDb } from "./helpers";
+import { afterVisit, closeDb, FUTURE_MONDAY, makeSalon, makeUser, resetDb } from "./helpers";
 
 const balance = async (userId: string) => ({ balance: (await User.findById(userId).orFail().lean()).loyalty?.balance ?? 0 });
 
 /** 15 h : hors heure creuse. Réservé des années à l'avance → toujours +5 « réservation 48 h à l'avance ». */
 async function completedBooking(clientId: string, ownerId: string, time = "15:00", slug = "salon-test") {
   const booking = await createBooking(clientId, { salonSlug: slug, serviceKeys: ["coupe"], employee: "any", date: FUTURE_MONDAY, time, paymentMethod: "ONSITE" });
-  await setBookingStatus(booking.id, { id: ownerId, role: "MANAGER" }, "complete");
+  await afterVisit.setBookingStatus(booking.id, { id: ownerId, role: "MANAGER" }, "complete");
   return booking;
 }
 
@@ -34,7 +34,7 @@ describe("Fidélité, avis vérifiés et Super Admin", () => {
 
     // Rejouer l'événement ne crédite pas deux fois
     await Booking.updateOne({ _id: booking.id }, { $set: { status: "CONFIRMED" } });
-    await setBookingStatus(booking.id, { id: owner.id, role: "MANAGER" }, "complete");
+    await afterVisit.setBookingStatus(booking.id, { id: owner.id, role: "MANAGER" }, "complete");
     assert.equal((await balance(client.id)).balance, 60);
   });
 
@@ -69,7 +69,7 @@ describe("Fidélité, avis vérifiés et Super Admin", () => {
     const review = { bookingId: pending.id, rating: 5, text: "Super coupe, très bon accueil.", lang: "fr" as const };
     await assert.rejects(createReview({ id: client.id, role: "CLIENT" }, review), (e: AppError) => e.code === "BOOKING_NOT_COMPLETED");
 
-    await setBookingStatus(pending.id, { id: owner.id, role: "MANAGER" }, "complete");
+    await afterVisit.setBookingStatus(pending.id, { id: owner.id, role: "MANAGER" }, "complete");
     const before = (await balance(client.id)).balance;
     await createReview({ id: client.id, role: "CLIENT" }, review);
     assert.equal((await balance(client.id)).balance, before + 15);
