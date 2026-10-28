@@ -22,3 +22,8 @@ export interface ReviewRepository {
 export interface SalonAccessPort {
   canManageSalon(actor: Actor, salonId: string): Promise<boolean>;
 }
+
+/** Modération IA : gros mots masqués avant publication */
+export interface ModerationPort {
+  cleanText(text: string): Promise<string>;
+}

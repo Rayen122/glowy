@@ -8,6 +8,9 @@ export type MediaPurpose = (typeof MEDIA_PURPOSES)[number];
 /** Les justificatifs et les photos d'analyse ne sont visibles que par leur propriétaire (et le Super Admin) — cahier §10 */
 export const PRIVATE_PURPOSES: readonly MediaPurpose[] = ["document", "analysis"];
 
+/** Photos publiques : vérifiées par l'IA de modération avant d'être enregistrées */
+export const MODERATED_PURPOSES: readonly MediaPurpose[] = ["salon", "review", "avatar"];
+
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 const LIMITS: Record<MediaPurpose, { types: readonly string[]; maxBytes: number }> = {
   salon: { types: IMAGE_TYPES, maxBytes: 5 * 1024 * 1024 },

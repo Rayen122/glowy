@@ -4,7 +4,8 @@
  */
 import type { Actor } from "@/core/domain/actor";
 import { forbidden, notFound } from "@/core/domain/errors";
-import { assertAcceptable, PRIVATE_PURPOSES, safeFilename, type MediaPurpose } from "./domain/policy";
+import { assertSafeImage } from "@/modules/moderation";
+import { assertAcceptable, MODERATED_PURPOSES, PRIVATE_PURPOSES, safeFilename, type MediaPurpose } from "./domain/policy";
 import { findFile, openFile, removeFile, storeFile } from "./infrastructure/gridfs";
 
 export const mediaUrl = (id: string) => `/api/media/${id}`;
@@ -13,6 +14,7 @@ export const mediaUrl = (id: string) => `/api/media/${id}`;
 export async function uploadMedia(actor: Actor | null, purpose: MediaPurpose, file: { name: string; bytes: Uint8Array }) {
   if (!actor && purpose !== "document") throw forbidden("Connectez-vous pour envoyer une photo.");
   const contentType = assertAcceptable(purpose, file.bytes);
+  if (MODERATED_PURPOSES.includes(purpose)) await assertSafeImage(file.bytes, contentType);
   const id = await storeFile(file.bytes, safeFilename(file.name), { owner: actor?.id ?? null, purpose, contentType, private: PRIVATE_PURPOSES.includes(purpose) });
   return { id, url: mediaUrl(id), contentType };
 }
