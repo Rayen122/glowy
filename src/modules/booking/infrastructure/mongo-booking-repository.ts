@@ -102,7 +102,8 @@ export const mongoBookingRepository: BookingRepository = {
         employee,
         startsAt: data.startsAt,
         endsAt: data.endsAt,
-        status: "CONFIRMED",
+        // Demande à confirmer par le salon ; le créneau est déjà verrouillé (personne d'autre ne peut le prendre)
+        status: "PENDING",
         totalPrice: data.totalPrice,
         discount: data.discount,
         promo: data.promo ? { promotion: objectId(data.promo.promotionId), code: data.promo.code, label: data.promo.label } : null,

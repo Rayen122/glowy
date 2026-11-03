@@ -36,8 +36,10 @@ export const isWithinCancellationWindow = (startsAt: Date, now: Date, cancellati
 
 /** Suivi du rendez-vous par le salon */
 export const TRANSITIONS = {
+  /** Le salon accepte la demande de la cliente */
+  confirm: { from: ["PENDING"], to: "CONFIRMED" },
   start: { from: ["PENDING", "CONFIRMED"], to: "IN_PROGRESS" },
-  complete: { from: ["CONFIRMED", "IN_PROGRESS"], to: "COMPLETED" },
+  complete: { from: ["PENDING", "CONFIRMED", "IN_PROGRESS"], to: "COMPLETED" },
   noShow: { from: ["PENDING", "CONFIRMED"], to: "NO_SHOW" },
 } as const satisfies Record<string, { from: readonly BookingStatus[]; to: BookingStatus }>;
 
@@ -58,7 +60,7 @@ export const EARLY_START_MIN = 30;
  * Un rendez-vous déjà commencé peut être terminé à tout moment.
  */
 export function isTooEarly(action: StaffAction, current: BookingStatus, startsAt: Date, now: Date) {
-  if (action === "complete" && current === "IN_PROGRESS") return false;
+  if (action === "confirm" || (action === "complete" && current === "IN_PROGRESS")) return false;
   const opensAt = startsAt.getTime() - (action === "start" ? EARLY_START_MIN * 60_000 : 0);
   return now.getTime() < opensAt;
 }

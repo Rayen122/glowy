@@ -55,9 +55,16 @@ export const bookingConfirmed = (salonName: string, date: string, time: string):
 
 export const bookingReceived = (client: string, date: string, time: string): Message => ({
   type: "booking.new",
-  title: "Nouveau rendez-vous",
-  body: `${client} — ${date} à ${time}`,
-  link: "/dashboard/agenda",
+  title: "Nouvelle demande à confirmer",
+  body: `${client} — ${date} à ${time}. Confirmez ou refusez depuis le dashboard.`,
+  link: "/dashboard",
+});
+
+export const bookingRequested = (salonName: string, date: string, time: string): Message => ({
+  type: "booking.requested",
+  title: "Demande envoyée",
+  body: `${salonName}, le ${date} à ${time} : le salon va confirmer votre rendez-vous.`,
+  link: "/compte/rendez-vous",
 });
 
 export const bookingCancelled = (salonName: string, date: string, recipient: "client" | "salon"): Message => ({

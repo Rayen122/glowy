@@ -35,6 +35,7 @@ export const bookingQuoteInput = z.object({
 export const bookingActionInput = z.discriminatedUnion("action", [
   z.object({ action: z.literal("cancel") }),
   z.object({ action: z.literal("reschedule"), date: DATE, time: TIME }),
+  z.object({ action: z.literal("confirm") }),
   z.object({ action: z.literal("start") }),
   z.object({ action: z.literal("complete") }),
   z.object({ action: z.literal("noShow") }),

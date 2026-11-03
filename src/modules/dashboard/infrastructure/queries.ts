@@ -9,7 +9,7 @@ import { currentSalonId } from "./current-salon";
 
 /** Dashboard salon (P2, SAL-01) : vue du jour calculée depuis les réservations. */
 
-const UI_STATUS = { COMPLETED: "termine", IN_PROGRESS: "en_cours", CONFIRMED: "confirme", PENDING: "confirme", NO_SHOW: "absent", CANCELLED: "absent" } as const;
+const UI_STATUS = { COMPLETED: "termine", IN_PROGRESS: "en_cours", CONFIRMED: "confirme", PENDING: "a_confirmer", NO_SHOW: "absent", CANCELLED: "absent" } as const;
 
 /** Salon du membre du personnel connecté (mis en cache le temps d'une requête) */
 export const staffSalon = cache(async (actor: Actor) => {
@@ -29,7 +29,7 @@ export async function salonDay(salonId: string, date = tunisToday(), now = new D
     color: keyOf.get(b.employeeId)?.color ?? 1,
     uiStatus: UI_STATUS[b.status],
     /** Boutons proposés au salon maintenant (pas de « terminé » / « absente » avant l'heure) */
-    actions: staffActions(b.status, b.startsAt, now),
+    actions: [...staffActions(b.status, b.startsAt, now), ...(b.status === "PENDING" ? (["decline"] as const) : [])],
   }));
   return { ...agenda, bookings };
 }

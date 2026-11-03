@@ -10,6 +10,8 @@ export type DomainEvents = {
   "plan.paymentRequested": { paymentId: string; salonId: string };
   "plan.paymentDecided": { paymentId: string; salonId: string; accepted: boolean; actorId: string };
   "booking.created": { bookingId: string };
+  /** Le salon a accepté la demande */
+  "booking.confirmed": { bookingId: string };
   "booking.cancelled": { bookingId: string; late: boolean; by: "client" | "salon" };
   "booking.completed": { bookingId: string };
   "booking.noShow": { bookingId: string };

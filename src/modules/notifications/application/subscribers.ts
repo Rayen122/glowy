@@ -38,9 +38,18 @@ export function registerNotificationSubscribers(bus: EventSubscriber, { notify, 
   bus.on("booking.created", async ({ bookingId }) => {
     const booking = await facts.booking(bookingId);
     const { date, time } = utcToTunis(booking.startsAt);
+    const requested = messages.bookingRequested(booking.salonName, date, time);
+    await notify(booking.clientId, requested);
+    await notify(booking.salonOwnerId, messages.bookingReceived(booking.clientName, date, time));
+    await mailer.send(booking.clientEmail, "Votre demande de rendez-vous Glowy", requested.body);
+  });
+
+  // Le salon accepte la demande : la cliente est prévenue (notification, e-mail, SMS)
+  bus.on("booking.confirmed", async ({ bookingId }) => {
+    const booking = await facts.booking(bookingId);
+    const { date, time } = utcToTunis(booking.startsAt);
     const confirmed = messages.bookingConfirmed(booking.salonName, date, time);
     await notify(booking.clientId, confirmed);
-    await notify(booking.salonOwnerId, messages.bookingReceived(booking.clientName, date, time));
     await mailer.send(booking.clientEmail, "Votre rendez-vous Glowy est confirmé", confirmed.body);
     if (booking.clientPhone) await sms.send(booking.clientPhone, `Glowy : RDV confirmé, ${confirmed.body}`);
   });

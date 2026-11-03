@@ -30,7 +30,7 @@ Connexion côté interface : `signIn("credentials", { email, password, redirect:
 | GET | `/api/salons/:slug` | public | Fiche : services groupés, équipe, horaires, avis vérifiés, répartition des notes |
 | GET | `/api/salons/:slug/availability?date=&services=a,b&employee=` | public | Créneaux de 30 min avec les employés libres pour la durée totale des prestations |
 | GET | `/api/bookings` | cliente | Historique de la cliente connectée |
-| POST | `/api/bookings` | cliente | Réserver. `409 SLOT_TAKEN` si le créneau vient d'être pris |
+| POST | `/api/bookings` | cliente | Demande de réservation : statut `PENDING` (créneau gardé) jusqu'à la confirmation du salon. `409 SLOT_TAKEN` si le créneau vient d'être pris |
 | PATCH | `/api/bookings/:id` | cliente / salon | `{ action }` : voir ci-dessous |
 
 Corps de `POST /api/bookings` :
@@ -51,8 +51,9 @@ Actions de `PATCH /api/bookings/:id` :
 
 | action | Qui | Effet |
 | --- | --- | --- |
-| `cancel` | cliente ou salon | Annule. Cliente à moins de `cancellationHours` du rendez-vous : annulation tardive, acompte conservé, −20 pts |
+| `cancel` | cliente ou salon | Annule (pour le salon, refuser une demande en attente). Cliente à moins de `cancellationHours` du rendez-vous : annulation tardive, acompte conservé, −20 pts |
 | `reschedule` + `date`, `time` | cliente | Déplace le rendez-vous (même employé, même durée) |
+| `confirm` | salon | Accepte la demande : `PENDING` → `CONFIRMED`, la cliente est prévenue (notification, e-mail, SMS) |
 | `start` | salon | En cours |
 | `complete` | salon | Terminé → événement `booking.completed` (points, droit à l'avis) |
 | `noShow` | salon | Absente → −20 pts |

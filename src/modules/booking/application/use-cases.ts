@@ -165,6 +165,7 @@ export function makeBooking({ bookings, access, promotions, events, clock, offPe
 
     const updated = await bookings.setStatus(bookingId, booking.status, to, clock.now());
     if (!updated) throw conflict("INVALID_TRANSITION", "Changement de statut impossible.");
+    if (to === "CONFIRMED") await events.publish("booking.confirmed", { bookingId });
     if (to === "COMPLETED") await events.publish("booking.completed", { bookingId });
     if (to === "NO_SHOW") await events.publish("booking.noShow", { bookingId });
     return updated;

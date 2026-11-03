@@ -11,6 +11,7 @@ import { requirePageUser } from "@/infrastructure/session";
 import { addDays, tunisToday, utcToTunis } from "@/core/domain/time";
 import { PlanUpsell } from "@/components/dashboard/plan-upsell";
 import { planAccess } from "@/modules/subscription";
+import { AgendaBooking } from "@/components/dashboard/agenda-booking";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -196,9 +197,24 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
                   const tint = TINT[e.color] ?? TINT[1];
                   const status = uiStatus;
                   return (
-                    <button
+                    <AgendaBooking
                       key={b.id}
-                      type="button"
+                      booking={{
+                        id: b.id,
+                        time: b.time,
+                        end: b.end,
+                        dateLabel: df(date, { weekday: "long", day: "numeric", month: "long" }),
+                        clientId: b.clientId,
+                        clientFullName: b.clientFullName || b.client,
+                        clientPhone: b.clientPhone,
+                        service: tc(b.service),
+                        employeeName: e.name,
+                        statusLabel: t.dashboard.bookingStatus[status],
+                        price: b.price,
+                        deposit: b.deposit,
+                        note: b.note,
+                        actions: b.actions,
+                      }}
                       className={cn(
                         "absolute inset-x-1.5 flex flex-col justify-start overflow-hidden rounded-lg border-s-[3px] px-2.5 py-1.5 text-start transition-shadow hover:shadow-soft focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
                         tint.bar,
@@ -208,7 +224,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
                         status === "en_cours" && "ring-2 ring-ink/80"
                       )}
                       style={{ top, height: h }}
-                      aria-label={f(a.slotAria, { from: b.time, to: b.end, client: b.client, service: tc(b.service), status: t.dashboard.bookingStatus[status] })}
+                      ariaLabel={f(a.slotAria, { from: b.time, to: b.end, client: b.client, service: tc(b.service), status: t.dashboard.bookingStatus[status] })}
                     >
                       <p className="truncate text-[11px] font-medium text-muted-foreground tabular-nums">
                         <span dir="ltr">
@@ -219,7 +235,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
                       </p>
                       <p className={cn("truncate text-sm font-semibold text-foreground", status === "absent" && "line-through")}>{b.client}</p>
                       {h > 56 && <p className="truncate text-xs text-muted-foreground">{tc(b.service)}</p>}
-                    </button>
+                    </AgendaBooking>
                   );
                 })}
               </div>

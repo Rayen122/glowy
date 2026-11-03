@@ -59,7 +59,7 @@ export async function salonAgenda(salonId: string, date: string) {
     Booking.find({ salon, startsAt: { $lt: end }, endsAt: { $gt: start }, status: { $ne: "CANCELLED" } }).sort({ startsAt: 1 }).lean(),
     TimeOff.find({ employee: { $in: employees.map((e) => e._id) }, startsAt: { $lt: end }, endsAt: { $gt: start } }).lean(),
   ]);
-  const clients = await User.find({ _id: { $in: bookings.map((b) => b.client) } }, { firstName: 1, lastName: 1 }).lean();
+  const clients = await User.find({ _id: { $in: bookings.map((b) => b.client) } }, { firstName: 1, lastName: 1, phone: 1 }).lean();
   const clientById = new Map(clients.map((c) => [idOf(c), c]));
 
   return {
@@ -90,6 +90,12 @@ export async function salonAgenda(salonId: string, date: string) {
         time: utcToTunis(b.startsAt).time,
         end: utcToTunis(b.endsAt).time,
         client: client ? shortName(client.firstName, client.lastName) : "",
+        /** Fiche du rendez-vous (clic dans l'agenda) */
+        clientId: b.client.toString(),
+        clientFullName: client ? `${client.firstName} ${client.lastName}`.trim() : "",
+        clientPhone: client?.phone ?? null,
+        note: b.note ?? null,
+        deposit: b.deposit ?? 0,
         service: b.items.map((i) => i.name).join(" + "),
         price: b.totalPrice,
       };

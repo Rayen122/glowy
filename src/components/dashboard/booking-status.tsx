@@ -2,17 +2,17 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Check, LoaderCircle, Play, UserX } from "lucide-react";
+import { CalendarCheck, Check, LoaderCircle, Play, UserX, X } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/i18n/client";
 import { api, ApiError } from "@/lib/api";
 
-type Action = "start" | "complete" | "noShow";
+type Action = "confirm" | "decline" | "start" | "complete" | "noShow";
 
-const ICONS = { start: Play, complete: Check, noShow: UserX } as const;
+const ICONS = { confirm: CalendarCheck, decline: X, start: Play, complete: Check, noShow: UserX } as const;
 
 /**
- * Suivi d'un rendez-vous par le salon : commencer, terminer (crédite les points de la cliente
+ * Suivi d'un rendez-vous par le salon : confirmer ou refuser une demande, commencer, terminer (crédite les points de la cliente
  * et ouvre le droit à l'avis vérifié) ou marquer absente (pénalité). Les actions possibles à cet instant
  * sont calculées par le serveur (`staffActions`) : rien n'est proposé avant l'heure du rendez-vous.
  */
@@ -25,7 +25,8 @@ export function BookingStatusActions({ bookingId, actions }: { bookingId: string
   const run = async (action: Action) => {
     setPending(action);
     try {
-      await api(`/api/bookings/${bookingId}`, { method: "PATCH", body: { action } });
+      // « Refuser » = annulation par le salon : créneau libéré, acompte remboursé, cliente prévenue
+      await api(`/api/bookings/${bookingId}`, { method: "PATCH", body: { action: action === "decline" ? "cancel" : action } });
       toast.success(d.done[action]);
       router.refresh();
     } catch (error) {
@@ -41,7 +42,7 @@ export function BookingStatusActions({ bookingId, actions }: { bookingId: string
     <span className="flex shrink-0 gap-1">
       {actions.map((id) => {
         const Icon = ICONS[id];
-        const primary = id === "complete";
+        const primary = id === "complete" || id === "confirm";
         return (
           <button
             key={id}

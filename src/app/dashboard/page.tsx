@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CalendarCheck, CircleCheck, CircleDot, Coins, Gauge, Lightbulb, ShieldAlert, Star, TrendingDown, UserX, Users } from "lucide-react";
+import { ArrowRight, CalendarCheck, CircleCheck, CircleDot, Coins, Gauge, Hourglass, Lightbulb, ShieldAlert, Star, TrendingDown, Users, UserX } from "lucide-react";
 import { AffluenceHeatmap } from "@/components/charts/affluence-heatmap";
 import { BarList } from "@/components/charts/bar-list";
 import { RevenueBars } from "@/components/charts/revenue-bars";
@@ -19,6 +19,7 @@ const STATUS_STYLE = {
   termine: { className: "text-muted-foreground", icon: CircleCheck },
   en_cours: { className: "text-plum-700", icon: CircleDot },
   confirme: { className: "text-success", icon: CalendarCheck },
+  a_confirmer: { className: "text-warning", icon: Hourglass },
   absent: { className: "text-destructive", icon: UserX },
 } as const;
 
