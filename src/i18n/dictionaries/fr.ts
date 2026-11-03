@@ -582,11 +582,11 @@ export const fr = {
     launcher: "Réserver avec l’assistante",
     dialogAria: "Assistante de réservation Glowy",
     title: "Assistante Glowy",
-    online: "En ligne · FR / عربي / EN",
+    online: "En ligne · FR / عربي / Tounsi / EN",
     close: "Fermer l'assistante",
     typing: "L'assistante écrit",
-    welcome: "Bonjour ! Je suis l’assistante Glowy. Dites-moi la prestation, le jour et le moment, en français, en arabe ou en anglais : je vous propose de vrais créneaux libres.",
-    suggestions: ["Une coupe demain matin", "Manucure samedi après-midi", "Comment annuler un rendez-vous ?"],
+    welcome: "Bonjour ! Je suis l’assistante Glowy. Posez-moi vos questions sur les salons, les prix ou les horaires, ou dites-moi la prestation et le jour : en français, en arabe, en tounsi ou en anglais. Je vous propose de vrais créneaux libres.",
+    suggestions: ["Une coupe demain matin", "Nheb manicure nhar essebt", "Comment annuler un rendez-vous ?"],
     understood: "Voici des créneaux libres pour {service}, {date}{place} :",
     place: " à {city}",
     services: {
@@ -619,6 +619,7 @@ export const fr = {
     none: "Je n’ai pas trouvé de créneau libre pour {service} {date}. Essayez un autre jour ou parcourez les salons.",
     searchCta: "Voir les salons",
     greeting: "Bonjour ! Que puis-je réserver pour vous ?",
+    courtesy: "Merci de rester courtois : les gros mots sont masqués.",
     thanks: "Avec plaisir ! Autre chose ?",
     fallback: "Je n’ai pas bien compris. Indiquez la prestation, le jour et le moment (ex. « coupe demain matin à Tunis »), ou utilisez le formulaire.",
     faq: {

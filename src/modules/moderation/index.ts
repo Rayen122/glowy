@@ -6,8 +6,9 @@
  * Si Gemini est injoignable (quota, réseau), on ne bloque jamais l'utilisateur : repli sur le lexique, photo acceptée.
  */
 import { badRequest } from "@/core/domain/errors";
+import { geminiEnabled } from "@/infrastructure/ai/gemini";
 import { maskProfanity } from "./domain/profanity";
-import { geminiEnabled, imageVerdict, offensiveWords } from "./infrastructure/gemini";
+import { imageVerdict, offensiveWords } from "./infrastructure/gemini";
 
 export async function cleanText(text: string) {
   let extra: string[] = [];
@@ -35,4 +36,4 @@ export async function assertSafeImage(bytes: Uint8Array, contentType: string) {
 }
 
 export { isProfane, maskProfanity } from "./domain/profanity";
-export { geminiEnabled } from "./infrastructure/gemini";
+export { geminiEnabled } from "@/infrastructure/ai/gemini";

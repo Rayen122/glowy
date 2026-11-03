@@ -3,16 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ArrowUp, CalendarCheck, Check, Clock, MessageCircle, Sparkles, X } from "lucide-react";
+import { ArrowUp, CalendarCheck, Check, Clock, MessageCircle, ShieldAlert, Sparkles, X } from "lucide-react";
 import { LogoMark } from "@/components/brand/logo";
 import { PointsBadge } from "@/components/salon/badges";
 import { useI18n } from "@/i18n/client";
 import { api, ApiError } from "@/lib/api";
-import type { ChatReply, ChatSlot } from "@/modules/assistant";
+import type { ChatReply, ChatResponse, ChatSlot, ChatTurn } from "@/modules/assistant";
 import { cn } from "@/lib/utils";
 
 /** Les messages sont stockés sous forme de données : ils se re-traduisent si la langue change. */
-type BotContent = ChatReply | { kind: "welcome" } | { kind: "prepare"; slot: ChatSlot } | { kind: "done"; slot: ChatSlot } | { kind: "login" } | { kind: "slotTaken" } | { kind: "error" };
+type BotContent = ChatReply | { kind: "welcome" } | { kind: "courtesy" } | { kind: "prepare"; slot: ChatSlot } | { kind: "done"; slot: ChatSlot } | { kind: "login" } | { kind: "slotTaken" } | { kind: "error" };
 type Message = { id: number; role: "user"; text: string } | ({ id: number; role: "bot" } & BotContent);
 
 const SERVICE_ORDER = ["coupe", "brushing", "couleur", "chignon", "ongles", "soin", "massage", "maquillage", "barbe", "epilation"] as const;
@@ -39,17 +39,31 @@ export function ChatbotWidget() {
   }, [messages, typing]);
 
   const longDate = (iso: string) => df(iso, { weekday: "long", day: "numeric", month: "long" });
-  const pushUser = (text: string) => setMessages((m) => [...m, { id: idRef.current++, role: "user", text }]);
+  const pushUser = (text: string) => {
+    const id = idRef.current++;
+    setMessages((m) => [...m, { id, role: "user", text }]);
+    return id;
+  };
   const pushBot = (content: BotContent) => setMessages((m) => [...m, { id: idRef.current++, role: "bot", ...content }]);
 
   async function send(text: string) {
     const value = text.trim();
     if (!value || typing) return;
-    pushUser(value);
+    // Derniers échanges écrits (client et réponses rédigées par l'IA) : l'assistante suit la conversation
+    const history: ChatTurn[] = messages
+      .flatMap((m): ChatTurn[] => (m.role === "user" ? [{ role: "user", text: m.text }] : "text" in m && m.text ? [{ role: "bot", text: m.text }] : []))
+      .slice(-8)
+      .map((turn) => ({ ...turn, text: turn.text.slice(0, 1000) }));
+    const userId = pushUser(value);
     setInput("");
     setTyping(true);
     try {
-      const reply = await api<ChatReply>("/api/ai/chat", { method: "POST", body: { message: value, salonSlug } });
+      const { masked, ...reply } = await api<ChatResponse>("/api/ai/chat", { method: "POST", body: { message: value, salonSlug, history } });
+      // Gros mots : la bulle du client est réécrite masquée (et l'historique renvoyé ensuite aussi), avec un rappel à la politesse
+      if (masked) {
+        setMessages((m) => m.map((msg) => (msg.id === userId && msg.role === "user" ? { ...msg, text: masked } : msg)));
+        pushBot({ kind: "courtesy" });
+      }
       if (reply.kind === "slots") setLastSlots(reply);
       pushBot(reply);
     } catch {
@@ -103,6 +117,18 @@ export function ChatbotWidget() {
     switch (m.kind) {
       case "welcome":
         return <p>{c.welcome}</p>;
+      case "courtesy":
+        return (
+          <p className="flex items-center gap-1.5 text-[13px] font-medium">
+            <ShieldAlert className="size-4 shrink-0 text-warning" aria-hidden /> {c.courtesy}
+          </p>
+        );
+      case "answer":
+        return (
+          <p className="whitespace-pre-line" dir="auto">
+            {m.text}
+          </p>
+        );
       case "greeting":
         return <p>{c.greeting}</p>;
       case "thanks":
@@ -163,7 +189,7 @@ export function ChatbotWidget() {
       case "none":
         return (
           <p>
-            {f(c.none, { service: c.services[m.query.service], date: longDate(m.query.date) })}{" "}
+            {m.text ? <span dir="auto">{m.text}</span> : f(c.none, { service: c.services[m.query.service], date: longDate(m.query.date) })}{" "}
             <Link href={m.query.city ? `/salons?ville=${encodeURIComponent(m.query.city)}` : "/salons"} className="font-semibold text-plum-700 underline-offset-2 hover:underline">
               {c.searchCta}
             </Link>
@@ -172,13 +198,19 @@ export function ChatbotWidget() {
       case "slots":
         return (
           <div className="space-y-3">
-            <p>
-              {rich(c.understood, {
-                service: <strong key="s">{c.services[m.query.service]}</strong>,
-                date: <strong key="d">{longDate(m.query.date)}</strong>,
-                place: m.query.city ? f(c.place, { city: m.query.city }) : "",
-              })}
-            </p>
+            {m.text ? (
+              <p className="whitespace-pre-line" dir="auto">
+                {m.text}
+              </p>
+            ) : (
+              <p>
+                {rich(c.understood, {
+                  service: <strong key="s">{c.services[m.query.service]}</strong>,
+                  date: <strong key="d">{longDate(m.query.date)}</strong>,
+                  place: m.query.city ? f(c.place, { city: m.query.city }) : "",
+                })}
+              </p>
+            )}
             <ul className="space-y-2">
               {m.slots.map((s) => (
                 <li key={`${s.slug}-${s.time}`}>{slotButton(s)}</li>

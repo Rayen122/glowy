@@ -577,11 +577,11 @@ export const en: Dictionary = {
     launcher: "Book with the assistant",
     dialogAria: "Glowy booking assistant",
     title: "Glowy assistant",
-    online: "Online · FR / عربي / EN",
+    online: "Online · FR / عربي / Tounsi / EN",
     close: "Close the assistant",
     typing: "The assistant is typing",
-    welcome: "Hello! I’m the Glowy assistant. Tell me the service, the day and the time of day, in French, Arabic or English: I’ll suggest real free slots.",
-    suggestions: ["A haircut tomorrow morning", "Manicure Saturday afternoon", "How do I cancel an appointment?"],
+    welcome: "Hello! I’m the Glowy assistant. Ask me about salons, prices or opening hours, or tell me the service and the day — in French, Arabic, Tunisian or English. I’ll suggest real free slots.",
+    suggestions: ["A haircut tomorrow morning", "Nheb manicure nhar essebt", "How do I cancel an appointment?"],
     understood: "Here are free slots for {service}, {date}{place}:",
     place: " in {city}",
     services: {
@@ -614,6 +614,7 @@ export const en: Dictionary = {
     none: "I couldn’t find a free slot for {service} {date}. Try another day or browse the salons.",
     searchCta: "Browse salons",
     greeting: "Hello! What can I book for you?",
+    courtesy: "Please keep it polite: offensive words are hidden.",
     thanks: "My pleasure! Anything else?",
     fallback: "I didn’t quite get that. Tell me the service, the day and the time of day (e.g. “haircut tomorrow morning in Tunis”), or use the form.",
     faq: {

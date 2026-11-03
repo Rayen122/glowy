@@ -118,6 +118,34 @@ export function parseMessage(message: string, now: Date, cities: string[]): Pars
   return { intent, service, topic, date, part, time, city };
 }
 
+/** Public d'une prestation : mot écrit dans son nom (clé) et façons de le dire dans un message */
+const AUDIENCES: Record<string, string[]> = {
+  homme: ["homme", "hommes", "men", "man", "rajel", "rjel", "rjal", "راجل", "رجل", "رجال"],
+  femme: ["femme", "femmes", "women", "woman", "lady", "mra", "مرا", "امرأة", "نساء"],
+  enfant: ["enfant", "enfants", "kid", "kids", "child", "sghir", "صغير", "طفل", "أطفال"],
+};
+const words = (text: string) => text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+
+/**
+ * Prestation d'un salon pour la demande : jamais pour un autre public que celui demandé (« coupe homme » ≠ « Coupe femme »),
+ * de préférence celle qui reprend les mots du client, sinon une prestation sans public précis, puis la moins chère
+ * (« brushing » → « Brushing 20 DT » plutôt que « Coupe femme + brushing »).
+ */
+export function pickService<S extends { name: string; price: number; active: boolean }>(services: S[], intent: ServiceIntent, request = "") {
+  const said = new Set(words(request));
+  const asked = Object.keys(AUDIENCES).filter((a) => AUDIENCES[a].some((w) => said.has(w)));
+  const candidates = services
+    .filter((s) => s.active && SERVICES[intent].search.some((term) => s.name.toLowerCase().includes(term)))
+    .map((s) => {
+      const name = words(s.name);
+      return { s, audience: Object.keys(AUDIENCES).filter((a) => name.includes(a)), hits: name.filter((w) => w.length >= 4 && said.has(w)).length };
+    })
+    .filter((c) => !asked.length || !c.audience.length || c.audience.some((a) => asked.includes(a)));
+  const unasked = (c: (typeof candidates)[number]) => Number(!asked.length && c.audience.length > 0);
+  candidates.sort((a, b) => b.hits - a.hits || unasked(a) - unasked(b) || a.s.price - b.s.price);
+  return candidates[0]?.s;
+}
+
 /** Le créneau correspond-il à la demande (heure précise ± 1 h, ou moment de la journée) ? */
 export function matchesTime(slot: string, wanted: { part: DayPart | null; time: string | null }) {
   const minutes = Number(slot.slice(0, 2)) * 60 + Number(slot.slice(3, 5));
@@ -129,4 +157,29 @@ export function matchesTime(slot: string, wanted: { part: DayPart | null; time: 
   if (wanted.part === "afternoon") return minutes >= 12 * 60 && minutes < 17 * 60;
   if (wanted.part === "evening") return minutes >= 17 * 60;
   return true;
+}
+
+/** Langue et écriture d'un message : la réponse de l'assistante doit être dans les mêmes (derja tunisienne comprise) */
+export type ChatLang = "tn_arabizi" | "tn_arabe" | "ar" | "fr" | "en";
+
+const DERJA_LATIN = ["nheb", "n7eb", "nhebb", "famma", "fama", "chnowa", "chnoua", "chniya", "ghodwa", "ghadwa", "barcha", "behi", "bahi", "aslema", "ahla", "yezzi", "kifech", "kifeh", "chkoun", "mte3", "mta3", "bech", "tawa", "ya3tik", "lyoum", "sbe7", "3chiya", "nhar", "9addech", "kadech", "9adech", "n9os", "brabi", "mrigel", "sahbi", "ken", "zeda", "zada"];
+const DERJA_ARABIC = ["نحب", "باش", "برشا", "فما", "فمّا", "شنوة", "شنية", "غدوة", "قداش", "توة", "عسلامة", "كيفاش", "وقتاش", "ياسر", "بلاصة", "نجم", "موش", "مش", "نهار", "العشية", "الصباح", "يعيشك", "بربي"];
+const STANDARD_ARABIC = ["أريد", "اريد", "هل", "ماذا", "لماذا", "يمكن", "يمكنني", "أود", "من فضلك", "غدا", "موعدا"];
+const ENGLISH = ["the", "is", "are", "you", "your", "my", "what", "how", "can", "i", "do", "does", "please", "hello", "hi", "thanks", "appointment", "tomorrow", "for", "with", "where", "which", "best", "want", "need", "price"];
+const FRENCH = ["le", "la", "les", "je", "tu", "vous", "est", "pour", "un", "une", "des", "du", "comment", "quel", "quelle", "bonjour", "merci", "demain", "avec", "où", "mon", "ma", "mes", "rendez-vous", "prix", "salut", "veux", "voudrais"];
+
+export function detectLang(message: string): ChatLang {
+  const arabic = (message.match(/\p{Script=Arabic}/gu) ?? []).length;
+  const latin = (message.match(/[a-zà-ÿ]/gi) ?? []).length;
+  if (arabic > latin) {
+    if (DERJA_ARABIC.some((w) => message.includes(w))) return "tn_arabe";
+    return STANDARD_ARABIC.some((w) => message.includes(w)) ? "ar" : "tn_arabe"; // site tunisien : la derja est la plus probable
+  }
+  const words = message.toLowerCase().split(/[^\p{L}\p{N}'-]+/u).filter(Boolean);
+  // Arabizi : chiffres utilisés comme lettres (3aslema, n9os, 7ammam), hors heures et dates (14h30, 15/01)
+  const arabizi = words.some((w) => /\p{L}/u.test(w) && /[235679]/.test(w) && !/^\d+(h\d*|am|pm|er|e|ème)?$/.test(w));
+  if (arabizi || words.some((w) => DERJA_LATIN.includes(w))) return "tn_arabizi";
+  const en = words.filter((w) => ENGLISH.includes(w)).length;
+  const fr = words.filter((w) => FRENCH.includes(w)).length;
+  return en > fr ? "en" : "fr";
 }
