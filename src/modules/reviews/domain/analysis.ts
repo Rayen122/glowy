@@ -25,14 +25,21 @@ const POSITIVE = [
   "excellent", "excellente", "parfait", "parfaite", "super", "top", "génial", "géniale", "magnifique", "ravie", "ravi", "adore", "adoré", "recommande", "bravo", "merci", "rapide", "professionnel", "professionnelle", "satisfaite", "satisfait", "impeccable", "propre", "agréable", "doux", "douce", "belle", "beau", "sublime", "nickel", "abordable", "ponctuel", "ponctuelle", "chaleureux", "chaleureuse", "aimable", "gentille", "gentil", "tient",
   "great", "amazing", "love", "loved", "perfect", "recommend", "excellent", "friendly", "clean", "beautiful", "best", "happy", "nice", "good", "punctual", "affordable",
   "رائع", "رائعة", "ممتاز", "ممتازة", "شكرا", "أنصح", "نظيف", "نظيفة", "جميل", "جميلة", "مزيان", "باهي", "بهي", "يعطيك", "برافو", "تحفة", "لطيفة", "لطيف",
+  // derja tunisienne en arabizi
+  "behi", "bahi", "behya", "mezyen", "mezyena", "mezyan", "mzyen", "mrigel", "mriguel", "hayel", "hayla", "3jebni", "3ajebni", "3jebna", "ya3tik", "yaatik", "nadhif", "nadhifa", "ndhif", "rkhis",
 ];
 const NEGATIVE = [
   "déçue", "déçu", "décevant", "décevante", "nul", "nulle", "horrible", "sale", "cher", "chère", "long", "longue", "retard", "raté", "ratée", "mal", "impoli", "impolie", "désagréable", "brûlé", "abîmé", "abîmés", "catastrophe", "lent", "lente", "bâclé", "bâclée", "attendre", "pire", "dommage", "problème",
   "bad", "terrible", "disappointed", "rude", "late", "dirty", "expensive", "awful", "worst", "slow", "ruined", "never", "problem",
   "سيء", "سيئة", "غالي", "غالية", "تأخير", "متأخر", "خايب", "ماعجبنيش", "وسخ", "مشكل", "خسارة",
+  // derja tunisienne en arabizi
+  "khayeb", "5ayeb", "khayba", "5ayba", "3ayeb", "ma3jebnich", "ma3jbnich", "majebnich", "ghali", "ghalia", "msakh", "mosekh", "mousakh", "fadhi7a",
 ];
-/** « t » : fin des contractions anglaises (don't, didn't, isn't…) après découpage sur l'apostrophe */
-const NEGATIONS = ["pas", "jamais", "aucun", "aucune", "sans", "not", "no", "never", "t", "ما", "لا", "مش", "موش", "ليس"];
+/**
+ * « t » : fin des contractions anglaises (don't, didn't…) ; « ne », « n » : début de la négation française
+ * (« je ne recommande pas », « n'était pas ») ; « mouch » : négation en arabizi (« mouch behi »)
+ */
+const NEGATIONS = ["pas", "jamais", "aucun", "aucune", "sans", "ne", "n", "not", "no", "never", "t", "mouch", "moch", "mosh", "ما", "لا", "مش", "موش", "ليس"];
 const POSITIVE_EMOJI = /[😍🥰😊🙂👍❤💕💖✨🌸👌💯🤩]/u;
 const NEGATIVE_EMOJI = /[😡😠👎😞😔💔🤬😤]/u;
 
@@ -74,16 +81,24 @@ function polarity(text: string) {
 const ratingScore = (rating: number) => (rating - 3) / 2; // 1 → −1, 3 → 0, 5 → +1
 const toSentiment = (score: number): Sentiment => (score > 0.25 ? "positif" : score < -0.2 ? "negatif" : "neutre");
 
+/** Seuil d'alerte : à partir de ce score, l'avis part en modération et s'affiche « suspect » au salon */
+export const SUSPICION_ALERT = 50;
+
+/** Un indice seul (avis court, majuscules) reste sous le seuil ; un lien, une note contredite ou deux indices le dépassent */
 function suspicionOf(text: string, rating: number, lexical: number, hits: number) {
   let s = 0;
   const words = tokenize(text);
   if (words.length < 4) s += 30; // avis creux
-  if (/https?:\/\/|www\.|\.com\b/i.test(text)) s += 35; // lien publicitaire
-  if (/(.)\1{4,}/u.test(text)) s += 15; // « suuuuuper », « !!!!!! »
+  if (/https?:\/\/|www\.|\.com\b/i.test(text)) s += 50; // lien publicitaire
+  if (/(.)\1{4,}/u.test(text)) s += 20; // « suuuuuper », « !!!!!! »
   const letters = text.replace(/[^\p{L}]/gu, "");
-  if (letters.length > 12 && letters === letters.toUpperCase() && /[A-Z]/.test(letters)) s += 15; // tout en majuscules
-  if (hits > 0 && ((rating >= 4 && lexical < -0.3) || (rating <= 2 && lexical > 0.3))) s += 30; // note contredite par le texte
-  if (new Set(words).size < words.length / 2 && words.length > 6) s += 15; // répétitions
+  if (letters.length > 12 && letters === letters.toUpperCase() && /[A-Z]/.test(letters)) s += 25; // tout en majuscules
+  if (hits > 0 && ((rating >= 4 && lexical <= -0.5) || (rating <= 2 && lexical >= 0.5))) s += 50; // note contredite par le texte
+  // Même mot répété (« top top top », « parfait » ×7)
+  const counts = new Map<string, number>();
+  for (const w of words) counts.set(w, (counts.get(w) ?? 0) + 1);
+  const top = Math.max(0, ...counts.values());
+  if (top >= 3 && top / words.length >= 0.3) s += words.length > 6 && top / words.length >= 0.6 ? 50 : 30;
   return Math.min(100, s);
 }
 

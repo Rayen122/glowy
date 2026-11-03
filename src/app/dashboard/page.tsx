@@ -13,6 +13,7 @@ import { tunisToday } from "@/core/domain/time";
 import { cn } from "@/lib/utils";
 import { PlanUpsell } from "@/components/dashboard/plan-upsell";
 import { salonWeekForecast } from "@/modules/affluence";
+import { SUSPICION_ALERT } from "@/modules/reviews";
 import { planAccess } from "@/modules/subscription";
 
 const STATUS_STYLE = {
@@ -218,7 +219,7 @@ export default async function DashboardPage() {
         </div>
         <ul data-animate="stagger" data-stagger="0.1" className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
           {reviews.map((r) => {
-            const suspicious = r.suspicion > 60;
+            const suspicious = r.suspicion >= SUSPICION_ALERT;
             return (
               <li key={r.id} className={cn("rounded-2xl p-4 ring-1", suspicious ? "bg-danger-soft/60 ring-destructive/20" : "bg-muted/40 ring-border")}>
                 <div className="flex items-center justify-between gap-2">

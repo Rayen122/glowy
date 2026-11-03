@@ -1,7 +1,7 @@
 import "./setup";
 import assert from "node:assert/strict";
 import { after, describe, test } from "node:test";
-import { analyzeReview, summarizeReviews } from "@/modules/reviews";
+import { analyzeReview, summarizeReviews, SUSPICION_ALERT } from "@/modules/reviews";
 import { closeDb } from "./helpers";
 
 describe("IA P4 : analyse des avis (sentiment, aspects, suspicion)", () => {
@@ -30,6 +30,21 @@ describe("IA P4 : analyse des avis (sentiment, aspects, suspicion)", () => {
     assert.ok(analyzeReview({ text: "Nul", rating: 1 }).suspicion >= 30);
     assert.ok(analyzeReview({ text: "Horrible, sale et déçue, à éviter", rating: 5 }).suspicion >= 30);
     assert.equal(analyzeReview({ text: "Très bonne coupe, un peu d'attente le samedi.", rating: 4 }).suspicion, 0);
+  });
+
+  test("derja en arabizi et négation française « ne … pas » comprises sans la note", () => {
+    assert.equal(analyzeReview({ text: "Behi barcha, el coiffeuse mezyena", rating: 3 }).sentiment, "positif");
+    assert.equal(analyzeReview({ text: "Khayeb barcha, ma3jebnich jemla", rating: 3 }).sentiment, "negatif");
+    assert.equal(analyzeReview({ text: "3adi, mouch khayeb mouch behi", rating: 3 }).sentiment, "neutre");
+    assert.equal(analyzeReview({ text: "Je ne recommande pas du tout.", rating: 3 }).sentiment, "negatif");
+  });
+
+  test("alerte « avis suspect » : faux avis signalés, vrais avis jamais (seuil SUSPICION_ALERT)", () => {
+    const score = (text: string, rating: number) => analyzeReview({ text, rating }).suspicion;
+    for (const [text, rating] of [["TOP TOP TOP MEILLEUR SALON DE TUNIS", 5], ["Parfait parfait parfait parfait parfait parfait parfait", 5], ["Excellent", 1], ["Horrible, sale, impolie, à fuir", 5], ["Promo sur www.beaute-pas-chere.com", 5]] as const)
+      assert.ok(score(text, rating) >= SUSPICION_ALERT, text);
+    for (const [text, rating] of [["Top !", 5], ["Très très très bien", 5], ["Super, encore 45 minutes de retard… merci pour rien.", 1], ["Très déçue, coupe ratée et personne ne s'est excusé.", 1]] as const)
+      assert.ok(score(text, rating) < SUSPICION_ALERT, text);
   });
 
   test("synthèse : points forts récurrents et points faibles", () => {

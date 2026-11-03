@@ -15,7 +15,7 @@ export type Metrics = {
   saturation: number;
   /** Part de reflets (pixels très clairs et peu saturés) */
   highlights: number;
-  /** Dominante rouge au centre de l'image */
+  /** Rougeur au centre de l'image : teinte plus rouge que celle d'une peau normale (0 = aucune, 0,5 au plus) */
   redness: number;
   /** Énergie des détails fins (laplacien moyen) : texture, frisottis, netteté */
   sharpness: number;
@@ -51,6 +51,30 @@ function saturationOf(r: number, g: number, b: number) {
   return max === 0 ? 0 : (max - min) / max;
 }
 
+/** Composantes a* (vert → rouge) et b* (bleu → jaune) de l'espace CIELAB, illuminant D65 */
+function labAB(r: number, g: number, b: number) {
+  const lin = (c: number) => (c / 255 <= 0.04045 ? c / 255 / 12.92 : ((c / 255 + 0.055) / 1.055) ** 2.4);
+  const [R, G, B] = [lin(r), lin(g), lin(b)];
+  const f = (t: number) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
+  const fx = f((0.4124 * R + 0.3576 * G + 0.1805 * B) / 0.95047);
+  const fy = f(0.2126 * R + 0.7152 * G + 0.0722 * B);
+  const fz = f((0.0193 * R + 0.1192 * G + 0.9505 * B) / 1.08883);
+  return { a: 500 * (fx - fy), b: 200 * (fy - fz) };
+}
+
+/**
+ * Toute peau est plus rouge que verte : la rougeur se lit dans la teinte, pas dans le rouge brut.
+ * Angle de teinte CIELAB (atan2(b*, a*)) : 51 à 63° pour les peaux normales, de très claire à très foncée ;
+ * 31 à 38° pour une peau irritée ou un coup de soleil. Indice = écart sous 55°, ignoré si la couleur est trop grise.
+ */
+const SKIN_HUE = 55;
+function rednessOf(r: number, g: number, b: number) {
+  const lab = labAB(r, g, b);
+  if (lab.a <= 0 || Math.hypot(lab.a, lab.b) < 8) return 0;
+  const hue = Math.max(0, (Math.atan2(lab.b, lab.a) * 180) / Math.PI);
+  return Math.min(0.5, Math.max(0, (SKIN_HUE - hue) / 100));
+}
+
 /** Mesures d'une image RGBA (largeur × hauteur), idéalement réduite à ~128 px de côté */
 export function measure(rgba: Uint8ClampedArray | number[], width: number, height: number): Metrics {
   const n = width * height;
@@ -58,8 +82,8 @@ export function measure(rgba: Uint8ClampedArray | number[], width: number, heigh
   let sumL = 0;
   let sumS = 0;
   let highlights = 0;
-  let redSum = 0;
-  let redCount = 0;
+  const center = [0, 0, 0];
+  let centerCount = 0;
   for (let i = 0; i < n; i += 1) {
     const r = rgba[i * 4];
     const g = rgba[i * 4 + 1];
@@ -73,8 +97,10 @@ export function measure(rgba: Uint8ClampedArray | number[], width: number, heigh
     const x = i % width;
     const y = Math.floor(i / width);
     if (x > width * 0.25 && x < width * 0.75 && y > height * 0.25 && y < height * 0.75) {
-      redSum += (r - (g + b) / 2) / 255;
-      redCount += 1;
+      center[0] += r;
+      center[1] += g;
+      center[2] += b;
+      centerCount += 1;
     }
   }
   const brightness = sumL / n;
@@ -101,7 +127,7 @@ export function measure(rgba: Uint8ClampedArray | number[], width: number, heigh
     contrast: round(Math.sqrt(variance / n)),
     saturation: round(sumS / n),
     highlights: round(highlights / n),
-    redness: round(redCount ? redSum / redCount : 0),
+    redness: round(centerCount ? rednessOf(center[0] / centerCount, center[1] / centerCount, center[2] / centerCount) : 0),
     sharpness: round(lapCount ? lap / lapCount : 0),
     topBottomDelta: round(height >= 3 ? band(height - third, height) - band(0, third) : 0),
   };

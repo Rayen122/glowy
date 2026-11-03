@@ -30,6 +30,20 @@ describe("IA P5 : analyse beauté par photo", () => {
     assert.ok(m.sharpness > 0.008, "texture présente");
   });
 
+  test("rougeurs : aucune sur une peau normale, claire, mate ou foncée ; détectées sur une peau irritée", () => {
+    const skin = ([r, g, b]: number[]) => {
+      const data = new Uint8ClampedArray(40 * 40 * 4);
+      for (let i = 0; i < 40 * 40; i += 1) {
+        const n = (i + Math.floor(i / 40)) % 2 ? 8 : -8;
+        data.set([r + n, g + n, b + n, 255], i * 4);
+      }
+      return measure(data, 40, 40).redness;
+    };
+    for (const normal of [[241, 194, 167], [198, 134, 103], [141, 85, 36], [92, 51, 23]]) assert.ok(skin(normal) < 0.12, `peau normale ${normal}`);
+    assert.ok(skin([215, 115, 105]) > 0.2, "peau très rouge : rougeurs modérées");
+    assert.ok(skin([220, 120, 100]) > 0.12, "coup de soleil");
+  });
+
   test("diagnostic : règles explicables et repli quand la photo est inexploitable", () => {
     assert.deepEqual(diagnose("cheveux", { ...base, brightness: 0.1 }), { kind: "retake", reason: "dark" });
     assert.deepEqual(diagnose("visage", { ...base, sharpness: 0.002 }), { kind: "retake", reason: "blurry" });

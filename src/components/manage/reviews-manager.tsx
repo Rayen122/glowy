@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useI18n } from "@/i18n/client";
 import type { StaffReviewRow } from "@/modules/reviews";
+import { SUSPICION_ALERT } from "@/modules/reviews/domain/analysis";
 import { PaginatedList } from "@/components/ui/paginated-list";
 import { cn } from "@/lib/utils";
 import { api, FIELD, FormError, PRIMARY_BUTTON, useAction } from "./kit";
@@ -135,7 +136,7 @@ export function ReviewsManager({ reviews, canReply }: { reviews: StaffReviewRow[
             <span className="text-xs text-muted-foreground">{df(r.date, { day: "numeric", month: "short", year: "numeric" })}</span>
             {r.reported && <span className="rounded-full bg-sand px-2 py-0.5 text-xs font-semibold text-plum-800">{m.reportedBadge}</span>}
             {r.status === "HIDDEN" && <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold">{m.hiddenBadge}</span>}
-            {r.suspicion != null && r.suspicion > 60 && (
+            {r.suspicion != null && r.suspicion >= SUSPICION_ALERT && (
               <span className="inline-flex items-center gap-1 rounded-full bg-danger-soft px-2 py-0.5 text-xs font-semibold text-destructive">
                 <ShieldAlert className="size-3" aria-hidden /> {f(m.suspicion, { n: r.suspicion })}
               </span>
