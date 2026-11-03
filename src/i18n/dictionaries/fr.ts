@@ -401,6 +401,9 @@ export const fr = {
       no: "Non",
     },
     reviewForm: {
+      minChars: "Encore {n} caractère(s) : 10 minimum.",
+      commentOk: "Commentaire prêt.",
+      pickRating: "Choisissez aussi une note (étoiles).",
       title: "Votre avis sur {salon}",
       hint: "Avis vérifié : publié avec votre prénom et l'initiale de votre nom.",
       rating: "Votre note",

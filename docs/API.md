@@ -77,7 +77,7 @@ La réponse de `POST /api/bookings` contient aussi `employeeKey` : le profession
 
 | Méthode | Route | Accès | Description |
 | --- | --- | --- | --- |
-| POST | `/api/reviews` | cliente | `{ bookingId, rating 1–5, text, photoUrl?, lang }` — uniquement après un rendez-vous terminé (`409 BOOKING_NOT_COMPLETED`, `409 ALREADY_REVIEWED`) |
+| POST | `/api/reviews` | cliente | `{ bookingId, rating 1–5, text, photoUrl?, lang }` — dès que l'heure du rendez-vous est passée, même si le salon ne l'a pas encore marqué terminé ; jamais sur une annulation ou une absence (`409 BOOKING_NOT_COMPLETED`, `409 ALREADY_REVIEWED`) |
 | PATCH | `/api/reviews/:id` | selon l'action | `reply` (gérant) · `report` (tous) · `hide` / `keep` (Super Admin, journalisé) |
 
 ## Dashboard salon (P2)

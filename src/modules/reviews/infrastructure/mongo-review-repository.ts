@@ -16,13 +16,14 @@ const toRecord = (r: ReviewDoc): ReviewRecord => ({
 export const mongoReviewRepository: ReviewRepository = {
   async bookingForReview(bookingId) {
     const _id = objectId(bookingId);
-    const booking = _id ? await Booking.findById(_id, { client: 1, salon: 1, employee: 1, status: 1 }).lean() : null;
+    const booking = _id ? await Booking.findById(_id, { client: 1, salon: 1, employee: 1, status: 1, startsAt: 1 }).lean() : null;
     if (!booking) return null;
     return {
       clientId: booking.client.toString(),
       salonId: booking.salon.toString(),
       employeeId: booking.employee.toString(),
       status: booking.status,
+      startsAt: booking.startsAt,
       reviewed: (await Review.exists({ booking: booking._id })) !== null,
     };
   },

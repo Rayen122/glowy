@@ -3,10 +3,17 @@ import type { BookingStatus, ReportStatus, ReviewStatus } from "@/core/domain/en
 
 /** Avis vérifiés (P4, AVI-01 à AVI-06) — règles pures. */
 
-/** AVI-01 : un avis n'est possible qu'après un rendez-vous terminé, par la cliente, une seule fois */
-export function assertCanReview(booking: { clientId: string; status: BookingStatus; reviewed: boolean } | null, clientId: string) {
+/**
+ * AVI-01 (avis vérifié) : la cliente peut donner son avis dès que l'heure de son rendez-vous est passée, sans attendre
+ * que le salon le marque « terminé ». Jamais sur un rendez-vous annulé ou une absence, ni avant l'heure.
+ */
+export const canReview = (booking: { status: BookingStatus; startsAt: Date }, now: Date) =>
+  booking.status === "COMPLETED" || (["PENDING", "CONFIRMED", "IN_PROGRESS"].includes(booking.status) && booking.startsAt.getTime() <= now.getTime());
+
+/** Par la cliente du rendez-vous, une seule fois */
+export function assertCanReview(booking: { clientId: string; status: BookingStatus; startsAt: Date; reviewed: boolean } | null, clientId: string, now: Date) {
   if (!booking || booking.clientId !== clientId) throw notFound("Rendez-vous introuvable.");
-  if (booking.status !== "COMPLETED") throw conflict("BOOKING_NOT_COMPLETED", "Vous pourrez donner votre avis après le rendez-vous.");
+  if (!canReview(booking, now)) throw conflict("BOOKING_NOT_COMPLETED", "Vous pourrez donner votre avis à partir de l'heure du rendez-vous.");
   if (booking.reviewed) throw conflict("ALREADY_REVIEWED", "Vous avez déjà donné votre avis sur ce rendez-vous.");
 }
 

@@ -2,11 +2,12 @@ import { shortName } from "@/core/domain/text";
 import { tunisDayRange, utcToTunis, weekdayOf } from "@/core/domain/time";
 import { Booking, Employee, idOf, Invoice, objectId, Review, Salon, TimeOff, User } from "@/infrastructure/db";
 import { toBookingRecord } from "./mongo-booking-repository";
+import { canReview } from "@/modules/reviews";
 
 /** Lectures pour l'interface (pas de règle métier) */
 
 /** Historique de la cliente (CLI-02), du plus récent au plus ancien */
-export async function listClientBookings(clientId: string) {
+export async function listClientBookings(clientId: string, now = new Date()) {
   const client = objectId(clientId);
   if (!client) return [];
   const bookings = await Booking.find({ client }).sort({ startsAt: -1 }).lean();
@@ -39,6 +40,8 @@ export async function listClientBookings(clientId: string) {
       employee: { name: employeeById.get(b.employee.toString())?.name ?? "", key: employeeById.get(b.employee.toString())?.active ? (employeeById.get(b.employee.toString())?.key ?? null) : null },
       items: b.items.map((i) => ({ name: i.name ?? "", price: i.price ?? 0, serviceKey: i.serviceKey ?? null })),
       review: reviewId ? { id: reviewId } : null,
+      /** Avis possible maintenant (dès l'heure du rendez-vous, une seule fois) */
+      canReview: !reviewId && canReview(b, now),
       /** Facture du salon (SAL-09), consultable et imprimable par la cliente */
       invoiceId: invoiceByBooking.get(idOf(b)) ?? null,
       local: utcToTunis(b.startsAt),

@@ -396,6 +396,9 @@ export const en: Dictionary = {
       no: "No",
     },
     reviewForm: {
+      minChars: "{n} more character(s): 10 minimum.",
+      commentOk: "Comment ready.",
+      pickRating: "Also pick a rating (stars).",
       title: "Your review of {salon}",
       hint: "Verified review: published with your first name and last initial.",
       rating: "Your rating",

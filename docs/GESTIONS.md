@@ -191,7 +191,7 @@ Le projet est découpé en **5 gestions**, une par membre de l'équipe. Chaque g
 
 ### Fonctionnalités
 
-- **Avis vérifié** : possible seulement après un rendez-vous **terminé**, par la cliente concernée, une seule fois.
+- **Avis vérifié** : possible dès que **l'heure du rendez-vous est passée** (sans attendre que le salon le marque « terminé »), par la cliente concernée, une seule fois ; jamais sur un rendez-vous annulé ou une absence.
 - Note de 1 à 5, commentaire et photo facultative.
 - **Réponse du salon** à un avis, depuis `/dashboard/avis`.
 - **Signalement** d'un avis par le salon ou par un utilisateur.

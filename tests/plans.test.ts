@@ -2,11 +2,13 @@ import "./setup";
 import assert from "node:assert/strict";
 import { after, beforeEach, describe, test } from "node:test";
 import type { AppError } from "@/core/domain/errors";
-import { Employee, Notification, Salon } from "@/infrastructure/db";
+import { Booking, Employee, Notification, Salon } from "@/infrastructure/db";
+import { cancelBooking, createBooking, setBookingStatus } from "@/modules/booking";
+import { createReview } from "@/modules/reviews";
 import { parseMessage } from "@/modules/assistant";
 import { createEmployee, createService, employeeInput, listSalonServices, serviceInput, updateService } from "@/modules/dashboard";
 import { canAddEmployee, effectivePlan, expirePlans, minimumPlanFor, planAllows, remindExpiringPlans, requirePlanFeature } from "@/modules/subscription";
-import { closeDb, makeSalon, resetDb } from "./helpers";
+import { closeDb, FUTURE_MONDAY, makeSalon, makeUser, resetDb } from "./helpers";
 
 const DAY = 86_400_000;
 
@@ -75,6 +77,44 @@ describe("Corrections de la recette", () => {
     await updateService(manager, created.id, serviceInput.parse({ name: "Soin éclat", group: "Soins", durationMin: 45, price: 49, oldPrice: 55 }));
     const services = await listSalonServices((await Salon.findOne({ owner: owner.id }).orFail()).id);
     assert.equal(services.find((s) => s.id === created.id)?.price, 49);
+  });
+
+  test("avis possible dès l'heure du rendez-vous, sans attendre « terminé » ; jamais avant, ni sur une absence", async () => {
+    await makeSalon();
+    const client = await makeUser();
+    const actor = { id: client.id, role: "CLIENT" as const };
+    const booking = await createBooking(client.id, { salonSlug: "salon-test", serviceKeys: ["coupe"], employee: "any", date: FUTURE_MONDAY, time: "10:00", paymentMethod: "ONSITE" });
+    const review = { bookingId: booking.id, rating: 5, text: "Très bon accueil, coupe réussie.", lang: "fr" as const };
+    await assert.rejects(createReview(actor, review), (e: AppError) => e.code === "BOOKING_NOT_COMPLETED");
+
+    // L'heure du rendez-vous est passée, le salon ne l'a pas encore marqué « terminé »
+    await Booking.updateOne({ _id: booking.id }, { $set: { startsAt: new Date(Date.now() - 3_600_000), endsAt: new Date(Date.now() - 1_800_000) } });
+    await createReview(actor, review);
+    await assert.rejects(createReview(actor, review), (e: AppError) => e.code === "ALREADY_REVIEWED");
+
+    const absent = await createBooking(client.id, { salonSlug: "salon-test", serviceKeys: ["coupe"], employee: "any", date: FUTURE_MONDAY, time: "14:00", paymentMethod: "ONSITE" });
+    await Booking.updateOne({ _id: absent.id }, { $set: { status: "NO_SHOW", startsAt: new Date(Date.now() - 7_200_000) } });
+    await assert.rejects(createReview(actor, { ...review, bookingId: absent.id }), (e: AppError) => e.code === "BOOKING_NOT_COMPLETED");
+  });
+
+  test("réservation « à confirmer » : le créneau est gardé, le salon confirme (cliente prévenue) ou refuse", async () => {
+    const { owner } = await makeSalon();
+    const [client, other] = await Promise.all([makeUser(), makeUser()]);
+    const manager = { id: owner.id, role: "MANAGER" as const };
+    const input = { salonSlug: "salon-test", serviceKeys: ["coupe"], employee: "amira", date: FUTURE_MONDAY, time: "10:00", paymentMethod: "ONSITE" as const };
+    const booking = await createBooking(client.id, input);
+    assert.equal(booking.status, "PENDING");
+    await assert.rejects(createBooking(other.id, input), (e: AppError) => e.code === "SLOT_TAKEN", "créneau gardé pendant l'attente");
+
+    const confirmed = await setBookingStatus(booking.id, manager, "confirm");
+    assert.equal(confirmed.status, "CONFIRMED");
+    assert.equal(await Notification.countDocuments({ user: client.id, type: "booking.confirmed" }), 1);
+
+    // Refus d'une autre demande = annulation par le salon : créneau libéré
+    const second = await createBooking(other.id, { ...input, time: "14:00" });
+    const { booking: declined } = await cancelBooking(second.id, manager);
+    assert.equal(declined.status, "CANCELLED");
+    assert.equal((await createBooking(client.id, { ...input, time: "14:00" })).status, "PENDING");
   });
 
   test("QA-07 : l'assistante comprend la darija écrite en lettres latines", () => {

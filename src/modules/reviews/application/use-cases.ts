@@ -14,7 +14,7 @@ export const SUSPICION_REPORT = 60;
 export function makeReviews({ reviews, access, moderation, events, clock }: { reviews: ReviewRepository; access: SalonAccessPort; moderation: ModerationPort; events: EventPublisher; clock: Clock }) {
   async function createReview(actor: Actor, input: CreateReviewInput) {
     const booking = await reviews.bookingForReview(input.bookingId);
-    assertCanReview(booking, actor.id);
+    assertCanReview(booking, actor.id, clock.now());
     // IA P4 : sentiment, aspects et suspicion calculés à la publication ; avis suspect → file de modération
     const analysis = analyzeReview(input);
     // Gros mots masqués « *** » (lexique tounsi / arabizi + IA) ; l'analyse garde le texte d'origine

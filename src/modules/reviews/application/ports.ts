@@ -6,7 +6,7 @@ import type { CreateReviewInput } from "./schemas";
 export type ReviewRecord = { id: string; bookingId: string; clientId: string; salonId: string; rating: number; text: string; status: ReviewStatus; reply: string | null };
 
 export interface ReviewRepository {
-  bookingForReview(bookingId: string): Promise<{ clientId: string; salonId: string; employeeId: string; status: BookingStatus; reviewed: boolean } | null>;
+  bookingForReview(bookingId: string): Promise<{ clientId: string; salonId: string; employeeId: string; status: BookingStatus; startsAt: Date; reviewed: boolean } | null>;
   create(data: Omit<CreateReviewInput, "bookingId"> & { bookingId: string; clientId: string; salonId: string; employeeId: string; analysis: ReviewAnalysis }): Promise<ReviewRecord>;
   findById(id: string): Promise<ReviewRecord | null>;
   reply(id: string, text: string, at: Date): Promise<ReviewRecord>;

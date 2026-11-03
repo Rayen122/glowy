@@ -121,6 +121,11 @@ export function ReviewDialog({ bookingId, salonName, label }: { bookingId: strin
             placeholder={r.placeholder}
             className="mt-2 w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-base font-normal placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 focus-visible:outline-none md:text-sm"
           />
+          {/* Le serveur exige 10 caractères : on l'indique au lieu de laisser le bouton grisé sans explication */}
+          <span aria-live="polite" className={cn("mt-1 block text-xs font-normal", text.trim().length >= 10 ? "text-success" : "text-muted-foreground")}>
+            {text.trim().length >= 10 ? r.commentOk : f(r.minChars, { n: 10 - text.trim().length })}
+          </span>
+          {rating === 0 && <span className="mt-0.5 block text-xs font-normal text-muted-foreground">{r.pickRating}</span>}
         </label>
         <ImageUpload label={t.manage.reschedule.reviewPhoto} value={photoUrl} onChange={setPhotoUrl} purpose="review" aspect="aspect-[16/9]" />
         <button

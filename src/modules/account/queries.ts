@@ -21,7 +21,7 @@ export const getAccountSummary = cache(async (userId: string) => {
     past: bookings.filter((b) => b.status === "COMPLETED" || b.status === "NO_SHOW"),
     cancelled: bookings.filter((b) => b.status === "CANCELLED"),
     next: upcoming.find((b) => b.startsAt.getTime() > now) ?? null,
-    toReview: bookings.find((b) => b.status === "COMPLETED" && !b.review) ?? null,
+    toReview: bookings.find((b) => b.canReview) ?? null,
   };
 });
 

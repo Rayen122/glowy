@@ -9,7 +9,7 @@ import { mongoReviewRepository } from "./infrastructure/mongo-review-repository"
 export const { createReview, actOnReview } = makeReviews({ reviews: mongoReviewRepository, access: { canManageSalon }, moderation: { cleanText }, events: eventBus, clock: systemClock });
 
 export { createReviewInput, reviewActionInput } from "./application/schemas";
-export { roundRating } from "./domain/policy";
+export { canReview, roundRating } from "./domain/policy";
 export const refreshSalonRating = mongoReviewRepository.refreshSalonRating;
 export { salonReviewsForStaff, STAFF_REVIEW_FILTERS, type StaffReviewFilter, type StaffReviewRow } from "./infrastructure/queries";
 export { analyzeMissingReviews, salonReviewInsights, type ReviewInsights } from "./infrastructure/insights";

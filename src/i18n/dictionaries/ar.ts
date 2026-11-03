@@ -395,6 +395,9 @@ export const ar: Dictionary = {
       no: "لا",
     },
     reviewForm: {
+      minChars: "بقي {n} حرف: 10 أحرف على الأقل.",
+      commentOk: "التعليق جاهز.",
+      pickRating: "اختر أيضًا تقييمًا (نجوم).",
       title: "تقييمك لـ{salon}",
       hint: "تقييم موثّق: يُنشر باسمك الأول والحرف الأول من لقبك.",
       rating: "تقييمك",

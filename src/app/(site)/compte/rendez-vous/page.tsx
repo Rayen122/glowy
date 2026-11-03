@@ -86,7 +86,7 @@ function BookingList({ bookings, i18n }: { bookings: AccountBooking[]; i18n: I18
                   <CancelBookingButton bookingId={b.id} />
                 </>
               )}
-              {b.status === "COMPLETED" && !b.review && (
+              {b.canReview && (
                 <ReviewDialog bookingId={b.id} salonName={b.salon.name} label={f(bk.review, { pts: f(t.common.plusPoints, { n: 15 }) })} />
               )}
               {b.invoiceId && (
