@@ -43,3 +43,10 @@ export function addDays(date: string, days: number) {
 }
 
 export const tunisToday = (now = new Date()) => utcToTunis(now).date;
+
+/** Vraie date du calendrier au format AAAA-MM-JJ (refuse « 2026-13-45 » ou « 2026-02-30 ») */
+export function isIsoDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const day = new Date(`${value}T12:00:00Z`);
+  return !Number.isNaN(day.getTime()) && day.toISOString().startsWith(value);
+}

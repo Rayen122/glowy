@@ -1,4 +1,5 @@
 import { disconnectDb, Employee, resetAll, Salon, User } from "@/infrastructure/db";
+import { addDays, tunisToday, weekdayOf } from "@/core/domain/time";
 import { createBookingModule } from "@/modules/booking";
 
 /** Vide toutes les collections de la base de test et recrée les index (dont l'index unique des tranches) */
@@ -41,8 +42,14 @@ export async function makeSalon(slug = "salon-test") {
   return { salon: { id: salon._id.toString() }, owner };
 }
 
-/** Lundi lointain : jamais « dans le passé » quel que soit le jour où les tests tournent */
-export const FUTURE_MONDAY = "2030-01-07";
+/**
+ * Lundi à venir (dans 2 à 3 semaines) : jamais « dans le passé », et dans l'horizon de réservation de 90 jours,
+ * quel que soit le jour où les tests tournent.
+ */
+export const FUTURE_MONDAY = (() => {
+  const today = tunisToday();
+  for (let i = 14; ; i++) if (weekdayOf(addDays(today, i)) === 1) return addDays(today, i);
+})();
 
 /** Module réservation avec une horloge après les rendez-vous de test : le salon peut les commencer, terminer, marquer absents */
-export const afterVisit = createBookingModule({ clock: { now: () => new Date("2030-02-01T12:00:00Z") } });
+export const afterVisit = createBookingModule({ clock: { now: () => new Date(`${addDays(FUTURE_MONDAY, 25)}T12:00:00Z`) } });

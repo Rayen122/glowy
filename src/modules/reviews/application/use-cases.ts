@@ -1,6 +1,6 @@
 import type { Actor } from "@/core/domain/actor";
 import type { Clock } from "@/core/domain/clock";
-import { forbidden, notFound } from "@/core/domain/errors";
+import { conflict, forbidden, notFound } from "@/core/domain/errors";
 import type { EventPublisher } from "@/core/domain/events";
 import { analyzeReview, SUSPICION_ALERT } from "../domain/analysis";
 import { assertCanReview } from "../domain/policy";
@@ -34,7 +34,8 @@ export function makeReviews({ reviews, access, moderation, events, clock }: { re
         return reviews.reply(reviewId, await moderation.cleanText(input.reply), clock.now());
       case "helpful":
         return reviews.toggleHelpful(reviewId, actor.id);
-      case "report": // AVI-05
+      case "report": // AVI-05 ; l'autrice modifie son avis via le support, elle ne le signale pas
+        if (review.clientId === actor.id) throw conflict("OWN_REVIEW", "Vous ne pouvez pas signaler votre propre avis.");
         return reviews.report({ reviewId, reporterId: actor.id, source: isSalonStaff ? "SALON" : "USER", reason: input.reason });
       case "hide":
       case "keep": {
@@ -47,5 +48,17 @@ export function makeReviews({ reviews, access, moderation, events, clock }: { re
     }
   }
 
-  return { createReview, actOnReview };
+  /**
+   * AVI-01 : un avis n'est « vérifié » que si la visite a eu lieu. Il peut être publié dès l'heure du rendez-vous ;
+   * si le salon marque ensuite la cliente absente, l'avis est retiré (note du salon recalculée, points de l'avis repris).
+   */
+  async function withdrawForNoShow(bookingId: string) {
+    const review = await reviews.publishedForBooking(bookingId);
+    if (!review) return;
+    await reviews.withdraw(review.id, clock.now());
+    await reviews.refreshSalonRating(review.salonId);
+    await events.publish("review.withdrawn", { reviewId: review.id });
+  }
+
+  return { createReview, actOnReview, withdrawForNoShow };
 }

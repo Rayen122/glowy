@@ -7,7 +7,8 @@ declare module "next-auth" {
     firstName: string;
   }
   interface Session {
-    user: { id: string; role: Role; firstName: string } & DefaultSession["user"];
+    /** authAt : heure de connexion (ms), comparée au dernier changement de mot de passe */
+    user: { id: string; role: Role; firstName: string; authAt?: number } & DefaultSession["user"];
   }
 }
 
@@ -16,5 +17,6 @@ declare module "@auth/core/jwt" {
     id: string;
     role: Role;
     firstName: string;
+    authAt?: number;
   }
 }

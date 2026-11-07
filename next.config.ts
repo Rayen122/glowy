@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
+/**
+ * Politique de contenu minimale, sans casser les scripts de Next.js : pas d'intégration du site dans un autre
+ * (clickjacking), pas de <base> ni de plugin, formulaires envoyés seulement au site (et à Google pour sa connexion).
+ */
+const CSP = ["frame-ancestors 'self'", "base-uri 'self'", "object-src 'none'", "form-action 'self' https://accounts.google.com"].join("; ");
+
 const nextConfig: NextConfig = {
+  // Ne pas annoncer la technologie du serveur (en-tête X-Powered-By)
+  poweredByHeader: false,
   /** En-têtes de sécurité (guide PWA Next.js) ; le service worker n'est jamais mis en cache */
   async headers() {
     return [
@@ -10,6 +18,11 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Content-Security-Policy", value: CSP },
+          // Ignoré en HTTP (local) ; en HTTPS, le navigateur refuse ensuite toute version non chiffrée du site
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+          // Caméra (analyse beauté) et position (salons proches) pour le site lui-même uniquement
+          { key: "Permissions-Policy", value: "camera=(self), geolocation=(self), microphone=(), payment=(), usb=()" },
         ],
       },
       {

@@ -128,6 +128,24 @@ export const mongoBookingRepository: BookingRepository = {
     return booking ? toBookingRecord(booking) : null;
   },
 
+  async clientHasOverlap(clientId, startsAt, endsAt, ignoreBookingId) {
+    const ignore = objectId(ignoreBookingId);
+    const found = await Booking.exists({
+      client: objectId(clientId),
+      status: { $in: ACTIVE_STATUSES },
+      startsAt: { $lt: endsAt },
+      endsAt: { $gt: startsAt },
+      ...(ignore ? { _id: { $ne: ignore } } : {}),
+    });
+    return found !== null;
+  },
+
+  pendingCount: (clientId, now) => Booking.countDocuments({ client: objectId(clientId), status: "PENDING", startsAt: { $gt: now } }),
+
+  async staleRequests(now) {
+    return (await Booking.find({ status: "PENDING", startsAt: { $lte: now } }, { _id: 1 }).lean()).map((b) => idOf(b));
+  },
+
   async cancel(id, at, refund) {
     const _id = objectId(id)!;
     const booking = await Booking.findOneAndUpdate(

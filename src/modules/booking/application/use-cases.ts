@@ -4,7 +4,23 @@ import { badRequest, conflict, forbidden, notFound } from "@/core/domain/errors"
 import type { EventPublisher } from "@/core/domain/events";
 import { toMinutes, tunisToUtc, weekdayOf } from "@/core/domain/time";
 import { computeSlots, freeEmployees, isFree } from "../domain/availability";
-import { depositFor, EARLY_START_MIN, isActive, isOffPeak, isTooEarly, isWithinCancellationWindow, nextStatus, startsTooSoon, type StaffAction } from "../domain/policy";
+import {
+  BOOKING_HORIZON_DAYS,
+  depositFor,
+  EARLY_START_MIN,
+  hasStarted,
+  isActive,
+  isBeyondHorizon,
+  isOffPeak,
+  isOnSlotGrid,
+  isTooEarly,
+  isTooLate,
+  isWithinCancellationWindow,
+  MAX_PENDING_PER_CLIENT,
+  nextStatus,
+  startsTooSoon,
+  type StaffAction,
+} from "../domain/policy";
 import type { BookingRepository, OffPeakPort, PromotionPort, SalonAccessPort } from "./ports";
 import type { AvailabilityQuery, BookingQuoteInput, CreateBookingInput } from "./schemas";
 
@@ -61,11 +77,18 @@ export function makeBooking({ bookings, access, promotions, events, clock, offPe
     const startsAt = tunisToUtc(input.date, input.time);
     const endsAt = new Date(startsAt.getTime() + durationMin * 60_000);
     if (startsTooSoon(startsAt, now)) throw badRequest("SLOT_IN_PAST", "Ce créneau est déjà passé.");
+    if (isBeyondHorizon(startsAt, now)) throw badRequest("TOO_FAR", `Réservation possible jusqu'à ${BOOKING_HORIZON_DAYS} jours à l'avance.`);
 
     const specific = input.employee !== "any";
     const day = await bookings.daySchedule(salon.id, input.date, { employeeKey: specific ? input.employee : undefined });
     if (!day.opening) throw badRequest("SALON_CLOSED", "Le salon est fermé ce jour-là.");
+    if (!isOnSlotGrid(toMinutes(input.time), day.opening.opensAt)) throw badRequest("OFF_GRID", "Choisissez l'un des créneaux proposés (toutes les 30 minutes).");
     if (specific && day.employees.length === 0) throw notFound("Professionnel introuvable.");
+    // Une seule personne ne peut pas être à deux endroits : pas deux rendez-vous qui se chevauchent, même dans deux salons
+    if (await bookings.clientHasOverlap(clientId, startsAt, endsAt)) throw conflict("CLIENT_BUSY", "Vous avez déjà un rendez-vous à ce moment-là.");
+    if ((await bookings.pendingCount(clientId, now)) >= MAX_PENDING_PER_CLIENT) {
+      throw conflict("TOO_MANY_PENDING", `Vous avez déjà ${MAX_PENDING_PER_CLIENT} demandes en attente de confirmation : attendez la réponse des salons avant d'en envoyer d'autres.`);
+    }
 
     // Promotion : vérifiée puis réservée avant d'écrire (le nombre d'utilisations ne peut pas être dépassé)
     const promo = await promotions.quote(salon.id, { code: input.promoCode, subtotal: total, startsAt });
@@ -114,6 +137,10 @@ export function makeBooking({ bookings, access, promotions, events, clock, offPe
     const byClient = booking.clientId === actor.id;
     if (!byClient && !(await access.canManageSalon(actor, booking.salonId))) throw forbidden();
     if (!isActive(booking.status)) throw conflict("NOT_CANCELLABLE", "Ce rendez-vous ne peut plus être annulé.");
+    // Après l'heure, la cliente ne transforme pas une absence en annulation : c'est au salon de pointer la visite
+    if (byClient && hasStarted(booking.startsAt, now)) {
+      throw conflict("ALREADY_STARTED", "L'heure du rendez-vous est passée : il ne peut plus être annulé. Contactez le salon.");
+    }
 
     const { cancellationHours } = await bookings.salonPolicy(booking.salonId);
     const late = byClient && isWithinCancellationWindow(booking.startsAt, now, cancellationHours);
@@ -140,8 +167,11 @@ export function makeBooking({ bookings, access, promotions, events, clock, offPe
     const startsAt = tunisToUtc(date, time);
     const endsAt = new Date(startsAt.getTime() + durationMin * 60_000);
     if (startsTooSoon(startsAt, now)) throw badRequest("SLOT_IN_PAST", "Ce créneau est déjà passé.");
+    if (isBeyondHorizon(startsAt, now)) throw badRequest("TOO_FAR", `Réservation possible jusqu'à ${BOOKING_HORIZON_DAYS} jours à l'avance.`);
 
     const day = await bookings.daySchedule(booking.salonId, date, { employeeId: booking.employeeId, ignoreBookingId: booking.id });
+    if (day.opening && !isOnSlotGrid(toMinutes(time), day.opening.opensAt)) throw badRequest("OFF_GRID", "Choisissez l'un des créneaux proposés (toutes les 30 minutes).");
+    if (await bookings.clientHasOverlap(booking.clientId, startsAt, endsAt, booking.id)) throw conflict("CLIENT_BUSY", "Vous avez déjà un rendez-vous à ce moment-là.");
     const employee = day.employees[0];
     if (!employee || !isFree(day, employee, toMinutes(time), durationMin)) throw conflict("SLOT_TAKEN", "Ce créneau n'est pas disponible.");
 
@@ -156,6 +186,7 @@ export function makeBooking({ bookings, access, promotions, events, clock, offPe
     if (!(await access.canManageSalon(actor, booking.salonId))) throw forbidden();
     const to = nextStatus(action, booking.status);
     if (!to) throw conflict("INVALID_TRANSITION", "Changement de statut impossible.");
+    if (isTooLate(action, booking.startsAt, clock.now())) throw conflict("TOO_LATE", "L'heure de cette demande est passée : elle ne peut plus être confirmée.");
     if (isTooEarly(action, booking.status, booking.startsAt, clock.now())) {
       throw conflict(
         "TOO_EARLY",
@@ -171,7 +202,24 @@ export function makeBooking({ bookings, access, promotions, events, clock, offPe
     return updated;
   }
 
-  return { resolveServices, getAvailability, availabilityForSalon, quoteBooking, createBooking, cancelBooking, rescheduleBooking, setBookingStatus };
+  /**
+   * Tâche planifiée : une demande que le salon n'a pas acceptée avant l'heure du rendez-vous expire
+   * (créneau libéré, acompte remboursé, cliente prévenue). Idempotent.
+   */
+  async function expireStaleRequests() {
+    const now = clock.now();
+    let expired = 0;
+    for (const id of await bookings.staleRequests(now)) {
+      const cancelled = await bookings.cancel(id, now, true);
+      if (!cancelled) continue;
+      if (cancelled.promotionId) await promotions.release(cancelled.promotionId);
+      await events.publish("booking.cancelled", { bookingId: id, late: false, by: "salon", expired: true });
+      expired += 1;
+    }
+    return expired;
+  }
+
+  return { resolveServices, getAvailability, availabilityForSalon, quoteBooking, createBooking, cancelBooking, rescheduleBooking, setBookingStatus, expireStaleRequests };
 }
 
 export type BookingUseCases = ReturnType<typeof makeBooking>;

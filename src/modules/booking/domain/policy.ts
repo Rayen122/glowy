@@ -1,4 +1,5 @@
 import type { BookingStatus, PaymentMethod } from "@/core/domain/enums";
+import { toMinutes } from "@/core/domain/time";
 
 /** Règles de réservation (P3, RES-03 à RES-05) — fonctions pures, testées sans base de données. */
 
@@ -26,6 +27,19 @@ export const isOffPeak = (weekday: number, minutes: number, forecastHours?: numb
  */
 export const depositFor = (total: number, method: PaymentMethod, percent = 20) =>
   method === "ONLINE" && total > 0 && percent > 0 ? Math.min(total, 30, Math.max(10, Math.round((total * percent) / 100))) : 0;
+
+/** Réservation possible au plus 90 jours à l'avance (au-delà : agendas et horaires pas encore connus) */
+export const BOOKING_HORIZON_DAYS = 90;
+export const isBeyondHorizon = (startsAt: Date, now: Date) => startsAt.getTime() > now.getTime() + BOOKING_HORIZON_DAYS * 86_400_000;
+
+/** Demandes en attente de confirmation par cliente : au-delà, un compte bloquerait l'agenda des salons */
+export const MAX_PENDING_PER_CLIENT = 3;
+
+/** L'heure est-elle l'un des créneaux proposés (pas de 30 min depuis l'ouverture) ? Refuse « 11:07 ». */
+export const isOnSlotGrid = (minutes: number, opensAt: string) => minutes >= toMinutes(opensAt) && (minutes - toMinutes(opensAt)) % SLOT_STEP_MIN === 0;
+
+/** L'heure du rendez-vous est-elle arrivée ? */
+export const hasStarted = (startsAt: Date, now: Date) => startsAt.getTime() <= now.getTime();
 
 /** Le créneau commence-t-il trop tôt pour être encore réservé ? */
 export const startsTooSoon = (startsAt: Date, now: Date) => startsAt.getTime() < now.getTime() + MIN_LEAD_MIN * 60_000;
@@ -65,9 +79,14 @@ export function isTooEarly(action: StaffAction, current: BookingStatus, startsAt
   return now.getTime() < opensAt;
 }
 
+/** Une demande dont l'heure est passée ne peut plus être acceptée : le salon la refuse, sinon elle expire */
+export const isTooLate = (action: StaffAction, startsAt: Date, now: Date) => action === "confirm" && hasStarted(startsAt, now);
+
 /** Actions proposées au salon pour un rendez-vous, à l'instant `now` (boutons du dashboard) */
 export const staffActions = (current: BookingStatus, startsAt: Date, now: Date) =>
-  (Object.keys(TRANSITIONS) as StaffAction[]).filter((action) => nextStatus(action, current) && !isTooEarly(action, current, startsAt, now));
+  (Object.keys(TRANSITIONS) as StaffAction[]).filter(
+    (action) => nextStatus(action, current) && !isTooEarly(action, current, startsAt, now) && !isTooLate(action, startsAt, now)
+  );
 
 /** Tranches de LOCK_GRAIN_MIN minutes couvertes par [start, end[ — clés du verrou en base */
 export function lockSlices(start: Date, end: Date) {

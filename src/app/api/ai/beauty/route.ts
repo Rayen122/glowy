@@ -1,4 +1,5 @@
 import { ok, readJson, route } from "@/infrastructure/http";
+import { clientIp, rateLimit } from "@/infrastructure/rate-limit";
 import { currentActor } from "@/infrastructure/session";
 import { beautyAnalysis, beautyInput } from "@/modules/beauty";
 
@@ -10,5 +11,6 @@ import { beautyAnalysis, beautyInput } from "@/modules/beauty";
 export const POST = route(async (request) => {
   const { mode, metrics } = await readJson(request, beautyInput);
   const actor = await currentActor();
+  rateLimit("ai", actor?.id ?? clientIp(request));
   return ok(await beautyAnalysis(actor?.role === "CLIENT" ? actor.id : null, mode, metrics));
 });

@@ -6,6 +6,7 @@ import { cn } from "cn"
 
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
+import { useI18n } from "@/i18n/client"
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
@@ -65,14 +66,14 @@ function DialogContent({
             render={
               <Button
                 variant="ghost"
-                className="absolute top-2 right-2"
+                className="absolute top-2 end-2"
                 size="icon-sm"
               />
             }
           >
             <XIcon
             />
-            <span className="sr-only">Close</span>
+            <CloseLabel />
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Popup>
@@ -157,4 +158,10 @@ export {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
+}
+
+/** Texte lecteur d'écran de la croix, dans la langue de l'interface (et non « Close » en dur) */
+function CloseLabel() {
+  const { t } = useI18n()
+  return <span className="sr-only">{t.common.close}</span>
 }

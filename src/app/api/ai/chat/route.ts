@@ -1,4 +1,5 @@
 import { ok, readJson, route } from "@/infrastructure/http";
+import { clientIp, rateLimit } from "@/infrastructure/rate-limit";
 import { currentActor } from "@/infrastructure/session";
 import { chat, chatInput } from "@/modules/assistant";
 
@@ -9,5 +10,7 @@ import { chat, chatInput } from "@/modules/assistant";
  */
 export const POST = route(async (request) => {
   const actor = await currentActor();
+  // Quota gratuit du modèle partagé par tous : limite par compte, ou par adresse pour les visiteurs
+  rateLimit("chat", actor?.id ?? clientIp(request));
   return ok(await chat(await readJson(request, chatInput), actor?.role === "CLIENT" ? actor.id : undefined));
 });

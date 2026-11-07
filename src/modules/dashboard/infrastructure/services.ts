@@ -79,7 +79,8 @@ export async function updateService(actor: Actor, serviceId: string, input: Serv
 export async function deleteService(actor: Actor, serviceId: string) {
   const _id = await managedSalon(actor);
   const sid = objectId(serviceId);
-  const result = sid ? await Salon.updateOne({ _id }, { $pull: { services: { _id: sid } } }) : null;
-  if (!result?.modifiedCount) throw notFound("Prestation introuvable.");
+  // Le filtre exige la prestation dans CE salon : sans lui, `updatedAt` comptait comme une modification (faux succès)
+  const result = sid ? await Salon.updateOne({ _id, "services._id": sid }, { $pull: { services: { _id: sid } } }) : null;
+  if (!result?.matchedCount) throw notFound("Prestation introuvable.");
   return { id: serviceId };
 }

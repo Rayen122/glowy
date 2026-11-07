@@ -13,6 +13,8 @@ export const mediaUrl = (id: string) => `/api/media/${id}`;
 /** Enregistre un fichier envoyé ; un visiteur non connecté ne peut envoyer qu'un justificatif (inscription d'un salon) */
 export async function uploadMedia(actor: Actor | null, purpose: MediaPurpose, file: { name: string; bytes: Uint8Array }) {
   if (!actor && purpose !== "document") throw forbidden("Connectez-vous pour envoyer une photo.");
+  // Photos de salon (vitrine, galerie, équipe) : réservées à l'équipe du salon et au Super Admin
+  if (purpose === "salon" && actor?.role === "CLIENT") throw forbidden("Seule l'équipe du salon peut envoyer des photos du salon.");
   const contentType = assertAcceptable(purpose, file.bytes);
   if (MODERATED_PURPOSES.includes(purpose)) await assertSafeImage(file.bytes, contentType);
   const id = await storeFile(file.bytes, safeFilename(file.name), { owner: actor?.id ?? null, purpose, contentType, private: PRIVATE_PURPOSES.includes(purpose) });

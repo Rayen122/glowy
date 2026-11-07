@@ -4,9 +4,10 @@ import { salonAgenda } from "@/modules/booking";
 import { ok, readQuery, route } from "@/infrastructure/http";
 import { requireUser } from "@/infrastructure/session";
 import { tunisToday } from "@/core/domain/time";
+import { DATE } from "@/core/schemas";
 
 const query = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  date: DATE.optional(),
   salonId: z.string().optional(),
 });
 

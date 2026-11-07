@@ -1,7 +1,6 @@
 import { z } from "zod";
+import { DATE } from "@/core/schemas";
 import { PROMOTION_KINDS } from "@/core/domain/enums";
-
-const DATE = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date attendue au format AAAA-MM-JJ");
 
 /** SAL-10 : promotion créée par le gérant */
 export const promotionInput = z

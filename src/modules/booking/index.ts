@@ -26,7 +26,8 @@ export const createBookingModule = (overrides: { clock?: Clock } = {}) => {
   });
 };
 
-export const { resolveServices, getAvailability, availabilityForSalon, quoteBooking, createBooking, cancelBooking, rescheduleBooking, setBookingStatus } = createBookingModule();
+export const { resolveServices, getAvailability, availabilityForSalon, quoteBooking, createBooking, cancelBooking, rescheduleBooking, setBookingStatus, expireStaleRequests } =
+  createBookingModule();
 
 export { listClientBookings, salonAgenda, type ClientBooking } from "./infrastructure/queries";
 export { createTimeOff, deleteTimeOff } from "./infrastructure/mongo-booking-repository";

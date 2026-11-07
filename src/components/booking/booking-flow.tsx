@@ -6,11 +6,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, CalendarPlus, Check, Clock, CreditCard, MapPin, Store, Tag, TimerReset, Users, X } from "lucide-react";
 import { toast } from "sonner";
+import { tunisToUtc } from "@/core/domain/time";
 import { depositFor } from "@/modules/booking/domain/policy";
 import { PointsBadge, Rating } from "@/components/salon/badges";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useI18n } from "@/i18n/client";
 import { api, ApiError } from "@/lib/api";
+import { downloadIcs } from "@/lib/calendar";
 import type { Employee, Salon, Service } from "@/lib/data";
 import { gsap, MOTION_OK, useGSAP } from "@/lib/gsap";
 import { cn } from "@/lib/utils";
@@ -94,6 +96,9 @@ export function BookingFlow({
   const [payment, setPayment] = useState<"online" | "onsite">("online");
   const [note, setNote] = useState("");
   const [accepted, setAccepted] = useState(false);
+  // Confirmation sans avoir accepté la politique : message sous la case au lieu d'un bouton grisé muet
+  const [policyError, setPolicyError] = useState(false);
+  const policyRef = useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -184,7 +189,7 @@ export function BookingFlow({
     { dependencies: [step], scope: stepRef }
   );
 
-  const canNext = [services.length > 0, true, !!time, accepted && !lockExpired][step];
+  const canNext = [services.length > 0, true, !!time, !lockExpired][step];
 
   const goToLogin = () => {
     const back = `${pathname}?service=${serviceIds[0] ?? ""}${time ? `&heure=${time}` : ""}`;
@@ -198,6 +203,11 @@ export function BookingFlow({
       return;
     }
     if (!user) return goToLogin();
+    if (!accepted) {
+      setPolicyError(true);
+      policyRef.current?.focus();
+      return;
+    }
     setSubmitting(true);
     try {
       const created = await api<{ employeeKey?: string }>("/api/bookings", {
@@ -230,6 +240,9 @@ export function BookingFlow({
         setPromoCode(null);
         return;
       }
+      if (error instanceof ApiError && error.code === "CLIENT_BUSY") return void toast.error(t.errors.clientBusy);
+      if (error instanceof ApiError && error.code === "TOO_MANY_PENDING") return void toast.error(t.errors.tooManyPending);
+      if (error instanceof ApiError && error.code === "RATE_LIMITED") return void toast.error(t.errors.rateLimited);
       toast.error(error instanceof ApiError && error.status === 403 ? b.clientOnly : t.errors.generic);
     } finally {
       setSubmitting(false);
@@ -296,7 +309,17 @@ export function BookingFlow({
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <button
             type="button"
-            onClick={() => toast.success(b.addedCalendar)}
+            onClick={() => {
+              const start = tunisToUtc(DAYS[day].iso, time);
+              downloadIcs(`glowy-${DAYS[day].iso}.ics`, {
+                title: `${services.map((s) => tc(s.name)).join(" + ")} — ${salon.name}`,
+                start,
+                end: new Date(start.getTime() + duration * 60_000),
+                location: salon.address,
+                description: b.calendarNote,
+              });
+              toast.success(b.addedCalendar);
+            }}
             className="inline-flex h-11 items-center gap-2 rounded-full border border-border bg-card px-5 text-sm font-semibold hover:bg-muted"
           >
             <CalendarPlus className="size-4" aria-hidden /> {b.addCalendar}
@@ -331,7 +354,7 @@ export function BookingFlow({
                 <span className={cn("block h-1 rounded-full transition-colors", i <= step ? "bg-primary" : "bg-border")} />
                 <span
                   className={cn(
-                    "mt-2 block truncate text-[11px] font-medium sm:text-xs",
+                    "mt-2 block text-xs leading-tight font-medium break-words hyphens-auto",
                     i === step ? "text-foreground" : i < step ? "text-plum-700 group-hover:underline" : "text-muted-foreground"
                   )}
                 >
@@ -453,7 +476,7 @@ export function BookingFlow({
                   >
                     <span className="text-xs">{df(d.iso, { weekday: "short" })}</span>
                     <span className="text-lg font-semibold">{df(d.iso, { day: "numeric" })}</span>
-                    <span className="text-[11px] opacity-80">{d.closed ? b.closed : df(d.iso, { month: "short" })}</span>
+                    <span className="text-xs opacity-80">{d.closed ? b.closed : df(d.iso, { month: "short" })}</span>
                   </button>
                 ))}
               </div>
@@ -508,7 +531,7 @@ export function BookingFlow({
                           >
                             {s}
                             {bonus && !taken && (
-                              <span className={cn("absolute -top-2 end-1 rounded-full px-1.5 text-[10px] font-bold", on ? "bg-white text-gold" : "bg-gold-soft text-gold")}>
+                              <span className={cn("absolute -top-2 end-1 rounded-full px-1.5 text-xs font-bold", on ? "bg-white text-gold" : "bg-gold-soft text-gold")}>
                                 +10
                               </span>
                             )}
@@ -670,10 +693,28 @@ export function BookingFlow({
                 <p className="mt-3 text-xs text-muted-foreground">{b.noCardStored}</p>
               </fieldset>
 
-              <label className="flex cursor-pointer items-start gap-3 text-sm">
-                <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-0.5 size-4 shrink-0 accent-[#6b2a5c]" />
-                <span>{b.acceptPolicy}</span>
-              </label>
+              <div>
+                <label className="flex cursor-pointer items-start gap-3 text-sm">
+                  <input
+                    ref={policyRef}
+                    type="checkbox"
+                    checked={accepted}
+                    onChange={(e) => {
+                      setAccepted(e.target.checked);
+                      if (e.target.checked) setPolicyError(false);
+                    }}
+                    aria-invalid={policyError || undefined}
+                    aria-describedby={policyError ? "policy-error" : undefined}
+                    className="mt-0.5 size-5 shrink-0 accent-[#6b2a5c]"
+                  />
+                  <span>{b.acceptPolicy}</span>
+                </label>
+                {policyError && (
+                  <p id="policy-error" role="alert" className="mt-2 ms-8 text-sm font-medium text-destructive">
+                    {b.acceptPolicyRequired}
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </div>

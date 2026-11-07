@@ -12,10 +12,13 @@ export type DomainEvents = {
   "booking.created": { bookingId: string };
   /** Le salon a accepté la demande */
   "booking.confirmed": { bookingId: string };
-  "booking.cancelled": { bookingId: string; late: boolean; by: "client" | "salon" };
+  /** expired : demande jamais confirmée, annulée automatiquement après son heure */
+  "booking.cancelled": { bookingId: string; late: boolean; by: "client" | "salon"; expired?: boolean };
   "booking.completed": { bookingId: string };
   "booking.noShow": { bookingId: string };
   "review.published": { reviewId: string };
+  /** Avis retiré automatiquement : la cliente ne s'est pas présentée au rendez-vous */
+  "review.withdrawn": { reviewId: string };
 };
 
 export type EventName = keyof DomainEvents;

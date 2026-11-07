@@ -10,6 +10,7 @@ export const ar: Dictionary = {
 
   common: {
     language: "اللغة",
+    close: "إغلاق",
     skipToContent: "انتقل إلى المحتوى",
     currency: "د.ت",
     durMin: "{m} دقيقة",
@@ -58,6 +59,8 @@ export const ar: Dictionary = {
     validation: "بعض المعلومات غير صحيحة. راجع الاستمارة.",
     invalidCredentials: "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
     accountLocked: "محاولات كثيرة: الحساب مقفل لمدة 15 دقيقة.",
+    lockoutHint: "تنبيه: بعد 5 محاولات خاطئة يُقفل الحساب لمدة 15 دقيقة. نسيت كلمة المرور؟ استعمل «نسيت كلمة المرور؟».",
+    rateLimited: "طلبات كثيرة في وقت قصير. انتظر بضع دقائق ثم أعد المحاولة.",
     accountBlocked: "تم تعليق هذا الحساب. تواصل مع الدعم.",
     emailTaken: "يوجد حساب بهذا البريد الإلكتروني.",
     slotTaken: "تم حجز هذا الموعد للتو. اختر موعدًا آخر.",
@@ -66,6 +69,23 @@ export const ar: Dictionary = {
     insufficientPoints: "رصيد النقاط غير كافٍ.",
     tooLate: "انتهت مهلة التعديل.",
     tooEarly: "لم يبدأ هذا الموعد بعد: هذا الإجراء ممكن ابتداءً من وقته.",
+    clientBusy: "لديك موعد آخر في هذا الوقت. اختر وقتًا آخر.",
+    tooManyPending: "لديك 3 طلبات في انتظار التأكيد: انتظر ردّ الصالونات قبل إرسال طلبات أخرى.",
+  },
+
+  legal: {
+    contact: "سؤال؟ اتصل بالدعم",
+    terms: "شروط الاستخدام",
+    privacy: "سياسة الخصوصية",
+    footerTerms: "الشروط",
+    footerPrivacy: "الخصوصية",
+  },
+
+  notFound: {
+    title: "الصفحة غير موجودة",
+    text: "هذا الرابط لا يؤدي إلى أي صفحة: ربما نُقلت الصفحة أو لم يعد هذا الصالون متاحًا.",
+    findSalon: "ابحث عن صالون",
+    home: "الرئيسية",
   },
 
   pwa: {
@@ -284,6 +304,7 @@ export const ar: Dictionary = {
     amenities: "المرافق",
     fromPrice: "ابتداءً من",
     nextSlotsToday: "المواعيد القادمة اليوم",
+    nextSlotsOn: "المواعيد القادمة · {day}",
     bookSlot: "احجز موعدًا",
     afterVisit: "بعد موعدك",
     firstVisit: "أول موعد في هذا الصالون",
@@ -510,7 +531,8 @@ export const ar: Dictionary = {
     services: "الخدمات",
     pointsAfter: "النقاط المكتسبة بعد الموعد",
     addCalendar: "أضف إلى التقويم",
-    addedCalendar: "أُضيف إلى تقويمك",
+    addedCalendar: "تم تنزيل ملف التقويم: افتحه لإضافة الموعد إلى تقويمك.",
+    calendarNote: "طلب موعد على Glowy: يجب أن يؤكده الصالون. تابعه في «مواعيدي».",
     seeBookings: "عرض مواعيدي",
     proAria: "المختص",
     anyPro: "أول مختص متاح",
@@ -570,6 +592,7 @@ export const ar: Dictionary = {
     loginToBook: "سجّل الدخول للتأكيد: ستُؤخذ بياناتك من حسابك.",
     loginCta: "سجّل الدخول للتأكيد",
     clientOnly: "الحجز متاح فقط لحسابات الحرفاء. سجّل الدخول بحساب حريف.",
+    acceptPolicyRequired: "ضع علامة على سياسة الإلغاء لتأكيد الحجز.",
   },
 
   chatbot: {
@@ -611,6 +634,7 @@ export const ar: Dictionary = {
     slotTaken: "حُجز هذا الموعد للتو. اختاري موعدًا آخر.",
     clarify: "ما الخدمة التي تريدينها؟ مثلًا:",
     none: "لم أجد موعدًا متاحًا لـ{service} {date}. جرّبي يومًا آخر أو تصفّحي الصالونات.",
+    noneClosed: "الصالون مغلق يوم {date}: جرّب يومًا آخر.",
     searchCta: "تصفّح الصالونات",
     greeting: "مرحبًا! ماذا أحجز لك؟",
     courtesy: "يرجى الحفاظ على الاحترام: الكلمات النابية تُخفى.",
@@ -943,7 +967,7 @@ export const ar: Dictionary = {
       signingIn: "جارٍ تسجيل الدخول…",
       welcome: "مرحبًا بك!",
       newHere: "جديد على Glowy؟",
-      createAccount: "أنشئ حسابًا · {pts}",
+      createAccount: "أنشئ حسابًا",
       demoAccess: "دخول تجريبي حسب الدور",
       roles: {
         client: "حريف",
@@ -954,7 +978,7 @@ export const ar: Dictionary = {
       errors: {
         email: "أدخل بريدًا إلكترونيًا صالحًا.",
         passwordLogin: "كلمة المرور تتكون من 8 أحرف على الأقل.",
-        password: "8 أحرف على الأقل.",
+        password: "8 أحرف على الأقل، مع حروف ورقم أو رمز واحد على الأقل.",
         firstName: "أدخل اسمك.",
         lastName: "أدخل لقبك.",
         salonName: "أدخل اسم الصالون.",
@@ -983,8 +1007,8 @@ export const ar: Dictionary = {
       documentHint: "السجل التجاري أو الباتيندة · PDF، JPG · 5 ميغابايت",
       plan: "العرض",
       perMonth: "{price}/شهريًا",
-      terms: "أوافق على شروط الاستخدام وسياسة الخصوصية (القانون عدد 63 لسنة 2004).",
-      createCta: "أنشئ حسابي · {pts}",
+      terms: "أوافق على {terms} و{privacy} (القانون عدد 63 لسنة 2004).",
+      createCta: "أنشئ حسابي",
       sendRequest: "أرسل طلبي",
       sending: "جارٍ الإرسال…",
       created: "تم إنشاء الحساب!",
@@ -1108,9 +1132,11 @@ export const ar: Dictionary = {
       subscription: "الاشتراك",
     },
     noMoreToday: "لا مزيد من المواعيد القادمة اليوم.",
+    toCheck: "{n} موعد سابق يجب تسجيله: منتهٍ أو غياب",
     actions: {
-      labels: { confirm: "تأكيد الطلب", decline: "رفض الطلب", start: "بدء", complete: "إنهاء الموعد", noShow: "الحريفة غائبة" },
-      done: { confirm: "تم تأكيد الموعد: أُعلمت الحريفة", decline: "رُفض الطلب: تحرّر الموعد وأُعلمت الحريفة", start: "بدأ الموعد", complete: "انتهى الموعد: أُضيفت النقاط إلى الحريفة", noShow: "تم تسجيل الغياب" },
+      labels: { confirm: "تأكيد الطلب", decline: "رفض الطلب", cancel: "إلغاء الموعد", start: "بدء", complete: "إنهاء الموعد", noShow: "الحريفة غائبة" },
+      confirmAgain: { decline: "تأكيد الرفض؟", cancel: "تأكيد الإلغاء؟", noShow: "تأكيد الغياب؟" },
+      done: { confirm: "تم تأكيد الموعد: أُعلمت الحريفة", decline: "رُفض الطلب: تحرّر الموعد وأُعلمت الحريفة", cancel: "أُلغي الموعد: تحرّر الوقت وأُعلمت الحريفة", start: "بدأ الموعد", complete: "انتهى الموعد: أُضيفت النقاط إلى الحريفة", noShow: "تم تسجيل الغياب" },
     },
     periodAria: "الفترة",
     periods: {

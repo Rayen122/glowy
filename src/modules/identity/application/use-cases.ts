@@ -99,10 +99,16 @@ export function makeIdentity({ accounts, hasher, events, clock, tokens, mailer }
     return user && user.status === "ACTIVE" ? user : null;
   }
 
-  /** Utilisateur de la session, relu en base à chaque requête : un compte bloqué perd l'accès aussitôt (AUTH-04) */
-  async function sessionUser(id: string) {
+  /**
+   * Utilisateur de la session, relu en base à chaque requête : un compte bloqué perd l'accès aussitôt (AUTH-04).
+   * `authAt` = heure de connexion de la session (ms) : une session ouverte avant le dernier changement
+   * de mot de passe est refusée (après un vol de compte, changer le mot de passe déconnecte l'intrus).
+   */
+  async function sessionUser(id: string, authAt?: number) {
     const user = await accounts.findById(id);
-    return user && user.status === "ACTIVE" ? user : null;
+    if (!user || user.status !== "ACTIVE") return null;
+    if (user.passwordChangedAt && (authAt ?? 0) < user.passwordChangedAt.getTime()) return null;
+    return user;
   }
 
   /** AUTH-07 : compte de connexion d'un employé, avec un mot de passe temporaire à lui transmettre */
@@ -151,7 +157,7 @@ export function makeIdentity({ accounts, hasher, events, clock, tokens, mailer }
   async function resetPassword(token: string, password: string) {
     const userId = await accounts.consumeToken("reset", tokens.hash(token), clock.now());
     if (!userId) throw badRequest("INVALID_TOKEN", "Ce lien n'est plus valable. Demandez-en un nouveau.");
-    await accounts.setPasswordHash(userId, await hasher.hash(password));
+    await accounts.setPasswordHash(userId, await hasher.hash(password), clock.now());
     // Le lien reçu par e-mail prouve aussi que l'adresse est la bonne
     await accounts.markEmailVerified(userId, clock.now());
     return { reset: true };
@@ -178,12 +184,15 @@ export function makeIdentity({ accounts, hasher, events, clock, tokens, mailer }
     return { verified: true };
   }
 
-  /** Changement de mot de passe d'un utilisateur connecté : l'ancien est exigé */
+  /**
+   * Changement de mot de passe d'un utilisateur connecté : l'ancien est exigé. Toutes les sessions sont fermées,
+   * y compris celle-ci : l'interface se reconnecte aussitôt avec le nouveau mot de passe (d'où l'e-mail renvoyé).
+   */
   async function changePassword(userId: string, current: string, next: string) {
     const user = await accounts.findById(userId);
     if (!user?.passwordHash || !(await hasher.verify(current, user.passwordHash))) throw unauthorized("Mot de passe actuel incorrect.");
-    await accounts.setPasswordHash(userId, await hasher.hash(next));
-    return { changed: true };
+    await accounts.setPasswordHash(userId, await hasher.hash(next), clock.now());
+    return { changed: true, email: user.email };
   }
 
   /**

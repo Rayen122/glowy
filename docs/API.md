@@ -8,6 +8,8 @@ Routes Next.js (`src/app/api`). Toutes les réponses sont en JSON :
 Les codes d'erreur sont stables : l'interface les traduit (`t.errors`). Validation des entrées avec Zod (`400 VALIDATION`).
 Authentification par cookie de session Auth.js ; `401 UNAUTHORIZED` sans session, `403 FORBIDDEN` si le rôle ne convient pas.
 Les requêtes d'écriture venant d'une autre origine sont refusées (`403`, protection CSRF).
+Limitation de débit (`429 RATE_LIMITED`) : inscription 10/h et connexion 20/10 min par adresse, mot de passe oublié 5/15 min, réservation 15/h par compte, assistante 6/min, envois de fichiers 30/h (`RATE_LIMITS=off` pour les tests automatisés).
+Dates : `400 VALIDATION` pour une date impossible (`2026-13-45`, `2026-02-30`).
 
 Dates : `AAAA-MM-JJ`, heures : `HH:MM`, en heure de Tunis. Montants en dinars entiers.
 
@@ -59,6 +61,8 @@ Actions de `PATCH /api/bookings/:id` :
 | `noShow` | salon | Absente → −20 pts |
 
 `start` est possible au plus tôt 30 min avant le rendez-vous ; `complete` (sauf rendez-vous déjà commencé) et `noShow` seulement après son heure : sinon `409 TOO_EARLY`.
+
+Règles de réservation (recette du 7 novembre 2026) : heure prise dans la grille de 30 min depuis l'ouverture (`400 OFF_GRID`), au plus 90 jours à l'avance (`400 TOO_FAR`), jamais deux rendez-vous actifs qui se chevauchent pour une même cliente, tous salons confondus (`409 CLIENT_BUSY`), au plus 3 demandes en attente par cliente (`409 TOO_MANY_PENDING`). Après l'heure du rendez-vous : la cliente ne peut plus annuler (`409 ALREADY_STARTED`), le salon ne peut plus confirmer une demande (`409 TOO_LATE`), et la tâche planifiée la fait expirer (acompte remboursé). Le salon peut annuler un rendez-vous confirmé à venir (`cancel`). Un avis publié est retiré si le salon marque ensuite la cliente absente (points de l'avis repris).
 La réponse de `POST /api/bookings` contient aussi `employeeKey` : le professionnel attribué, même avec `employee: "any"`.
 
 **Fonctions réservées aux plans** (routes du dashboard) : `403 PLAN_REQUIRED` (`details.plan` = plan minimal) pour le CRM, les statistiques et exports, les promotions (Pro) et les stocks et succursales (Premium) ; `409 PLAN_LIMIT` au-delà du nombre de professionnels actifs du plan (Gratuit 1, Pro 8, Premium illimité).
@@ -78,7 +82,7 @@ La réponse de `POST /api/bookings` contient aussi `employeeKey` : le profession
 | Méthode | Route | Accès | Description |
 | --- | --- | --- | --- |
 | POST | `/api/reviews` | cliente | `{ bookingId, rating 1–5, text, photoUrl?, lang }` — dès que l'heure du rendez-vous est passée, même si le salon ne l'a pas encore marqué terminé ; jamais sur une annulation ou une absence (`409 BOOKING_NOT_COMPLETED`, `409 ALREADY_REVIEWED`) |
-| PATCH | `/api/reviews/:id` | selon l'action | `reply` (gérant) · `report` (tous) · `hide` / `keep` (Super Admin, journalisé) |
+| PATCH | `/api/reviews/:id` | selon l'action | `reply` (gérant) · `report` (tous sauf l'autrice : `409 OWN_REVIEW`) · `hide` / `keep` (Super Admin, journalisé) |
 
 ## Dashboard salon (P2)
 

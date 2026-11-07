@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { CircleCheck, KeyRound, MailCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { isWeakPassword } from "@/core/domain/password";
 import { useI18n } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import { api, Field, FIELD, FormError, PRIMARY_BUTTON, SECONDARY_BUTTON, useAction } from "./kit";
@@ -88,6 +90,7 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
       onSubmit={async (e) => {
         e.preventDefault();
         if (password !== confirm) return setError(m.mismatch);
+        if (isWeakPassword(password)) return setError(m.weak);
         if (await run(() => api("/api/auth/password/reset", { method: "POST", body: { token, password } }))) setDone(true);
       }}
       className="space-y-4"
@@ -116,12 +119,19 @@ export function ChangePasswordForm({ onDone }: { onDone?: () => void }) {
   const m = t.manage.password;
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
-  const { run, pending, error } = useAction();
+  const { run, pending, error, setError } = useAction();
   return (
     <form
       onSubmit={async (e) => {
         e.preventDefault();
-        if (await run(() => api("/api/me/password", { method: "PATCH", body: { current, next } }), m.changed)) {
+        if (isWeakPassword(next)) return setError(m.weak);
+        // Le changement ferme toutes les sessions, celle-ci comprise : reconnexion immédiate avec le nouveau mot de passe
+        const changed = await run(async () => {
+          const result = await api<{ email: string }>("/api/me/password", { method: "PATCH", body: { current, next } });
+          await signIn("credentials", { email: result.email, password: next, redirect: false });
+          return result;
+        }, m.changed);
+        if (changed) {
           setCurrent("");
           setNext("");
           onDone?.();

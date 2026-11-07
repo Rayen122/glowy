@@ -31,7 +31,7 @@ export function ClientNotes({ clientId, notes }: { clientId: string; notes: Note
             </button>
           ))}
         </div>
-        <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder={m.notePlaceholder} rows={2} maxLength={500} className={cn(FIELD, "h-auto py-2.5")} />
+        <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder={m.notePlaceholder} aria-label={m.notePlaceholder} rows={2} maxLength={500} className={cn(FIELD, "h-auto py-2.5")} />
         <FormError message={error} />
         <button type="submit" disabled={pending || text.trim().length < 2} className={cn(PRIMARY_BUTTON, "h-10")}>
           {m.addNote}

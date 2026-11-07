@@ -66,7 +66,7 @@ export function ForecastBars({
           ))}
         </div>
       </div>
-      <div className="mt-1.5 flex justify-between text-[11px] text-muted-foreground tabular-nums" aria-hidden dir="ltr">
+      <div className="mt-1.5 flex justify-between text-xs text-muted-foreground tabular-nums" aria-hidden dir="ltr">
         <span>{hour(data[0].hour)}</span>
         <span>{hour(data[Math.floor(data.length / 2)].hour)}</span>
         <span>{hour(data[data.length - 1].hour)}</span>

@@ -1,8 +1,6 @@
 import { z } from "zod";
+import { DATE, TIME } from "@/core/schemas";
 import { CASH_METHODS } from "@/core/domain/enums";
-
-const DATE = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date attendue au format AAAA-MM-JJ");
-const TIME = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Heure attendue au format HH:MM");
 
 /** Blocage d'un créneau dans l'agenda (SAL-04) : pause, congé, indisponibilité */
 export const blockSlotInput = z
@@ -117,7 +115,8 @@ export const checkoutInput = z
     discount: AMOUNT.default(0),
     method: z.enum(CASH_METHODS),
   })
-  .refine((v) => v.bookingId || (v.clientName?.length ?? 0) >= 2, { message: "Nom de la cliente requis", path: ["clientName"] });
+  .refine((v) => v.bookingId || (v.clientName?.length ?? 0) >= 2, { message: "Nom de la cliente requis", path: ["clientName"] })
+  .refine((v) => v.discount <= v.lines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0), { message: "La remise dépasse le total", path: ["discount"] });
 export type CheckoutInput = z.infer<typeof checkoutInput>;
 
 export const voidInvoiceInput = z.object({ reason: z.string().trim().min(3, "3 caractères minimum").max(200) });

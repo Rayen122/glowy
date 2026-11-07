@@ -144,7 +144,7 @@ export async function AgendaMonth({ salonId, date }: { salonId: string; date: st
               >
                 <span className="text-xs font-semibold tabular-nums sm:text-sm">{df(d.date, { day: "numeric" })}</span>
                 {!outside && (
-                  <span className="mt-auto hidden text-[11px] leading-tight sm:block">
+                  <span className="mt-auto hidden text-xs leading-tight sm:block">
                     {d.open ? (
                       d.bookings.length ? (
                         <>
@@ -159,7 +159,7 @@ export async function AgendaMonth({ salonId, date }: { salonId: string; date: st
                     )}
                   </span>
                 )}
-                {!outside && d.bookings.length > 0 && <span className="mt-auto text-[10px] font-semibold tabular-nums sm:hidden">{d.bookings.length}</span>}
+                {!outside && d.bookings.length > 0 && <span className="mt-auto text-xs font-semibold tabular-nums sm:hidden">{d.bookings.length}</span>}
               </Link>
             );
           })}

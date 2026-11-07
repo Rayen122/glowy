@@ -51,10 +51,10 @@ export function SearchBar({
         className
       )}
     >
-      <label className={cn("group flex min-w-0 flex-1 items-center gap-3 rounded-2xl px-4 transition-colors hover:bg-muted/60 md:rounded-full", hero ? "h-14" : "h-11")}>
+      <label className={cn("group flex min-w-0 flex-1 items-center gap-3 rounded-2xl px-4 transition-colors hover:bg-muted/60 md:rounded-full focus-within:bg-muted/60 focus-within:ring-2 focus-within:ring-ring/60", hero ? "h-14" : "h-11")}>
         <Search className="size-5 shrink-0 text-plum-600" aria-hidden />
         <span className="flex min-w-0 flex-1 flex-col">
-          {hero && <span className="text-[11px] font-semibold tracking-wide text-foreground uppercase">{s.service}</span>}
+          {hero && <span className="text-xs font-semibold tracking-wide text-foreground uppercase">{s.service}</span>}
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -67,10 +67,10 @@ export function SearchBar({
 
       <span className="mx-1 hidden h-8 w-px bg-border md:block" aria-hidden />
 
-      <div className={cn("flex min-w-0 flex-1 items-center gap-3 rounded-2xl px-4 transition-colors hover:bg-muted/60 md:rounded-full", hero ? "h-14" : "h-11")}>
+      <div className={cn("flex min-w-0 flex-1 items-center gap-3 rounded-2xl px-4 transition-colors hover:bg-muted/60 md:rounded-full focus-within:bg-muted/60 focus-within:ring-2 focus-within:ring-ring/60", hero ? "h-14" : "h-11")}>
         <MapPin className="size-5 shrink-0 text-plum-600" aria-hidden />
         <span className="flex min-w-0 flex-1 flex-col">
-          {hero && <span className="text-[11px] font-semibold tracking-wide text-foreground uppercase">{s.where}</span>}
+          {hero && <span className="text-xs font-semibold tracking-wide text-foreground uppercase">{s.where}</span>}
           <input
             value={city}
             onChange={(e) => setCity(e.target.value)}
@@ -98,10 +98,10 @@ export function SearchBar({
 
       <span className="mx-1 hidden h-8 w-px bg-border md:block" aria-hidden />
 
-      <label className={cn("relative flex items-center gap-3 rounded-2xl px-4 transition-colors hover:bg-muted/60 md:w-52 md:rounded-full", hero ? "h-14" : "h-11")}>
+      <label className={cn("relative flex items-center gap-3 rounded-2xl px-4 transition-colors hover:bg-muted/60 md:w-52 md:rounded-full focus-within:bg-muted/60 focus-within:ring-2 focus-within:ring-ring/60", hero ? "h-14" : "h-11")}>
         <CalendarDays className="size-5 shrink-0 text-plum-600" aria-hidden />
         <span className="flex min-w-0 flex-1 flex-col">
-          {hero && <span className="text-[11px] font-semibold tracking-wide text-foreground uppercase">{s.when}</span>}
+          {hero && <span className="text-xs font-semibold tracking-wide text-foreground uppercase">{s.when}</span>}
           <select
             value={when}
             onChange={(e) => setWhen(e.target.value as (typeof WHEN)[number])}

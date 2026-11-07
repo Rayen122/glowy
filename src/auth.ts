@@ -3,13 +3,15 @@ import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { z } from "zod";
 import { ROLES } from "@/core/domain/actor";
+import { clientIp, hit, rateLimitsEnabled } from "@/infrastructure/rate-limit";
 import { authenticate, credentialsInput, demoAccount, oauthSignIn, type UserAccount } from "@/modules/identity";
 import { authConfig } from "./auth.config";
 
 /**
  * Authentification (P1, AUTH-03 / AUTH-04) : e-mail + mot de passe haché (bcrypt), 4 rôles,
  * blocage après 5 échecs pendant 15 minutes (cahier §10) — règles dans src/modules/identity.
- * Fournisseur « demo » (connexion en un clic par rôle) : actif seulement si DEMO_LOGIN=true.
+ * Fournisseur « demo » (connexion en un clic par rôle) : actif seulement si DEMO_LOGIN=true, et jamais en
+ * production sans un second accord explicite (DEMO_LOGIN_PRODUCTION=true) : il ouvre le Super Admin sans mot de passe.
  */
 class InvalidCredentials extends CredentialsSignin {
   code = "invalid_credentials";
@@ -19,6 +21,9 @@ class AccountLocked extends CredentialsSignin {
 }
 class AccountBlocked extends CredentialsSignin {
   code = "account_blocked";
+}
+class RateLimited extends CredentialsSignin {
+  code = "rate_limited";
 }
 
 const toSessionUser = (user: UserAccount) => ({
@@ -38,7 +43,12 @@ const DEMO_ACCOUNTS = {
   ADMIN: "admin@beautyhub.tn",
 } as const;
 
-export const demoLoginEnabled = process.env.DEMO_LOGIN === "true";
+export const demoLoginEnabled =
+  process.env.DEMO_LOGIN === "true" && (process.env.NODE_ENV !== "production" || process.env.DEMO_LOGIN_PRODUCTION === "true");
+
+if (demoLoginEnabled && process.env.NODE_ENV === "production") {
+  console.warn("[config] Connexion démo active en production (DEMO_LOGIN_PRODUCTION=true) : n'importe qui peut ouvrir le Super Admin. À réserver à une démonstration locale.");
+}
 
 /** AUTH-08 (bonus) : connexion Google, active seulement si l'application OAuth est configurée */
 export const googleLoginEnabled = Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
@@ -66,7 +76,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const { token, account, profile } = params;
       if (account?.provider === "google" && profile) {
         const user = await googleAccount(profile as GoogleProfile);
-        if (user) Object.assign(token, { id: user.id, role: user.role, firstName: user.firstName, name: `${user.firstName} ${user.lastName}`.trim() });
+        if (user) Object.assign(token, { id: user.id, role: user.role, firstName: user.firstName, name: `${user.firstName} ${user.lastName}`.trim(), authAt: Date.now() });
         return token;
       }
       return authConfig.callbacks.jwt(params);
@@ -77,7 +87,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Credentials({
       id: "credentials",
       credentials: { email: {}, password: {} },
-      async authorize(raw) {
+      async authorize(raw, request) {
+        // En plus du blocage d'un compte à 5 échecs : une même adresse ne peut pas essayer des comptes en série
+        if (rateLimitsEnabled() && !hit("login", clientIp(request))) throw new RateLimited();
         const parsed = credentialsInput.safeParse(raw);
         if (!parsed.success) throw new InvalidCredentials();
         const result = await authenticate(parsed.data.email, parsed.data.password);

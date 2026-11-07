@@ -44,7 +44,10 @@ export default async function DashboardPage() {
   const today = tunisToday();
   // Statistiques réelles sur 30 jours (SAL-06)
   const total30 = stats30.revenue;
-  const upcoming = kpis.day.bookings.filter((b) => b.status !== "COMPLETED" && b.status !== "NO_SHOW").slice(0, 6);
+  // « Prochains » = pas encore fini ; les rendez-vous passés encore ouverts sont à pointer depuis l'agenda
+  const open = kpis.day.bookings.filter((b) => b.status !== "COMPLETED" && b.status !== "NO_SHOW");
+  const upcoming = open.filter((b) => b.end > kpis.nowTime).slice(0, 6);
+  const toCheck = open.filter((b) => b.end <= kpis.nowTime).length;
   const weekday = (w: number) => df(weekdayIso(w), { weekday: "long" });
 
   return (
@@ -166,6 +169,11 @@ export default async function DashboardPage() {
             })}
             {upcoming.length === 0 && <li className="py-6 text-center text-sm text-muted-foreground">{d.noMoreToday}</li>}
           </ul>
+          {toCheck > 0 && (
+            <Link href="/dashboard/agenda" className="mt-2 inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold text-plum-700 hover:underline">
+              {f(d.toCheck, { n: toCheck })} <ArrowRight className="size-4 rtl:rotate-180" aria-hidden />
+            </Link>
+          )}
         </section>
       </div>
 

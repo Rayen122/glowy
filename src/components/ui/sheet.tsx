@@ -6,6 +6,7 @@ import { cn } from "cn"
 
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
+import { useI18n } from "@/i18n/client"
 
 function Sheet({ ...props }: SheetPrimitive.Root.Props) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />
@@ -65,14 +66,14 @@ function SheetContent({
             render={
               <Button
                 variant="ghost"
-                className="absolute top-3 right-3"
+                className="absolute top-3 end-3"
                 size="icon-sm"
               />
             }
           >
             <XIcon
             />
-            <span className="sr-only">Close</span>
+            <CloseLabel />
           </SheetPrimitive.Close>
         )}
       </SheetPrimitive.Popup>
@@ -135,4 +136,10 @@ export {
   SheetFooter,
   SheetTitle,
   SheetDescription,
+}
+
+/** Texte lecteur d'écran de la croix, dans la langue de l'interface (et non « Close » en dur) */
+function CloseLabel() {
+  const { t } = useI18n()
+  return <span className="sr-only">{t.common.close}</span>
 }

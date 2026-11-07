@@ -13,6 +13,10 @@ export interface ReviewRepository {
   report(data: { reviewId: string; reporterId: string | null; source: ReportSource; reason: string }): Promise<{ id: string }>;
   /** Décision finale : statut de l'avis + signalements résolus + journal d'audit, d'un seul tenant */
   moderate(id: string, decision: "hide" | "keep", actorId: string, at: Date): Promise<ReviewRecord>;
+  /** Avis publié d'un rendez-vous, ou null */
+  publishedForBooking(bookingId: string): Promise<ReviewRecord | null>;
+  /** Masque l'avis sans décision humaine (journalisé) */
+  withdraw(id: string, at: Date): Promise<void>;
   /** Note moyenne et nombre d'avis publiés du salon (dénormalisés pour la recherche) */
   refreshSalonRating(salonId: string): Promise<void>;
   /** Vote « utile » : ajoute ou retire le vote de cet utilisateur */

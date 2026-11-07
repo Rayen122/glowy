@@ -41,6 +41,15 @@ export function makeLoyalty({ ledger, clock, notices = SILENT }: { ledger: Loyal
   /** Déjà crédité pour cette réservation / cet avis ? (rend les réactions aux événements idempotentes) */
   const alreadyAwarded = (userId: string, reason: PointReason, ref: { bookingId?: string; reviewId?: string }) => ledger.hasEntry(userId, reason, ref);
 
+  /** Points gagnés grâce à un avis, déjà repris compris (0 après une reprise) */
+  const reviewPoints = (userId: string, reviewId: string) => ledger.reviewPoints(userId, reviewId);
+
+  /** Reprise de points accordés à tort (avis retiré) : ligne « ajustement » négative, solde jamais négatif */
+  async function revoke(userId: string, points: number, opts: AwardOptions = {}) {
+    if (points <= 0) return;
+    await ledger.record({ userId, points: -points, reason: "ADJUSTMENT", ...opts, at: clock.now() });
+  }
+
   /** Bonus unique (profil complété…) */
   async function awardOnce(userId: string, reason: PointReason) {
     return (await ledger.hasEntry(userId, reason)) ? 0 : award(userId, reason);
@@ -78,7 +87,7 @@ export function makeLoyalty({ ledger, clock, notices = SILENT }: { ledger: Loyal
     return accounts.length;
   }
 
-  return { award, alreadyAwarded, awardOnce, redeem, expireInactivePoints, warnExpiringPoints };
+  return { award, alreadyAwarded, awardOnce, reviewPoints, revoke, redeem, expireInactivePoints, warnExpiringPoints };
 }
 
 export type Loyalty = ReturnType<typeof makeLoyalty>;

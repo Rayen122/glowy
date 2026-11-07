@@ -71,7 +71,7 @@ export function BranchesManager({ branches }: { branches: Branch[] }) {
                 [m.team, nf(b.team)],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-2xl bg-muted/50 p-2">
-                  <dt className="text-[11px] text-muted-foreground">{label}</dt>
+                  <dt className="text-xs text-muted-foreground">{label}</dt>
                   <dd className="text-sm font-semibold tabular-nums">{value}</dd>
                 </div>
               ))}

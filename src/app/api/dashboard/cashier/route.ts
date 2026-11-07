@@ -1,4 +1,4 @@
-import { tunisToday } from "@/core/domain/time";
+import { isIsoDate, tunisToday } from "@/core/domain/time";
 import { ok, readJson, route } from "@/infrastructure/http";
 import { requireUser } from "@/infrastructure/session";
 import { cashierDay, checkout, checkoutInput, currentSalonId } from "@/modules/dashboard";
@@ -7,7 +7,7 @@ import { cashierDay, checkout, checkoutInput, currentSalonId } from "@/modules/d
 export const GET = route(async (request) => {
   const actor = await requireUser("MANAGER", "EMPLOYEE", "ADMIN");
   const date = new URL(request.url).searchParams.get("date");
-  return ok(await cashierDay(await currentSalonId(actor), date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : tunisToday()));
+  return ok(await cashierDay(await currentSalonId(actor), date && isIsoDate(date) ? date : tunisToday()));
 });
 
 /** POST /api/dashboard/cashier — { bookingId | clientName, lines, discount, method } : encaissement, crée la facture */

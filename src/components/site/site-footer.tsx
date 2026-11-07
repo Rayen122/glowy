@@ -3,6 +3,7 @@ import { demoLoginEnabled } from "@/auth";
 import { DemoRoleLink } from "@/components/auth/demo-role-link";
 import { Logo } from "@/components/brand/logo";
 import { getI18n } from "@/i18n/server";
+import { cn } from "@/lib/utils";
 import { activeCities } from "@/modules/platform";
 
 export async function SiteFooter() {
@@ -27,20 +28,29 @@ export async function SiteFooter() {
         { href: "/inscription?type=salon", label: f.registerSalon },
       ],
     },
-    {
-      title: f.demo,
-      // Espaces de démonstration : connexion au compte démo du rôle avant d'ouvrir l'espace
-      links: [
-        { href: "/compte", label: f.clientSpace, role: "CLIENT" },
-        { href: "/dashboard", label: f.salonDashboard, role: "MANAGER" },
-        { href: "/admin", label: f.superAdmin, role: "ADMIN" },
-      ] as const,
-    },
+    // Espaces de démonstration (connexion au compte démo du rôle) : seulement quand la connexion démo est active
+    ...(demoLoginEnabled
+      ? [
+          {
+            title: f.demo,
+            links: [
+              { href: "/compte", label: f.clientSpace, role: "CLIENT" },
+              { href: "/dashboard", label: f.salonDashboard, role: "MANAGER" },
+              { href: "/admin", label: f.superAdmin, role: "ADMIN" },
+            ] as const,
+          },
+        ]
+      : []),
   ];
 
   return (
     <footer className="mt-auto border-t border-border bg-sand/60">
-      <div className="container-page grid grid-cols-2 gap-x-6 gap-y-9 py-12 sm:py-14 md:grid-cols-[1.4fr_repeat(3,1fr)] md:gap-10">
+      <div
+        className={cn(
+          "container-page grid grid-cols-2 gap-x-6 gap-y-9 py-12 sm:py-14 md:gap-10",
+          demoLoginEnabled ? "md:grid-cols-[1.4fr_repeat(3,1fr)]" : "md:grid-cols-[1.4fr_repeat(2,1fr)]"
+        )}
+      >
         <div className="col-span-2 max-w-xs space-y-4 md:col-span-1">
           <Logo />
           <p className="text-sm leading-relaxed text-muted-foreground">{f.tagline}</p>
@@ -78,7 +88,15 @@ export async function SiteFooter() {
       </div>
       <div className="border-t border-border">
         <div className="container-page flex flex-col gap-2 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <p>{f.legal}</p>
+          <p className="flex flex-wrap gap-x-3 gap-y-1">
+            <span>{f.legal}</span>
+            <Link href="/conditions" className="inline-flex min-h-10 items-center hover:text-foreground hover:underline sm:min-h-0">
+              {t.legal.footerTerms}
+            </Link>
+            <Link href="/confidentialite" className="inline-flex min-h-10 items-center hover:text-foreground hover:underline sm:min-h-0">
+              {t.legal.footerPrivacy}
+            </Link>
+          </p>
           <p>{f.demoNote}</p>
         </div>
       </div>

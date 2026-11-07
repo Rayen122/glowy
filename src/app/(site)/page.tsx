@@ -30,7 +30,7 @@ import { auth } from "@/auth";
 import { getI18n } from "@/i18n/server";
 import { CATEGORIES, IMAGES, TIERS, TODAY_FORECAST } from "@/lib/data";
 import { activeCities, getPlatformSettings } from "@/modules/platform";
-import { recommendedSalons } from "@/modules/catalog";
+import { platformShowcase, recommendedSalons, type Showcase } from "@/modules/catalog";
 import { cn } from "@/lib/utils";
 
 const POPULAR = ["Brushing", "Balayage", "Manucure semi-permanent", "Hammam", "Taille de barbe"];
@@ -40,11 +40,11 @@ export default async function HomePage() {
   const { t, f, nf } = i18n;
   const h = t.home;
   const session = await auth();
-  const recommended = await recommendedSalons(4, session?.user.id);
+  const [recommended, showcase] = await Promise.all([recommendedSalons(4, session?.user.id), platformShowcase()]);
 
   return (
     <>
-      <Hero i18n={i18n} />
+      <Hero i18n={i18n} showcase={showcase} />
 
       {/* Catégories */}
       <section className="container-page py-16 lg:py-24" aria-labelledby="categories-title">
@@ -130,8 +130,9 @@ export default async function HomePage() {
   );
 }
 
-function Hero({ i18n }: { i18n: I18n }) {
-  const { t, tc, f, nf, hour } = i18n;
+function Hero({ i18n, showcase }: { i18n: I18n; showcase: Showcase }) {
+  const { t, tc, f, nf, df, hour } = i18n;
+  const top = showcase.featured;
   const h = t.home.hero;
   const peak = Math.max(...TODAY_FORECAST.map((x) => x.value));
   return (
@@ -147,7 +148,7 @@ function Hero({ i18n }: { i18n: I18n }) {
               <BadgeCheck className="size-4 shrink-0 text-plum-600" aria-hidden />
               <span>
                 <span className="font-semibold text-foreground">
-                  {i18n.rich(h.badgeStrong, { count: <span key="c" data-animate="count">{nf(1342)}</span> })}
+                  {i18n.rich(h.badgeStrong, { count: <span key="c" data-animate="count">{nf(showcase.salons)}</span> })}
                 </span>{" "}
                 {h.badgeRest}
               </span>
@@ -160,8 +161,9 @@ function Hero({ i18n }: { i18n: I18n }) {
             </p>
             <dl data-hero="stats" className="mt-8 grid max-w-lg grid-cols-3 gap-3 border-t border-border pt-6 sm:gap-6">
               {[
-                { k: h.statRating, v: `${nf(4.8, { minimumFractionDigits: 1 })}/5` },
-                { k: h.statReviews, v: nf(96000) },
+                // Chiffres réels de la plateforme (avis publiés, note moyenne)
+                { k: h.statRating, v: showcase.rating === null ? "—" : `${nf(showcase.rating, { minimumFractionDigits: 1 })}/5` },
+                { k: h.statReviews, v: nf(showcase.reviews) },
                 { k: h.statDoubles, v: "0" },
               ].map((s) => (
                 <div key={s.k}>
@@ -187,27 +189,35 @@ function Hero({ i18n }: { i18n: I18n }) {
               <Image src={IMAGES.heroSalon} alt={h.salonAlt} fill loading="eager" sizes="240px" className="object-cover" />
             </div>
 
-            {/* Carte créneau */}
-            <div data-hero="card" className="absolute start-0 top-6 w-[13.5rem] rounded-2xl bg-card/95 p-3 shadow-lift ring-1 ring-border backdrop-blur sm:start-2 sm:top-10 sm:w-64 sm:p-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold">Salon Yasmine</p>
-                <VerifiedBadge compact className="ring-0" />
-              </div>
-              <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                <Star className="size-3.5 fill-star text-star" aria-hidden /> {nf(4.9, { minimumFractionDigits: 1 })} · {tc("La Marsa")}
-              </p>
-              <p className="mt-3 text-xs font-medium text-muted-foreground">{t.salon.nextSlotsToday}</p>
-              <div className="mt-1.5 flex gap-1.5">
-                {["14:00", "14:45", "16:30"].map((slot, i) => (
-                  <span
-                    key={slot}
-                    className={cn("rounded-lg px-2 py-1 text-xs font-semibold tabular-nums sm:px-2.5", i === 0 ? "bg-primary text-primary-foreground" : "bg-blush text-plum-800")}
-                  >
-                    {slot}
-                  </span>
-                ))}
-              </div>
-            </div>
+            {/* Carte créneau : un vrai salon et ses vrais prochains créneaux libres */}
+            {top && (
+              <Link
+                href={`/salons/${top.slug}`}
+                data-hero="card"
+                className="absolute start-0 top-6 w-[13.5rem] rounded-2xl bg-card/95 p-3 shadow-lift ring-1 ring-border backdrop-blur transition-shadow hover:ring-plum-300 sm:start-2 sm:top-10 sm:w-64 sm:p-4"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="truncate text-sm font-semibold">{top.name}</p>
+                  <VerifiedBadge compact className="ring-0" />
+                </div>
+                <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                  <Star className="size-3.5 fill-star text-star" aria-hidden /> {nf(top.rating, { minimumFractionDigits: 1 })} · {tc(top.city)}
+                </p>
+                <p className="mt-3 text-xs font-medium text-muted-foreground">
+                  {top.today ? t.salon.nextSlotsToday : f(t.salon.nextSlotsOn, { day: df(top.date, { weekday: "long", day: "numeric", month: "long" }) })}
+                </p>
+                <div className="mt-1.5 flex gap-1.5">
+                  {top.slots.map((slot, i) => (
+                    <span
+                      key={slot}
+                      className={cn("rounded-lg px-2 py-1 text-xs font-semibold tabular-nums sm:px-2.5", i === 0 ? "bg-primary text-primary-foreground" : "bg-blush text-plum-800")}
+                    >
+                      {slot}
+                    </span>
+                  ))}
+                </div>
+              </Link>
+            )}
 
             {/* Carte affluence */}
             <div data-hero="card" className="absolute end-0 top-[44%] w-44 rounded-2xl bg-card/95 p-3 shadow-lift ring-1 ring-border backdrop-blur sm:end-[-8px] sm:top-[46%] sm:w-56 sm:p-4">
@@ -240,7 +250,7 @@ function Hero({ i18n }: { i18n: I18n }) {
         </div>
 
         <div className="container-page relative pb-6">
-          <div data-hero="search">
+          <div data-hero="search" data-launcher-avoid>
             <SearchBar />
           </div>
           <p data-hero="chips" className="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
@@ -473,7 +483,7 @@ function LoyaltySection({ i18n }: { i18n: I18n }) {
                 )}
               >
                 <span className="block truncate">{tc(tier.label)}</span>
-                <span className="block text-[11px] font-normal text-muted-foreground">{f(l.tierMin, { n: nf(tier.min) })}</span>
+                <span className="block text-xs font-normal text-muted-foreground">{f(l.tierMin, { n: nf(tier.min) })}</span>
               </li>
             ))}
           </ol>
@@ -544,7 +554,7 @@ function ProSection({ i18n }: { i18n: I18n }) {
               ].map(({ icon: Icon, k, v }) => (
                 <div key={k} className="min-w-0 rounded-2xl border border-border p-2.5 sm:p-3">
                   <Icon className="size-4 text-plum-600" aria-hidden />
-                  <p className="mt-2 truncate text-[11px] text-muted-foreground">{k}</p>
+                  <p className="mt-2 truncate text-xs text-muted-foreground">{k}</p>
                   <p className="truncate text-base font-semibold sm:text-lg" data-animate="count">
                     {v}
                   </p>

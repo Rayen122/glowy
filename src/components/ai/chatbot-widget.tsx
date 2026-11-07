@@ -34,6 +34,42 @@ export function ChatbotWidget() {
   const idRef = useRef(1);
   const listRef = useRef<HTMLDivElement>(null);
 
+  // Le bouton flottant ne recouvre jamais un élément marqué `data-launcher-avoid` (barre de recherche de l'accueil) :
+  // tant qu'ils se chevaucheraient, il se réduit à son icône et remonte juste au-dessus
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const [lift, setLift] = useState(0);
+  useEffect(() => {
+    let frame = 0;
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const button = launcherRef.current;
+        if (!button) return;
+        // Position de repos d'après la règle CSS `bottom` (jamais d'après le rendu, faussé pendant la transition)
+        const rect = button.getBoundingClientRect();
+        const bottom = window.innerHeight - parseFloat(getComputedStyle(button).bottom);
+        const top = bottom - button.offsetHeight;
+        let next = 0;
+        for (const el of document.querySelectorAll("[data-launcher-avoid]")) {
+          const r = el.getBoundingClientRect();
+          if (r.left < rect.right && r.right > rect.left && r.top < bottom && r.bottom > top) next = Math.max(next, Math.ceil(bottom - r.top + 12));
+        }
+        setLift(next);
+      });
+    };
+    measure();
+    // Les éléments de l'accueil arrivent avec une animation d'entrée : nouvelle mesure une fois en place
+    const timers = [400, 1200, 2500].map((ms) => window.setTimeout(measure, ms));
+    window.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", measure);
+    return () => {
+      cancelAnimationFrame(frame);
+      timers.forEach((id) => window.clearTimeout(id));
+      window.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+    };
+  }, [pathname]);
+
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, typing]);
@@ -189,7 +225,7 @@ export function ChatbotWidget() {
       case "none":
         return (
           <p>
-            {m.text ? <span dir="auto">{m.text}</span> : f(c.none, { service: c.services[m.query.service], date: longDate(m.query.date) })}{" "}
+            {m.text ? <span dir="auto">{m.text}</span> : f(m.closed ? c.noneClosed : c.none, { service: c.services[m.query.service], date: longDate(m.query.date) })}{" "}
             <Link href={m.query.city ? `/salons?ville=${encodeURIComponent(m.query.city)}` : "/salons"} className="font-semibold text-plum-700 underline-offset-2 hover:underline">
               {c.searchCta}
             </Link>
@@ -282,12 +318,15 @@ export function ChatbotWidget() {
 
   // Le tunnel de réservation a sa propre barre d'action en bas d'écran
   if (pathname.endsWith("/reserver")) return null;
+  const launcherStyle = lift > 0 ? { transform: `translateY(-${lift}px)` } : undefined;
   // Page salon : une barre « Réserver » occupe le bas de l'écran sur mobile
   const raised = /^\/salons\/[^/]+$/.test(pathname);
 
   return (
     <>
       <button
+        ref={launcherRef}
+        style={launcherStyle}
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
@@ -296,14 +335,16 @@ export function ChatbotWidget() {
         className={cn(
           "fixed end-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-50 inline-flex size-12 items-center justify-center gap-2 rounded-full bg-ink text-sm font-medium text-white shadow-lift ring-1 ring-white/15 transition-[transform,background-color] duration-200 hover:bg-plum-800 focus-visible:ring-4 focus-visible:ring-ring/40 focus-visible:outline-none sm:end-6 sm:bottom-6 sm:h-14 sm:w-auto sm:ps-4 sm:pe-5",
           raised && "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] sm:bottom-24 lg:bottom-6",
-          open && "pointer-events-none translate-y-2 opacity-0"
+          open && "pointer-events-none translate-y-2 opacity-0",
+          // Au-dessus d'un élément à ne pas recouvrir : icône seule (le libellé reste lu par aria-label)
+          lift > 0 && "sm:size-14 sm:px-0"
         )}
       >
         <span className="relative">
           <MessageCircle className="size-5" aria-hidden />
           <Sparkles className="absolute -end-1.5 -top-1.5 size-3 text-plum-200" aria-hidden />
         </span>
-        <span className="hidden sm:inline">{c.launcher}</span>
+        <span className={cn("hidden sm:inline", lift > 0 && "sm:hidden")}>{c.launcher}</span>
       </button>
 
       <section

@@ -30,6 +30,13 @@ export function registerLoyaltySubscribers(bus: EventSubscriber, { loyalty, fact
     await loyalty.award(booking.clientId, "NO_SHOW", { salonId: booking.salonId, bookingId, label: booking.salonName });
   });
 
+  // Avis retiré (absence) : les points gagnés grâce à lui sont repris, une seule fois
+  bus.on("review.withdrawn", async ({ reviewId }) => {
+    const review = await facts.review(reviewId);
+    const earned = await loyalty.reviewPoints(review.clientId, reviewId);
+    if (earned > 0) await loyalty.revoke(review.clientId, earned, { salonId: review.salonId, reviewId, label: review.salonName });
+  });
+
   bus.on("review.published", async ({ reviewId }) => {
     const review = await facts.review(reviewId);
     const ref = { salonId: review.salonId, reviewId, label: review.salonName };

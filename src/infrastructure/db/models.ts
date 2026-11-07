@@ -57,6 +57,8 @@ const userSchema = new Schema(
     /** Blocage temporaire après 5 échecs (AUTH-03) */
     failedLogins: { type: Number, default: 0 },
     lockedUntil: optional(Date),
+    /** Dernier changement du mot de passe : les sessions ouvertes avant sont refusées */
+    passwordChangedAt: optional(Date),
     /** Compte fidélité (P5) : solde, cumul (niveau), dernière activité (expiration à 12 mois) */
     loyalty: {
       balance: { type: Number, default: 0 },

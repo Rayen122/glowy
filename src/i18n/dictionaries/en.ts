@@ -11,6 +11,7 @@ export const en: Dictionary = {
 
   common: {
     language: "Language",
+    close: "Close",
     skipToContent: "Skip to content",
     currency: "DT",
     durMin: "{m} min",
@@ -59,6 +60,8 @@ export const en: Dictionary = {
     validation: "Some details are invalid. Please check the form.",
     invalidCredentials: "Incorrect email or password.",
     accountLocked: "Too many attempts: account locked for 15 minutes.",
+    lockoutHint: "Careful: after 5 wrong attempts the account is locked for 15 minutes. Forgot it? Use “Forgot password?”.",
+    rateLimited: "Too many requests in a short time. Please wait a few minutes and try again.",
     accountBlocked: "This account has been suspended. Contact support.",
     emailTaken: "An account already exists with this email address.",
     slotTaken: "This slot has just been booked. Please choose another one.",
@@ -67,6 +70,23 @@ export const en: Dictionary = {
     insufficientPoints: "Not enough points.",
     tooLate: "The deadline for changes has passed.",
     tooEarly: "This appointment has not started yet: this action is possible from its start time.",
+    clientBusy: "You already have an appointment at that time. Choose another slot.",
+    tooManyPending: "You already have 3 requests waiting for confirmation: wait for the salons to answer before sending more.",
+  },
+
+  legal: {
+    contact: "A question? Contact support",
+    terms: "terms of use",
+    privacy: "privacy policy",
+    footerTerms: "Terms",
+    footerPrivacy: "Privacy",
+  },
+
+  notFound: {
+    title: "Page not found",
+    text: "This link leads nowhere: the page may have moved, or this salon is no longer online.",
+    findSalon: "Find a salon",
+    home: "Home",
   },
 
   pwa: {
@@ -285,6 +305,7 @@ export const en: Dictionary = {
     amenities: "Amenities",
     fromPrice: "from",
     nextSlotsToday: "Next slots today",
+    nextSlotsOn: "Next slots · {day}",
     bookSlot: "Book a slot",
     afterVisit: "after your appointment",
     firstVisit: "first visit to this salon",
@@ -511,7 +532,8 @@ export const en: Dictionary = {
     services: "Services",
     pointsAfter: "Points earned after the appointment",
     addCalendar: "Add to calendar",
-    addedCalendar: "Added to your calendar",
+    addedCalendar: "Calendar file downloaded: open it to add the appointment to your calendar.",
+    calendarNote: "Glowy appointment request: the salon still has to confirm it. Track it in “My appointments”.",
     seeBookings: "See my appointments",
     proAria: "Professional",
     anyPro: "First available",
@@ -571,6 +593,7 @@ export const en: Dictionary = {
     loginToBook: "Sign in to confirm: your details will be taken from your account.",
     loginCta: "Sign in to confirm",
     clientOnly: "Only a client account can book. Please sign in with a client account.",
+    acceptPolicyRequired: "Tick the cancellation policy to confirm the booking.",
   },
 
   chatbot: {
@@ -612,6 +635,7 @@ export const en: Dictionary = {
     slotTaken: "This slot was just taken. Please choose another one.",
     clarify: "Which service would you like? For example:",
     none: "I couldn’t find a free slot for {service} {date}. Try another day or browse the salons.",
+    noneClosed: "The salon is closed on {date}: try another day.",
     searchCta: "Browse salons",
     greeting: "Hello! What can I book for you?",
     courtesy: "Please keep it polite: offensive words are hidden.",
@@ -944,7 +968,7 @@ export const en: Dictionary = {
       signingIn: "Signing in…",
       welcome: "Welcome!",
       newHere: "New to Glowy?",
-      createAccount: "Create an account · {pts}",
+      createAccount: "Create an account",
       demoAccess: "Demo access by role",
       roles: {
         client: "Client",
@@ -955,7 +979,7 @@ export const en: Dictionary = {
       errors: {
         email: "Enter a valid email address.",
         passwordLogin: "Your password has at least 8 characters.",
-        password: "8 characters minimum.",
+        password: "At least 8 characters, with letters and at least one number or symbol.",
         firstName: "Enter your first name.",
         lastName: "Enter your last name.",
         salonName: "Enter the salon name.",
@@ -984,8 +1008,8 @@ export const en: Dictionary = {
       documentHint: "Trade register or business licence · PDF, JPG · 5 MB",
       plan: "Plan",
       perMonth: "{price}/month",
-      terms: "I accept the terms of use and the privacy policy (Law No. 2004-63).",
-      createCta: "Create my account · {pts}",
+      terms: "I accept the {terms} and the {privacy} (Law No. 2004-63).",
+      createCta: "Create my account",
       sendRequest: "Send my request",
       sending: "Sending…",
       created: "Account created!",
@@ -1109,9 +1133,11 @@ export const en: Dictionary = {
       subscription: "Subscription",
     },
     noMoreToday: "No more upcoming appointments today.",
+    toCheck: "{n} past appointment(s) to check in: completed or no-show",
     actions: {
-      labels: { confirm: "Confirm the request", decline: "Decline the request", start: "Start", complete: "Complete the appointment", noShow: "Client didn't show up" },
-      done: { confirm: "Appointment confirmed: the client has been notified", decline: "Request declined: slot released, client notified", start: "Appointment started", complete: "Appointment completed: points credited to the client", noShow: "No-show recorded" },
+      labels: { confirm: "Confirm the request", decline: "Decline the request", cancel: "Cancel the appointment", start: "Start", complete: "Complete the appointment", noShow: "Client didn't show up" },
+      confirmAgain: { decline: "Confirm decline?", cancel: "Confirm cancellation?", noShow: "Confirm no-show?" },
+      done: { confirm: "Appointment confirmed: the client has been notified", decline: "Request declined: slot released, client notified", cancel: "Appointment cancelled: slot released, client notified", start: "Appointment started", complete: "Appointment completed: points credited to the client", noShow: "No-show recorded" },
     },
     periodAria: "Period",
     periods: {

@@ -39,7 +39,7 @@ export function ReportReviewButton({ reviewId, className }: { reviewId: string; 
           }}
           className="space-y-3"
         >
-          <textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder={m.reportPlaceholder} rows={3} maxLength={300} className={cn(FIELD, "h-auto py-2.5")} />
+          <textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder={m.reportPlaceholder} aria-label={m.reportPlaceholder} rows={3} maxLength={300} className={cn(FIELD, "h-auto py-2.5")} />
           <FormError message={error} />
           <button type="submit" disabled={pending || reason.trim().length < 3} className={cn(PRIMARY_BUTTON, "w-full")}>
             {m.report}
@@ -109,7 +109,7 @@ function ReplyBox({ review, canReply }: { review: StaffReviewRow; canReply: bool
       }}
       className="space-y-2"
     >
-      <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder={m.replyPlaceholder} rows={2} maxLength={1000} dir="auto" className={cn(FIELD, "h-auto py-2.5")} />
+      <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder={m.replyPlaceholder} aria-label={m.replyPlaceholder} rows={2} maxLength={1000} dir="auto" className={cn(FIELD, "h-auto py-2.5")} />
       <FormError message={error} />
       <button type="submit" disabled={pending || text.trim().length < 2} className={cn(PRIMARY_BUTTON, "h-10")}>
         <MessageSquareText className="size-4" aria-hidden /> {m.reply}

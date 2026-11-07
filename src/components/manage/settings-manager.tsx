@@ -121,6 +121,7 @@ export function SettingsManager({ settings }: { settings: SalonSettings }) {
                 }
               }}
               placeholder={m.amenityPlaceholder}
+              aria-label={m.amenityPlaceholder}
               maxLength={40}
               className={cn(FIELD, "max-w-xs")}
             />

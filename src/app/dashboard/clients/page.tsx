@@ -81,8 +81,8 @@ export default async function ClientsPage({ searchParams }: PageProps<"/dashboar
                     {c.phone ?? c.email}
                   </p>
                   <div className="mt-1 flex flex-wrap gap-1.5">
-                    {c.inactive && <span className="rounded-full bg-sand px-2 py-0.5 text-[11px] font-semibold text-plum-800">{m.inactiveBadge}</span>}
-                    {c.upcoming > 0 && <span className="rounded-full bg-success-soft px-2 py-0.5 text-[11px] font-semibold text-success">{f(m.upcoming, { n: c.upcoming })}</span>}
+                    {c.inactive && <span className="rounded-full bg-sand px-2 py-0.5 text-xs font-semibold text-plum-800">{m.inactiveBadge}</span>}
+                    {c.upcoming > 0 && <span className="rounded-full bg-success-soft px-2 py-0.5 text-xs font-semibold text-success">{f(m.upcoming, { n: c.upcoming })}</span>}
                   </div>
                 </td>
                 <td className="px-4 py-3 tabular-nums">{nf(c.visits)}</td>

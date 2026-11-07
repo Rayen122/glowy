@@ -4,6 +4,10 @@
  */
 export type Message = { type: string; title: string; body: string; link?: string };
 
+/** « 2026-11-09 » → « lundi 9 novembre » : jamais de date brute dans un message */
+const dayLabel = (date: string) =>
+  /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`)) : date;
+
 const SALON_STATUS_TEXT: Record<string, string> = {
   ACTIVE: "Votre salon est en ligne avec le badge « Salon vérifié ».",
   REJECTED: "Votre demande n'a pas été acceptée. Contactez le support pour en savoir plus.",
@@ -49,28 +53,28 @@ export const planPaymentDecided = (plan: string, accepted: boolean, reason: stri
 export const bookingConfirmed = (salonName: string, date: string, time: string): Message => ({
   type: "booking.confirmed",
   title: "Rendez-vous confirmé",
-  body: `${salonName}, le ${date} à ${time}.`,
+  body: `${salonName}, le ${dayLabel(date)} à ${time}.`,
   link: "/compte/rendez-vous",
 });
 
 export const bookingReceived = (client: string, date: string, time: string): Message => ({
   type: "booking.new",
   title: "Nouvelle demande à confirmer",
-  body: `${client} — ${date} à ${time}. Confirmez ou refusez depuis le dashboard.`,
+  body: `${client} — ${dayLabel(date)} à ${time}. Confirmez ou refusez depuis le dashboard.`,
   link: "/dashboard",
 });
 
 export const bookingRequested = (salonName: string, date: string, time: string): Message => ({
   type: "booking.requested",
   title: "Demande envoyée",
-  body: `${salonName}, le ${date} à ${time} : le salon va confirmer votre rendez-vous.`,
+  body: `${salonName}, le ${dayLabel(date)} à ${time} : le salon va confirmer votre rendez-vous.`,
   link: "/compte/rendez-vous",
 });
 
-export const bookingCancelled = (salonName: string, date: string, recipient: "client" | "salon"): Message => ({
+export const bookingCancelled = (salonName: string, date: string, recipient: "client" | "salon", expired = false): Message => ({
   type: "booking.cancelled",
-  title: "Rendez-vous annulé",
-  body: `${salonName} — ${date}`,
+  title: expired ? "Demande expirée" : "Rendez-vous annulé",
+  body: expired ? `${salonName} — ${dayLabel(date)} : le salon n'a pas confirmé à temps. Votre acompte éventuel est remboursé.` : `${salonName} — ${dayLabel(date)}`,
   link: recipient === "salon" ? "/dashboard/agenda" : "/compte/rendez-vous",
 });
 
@@ -124,6 +128,6 @@ const REMINDER_TITLE = { soon: "Rendez-vous dans moins de 2 heures", today: "Ren
 export const bookingReminder = (salonName: string, date: string, time: string, when: keyof typeof REMINDER_TITLE): Message => ({
   type: "booking.reminder",
   title: REMINDER_TITLE[when],
-  body: `${salonName}, le ${date} à ${time}. Besoin d'annuler ? Faites-le depuis votre espace.`,
+  body: `${salonName}, le ${dayLabel(date)} à ${time}. Besoin d'annuler ? Faites-le depuis votre espace.`,
   link: "/compte/rendez-vous",
 });
