@@ -12,7 +12,7 @@ import { requirePageUser } from "@/infrastructure/session";
 import { tunisToday } from "@/core/domain/time";
 import { cn } from "@/lib/utils";
 import { PlanUpsell } from "@/components/dashboard/plan-upsell";
-import { salonWeekForecast } from "@/modules/affluence";
+import { affluenceAdvice, salonWeekForecast } from "@/modules/affluence";
 import { SUSPICION_ALERT } from "@/modules/reviews";
 import { planAccess } from "@/modules/subscription";
 
@@ -31,7 +31,7 @@ export default async function DashboardPage() {
   const user = await requirePageUser("MANAGER", "EMPLOYEE", "ADMIN");
   const salon = await staffSalon(user);
   const access = await planAccess(salon.id);
-  const [{ t, tc, f, nf, money, df, hour }, kpis, reviews, stats30, week] = await Promise.all([
+  const [{ t, tc, f, nf, money, df, hour, locale }, kpis, reviews, stats30, week] = await Promise.all([
     getI18n(),
     salonKpis(salon.id),
     recentSalonReviews(salon.id),
@@ -39,6 +39,8 @@ export default async function DashboardPage() {
     // IA P2 : vraie prévision de la semaine (plan Pro et Premium)
     access.features.includes("affluence") ? salonWeekForecast(salon.id, HEATMAP_HOURS) : null,
   ]);
+  // IA P2 : conseils de la semaine rédigés par le modèle d'IA à partir de la prévision (gardés 6 h)
+  const advice = week ? await affluenceAdvice(salon.id, week, HEATMAP_HOURS, locale) : null;
   const d = t.dashboard;
   const o = d.overview;
   const today = tunisToday();
@@ -128,6 +130,20 @@ export default async function DashboardPage() {
                   </li>
                 )}
               </ul>
+              {advice && advice.length > 0 && (
+                <div className="mt-4 rounded-2xl bg-blush/60 p-4 ring-1 ring-plum-200/60">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-plum-800">
+                    <Lightbulb className="size-4 shrink-0" aria-hidden /> {o.aiTipsTitle}
+                  </p>
+                  <ul className="mt-2 space-y-2 text-sm">
+                    {advice.map((tip) => (
+                      <li key={tip.title} dir="auto">
+                        <span className="font-semibold">{tip.title}</span> <span className="text-muted-foreground">{tip.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </>
           ) : (
             <PlanUpsell feature="affluence" canUpgrade={user.role !== "EMPLOYEE"} compact className="mt-5" />

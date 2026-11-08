@@ -66,6 +66,9 @@ export const employeeInput = z.object({
   color: z.coerce.number().int().min(1).max(5).default(1),
   /** SAL-13 : commission en % du chiffre d'affaires réalisé */
   commissionRate: z.coerce.number().min(0, "Entre 0 et 80 %").max(80, "Entre 0 et 80 %").default(0),
+  /** Paie : salaire de base mensuel brut (DT) et majoration des heures supplémentaires (%) */
+  baseSalary: z.coerce.number().min(0, "Montant positif").max(50_000, "Montant trop élevé").default(0),
+  overtimeRate: z.coerce.number().min(0, "Entre 0 et 100 %").max(100, "Entre 0 et 100 %").default(25),
   avatarUrl: IMAGE_URL.nullable().default(null),
   active: z.boolean().default(true),
   workingHours: z

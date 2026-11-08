@@ -301,7 +301,8 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
                 <p className="mt-3 leading-relaxed text-foreground">
                   {!aiSummary
                     ? ins.notEnough
-                    : `${aiSummary.strengths.length ? f(ins.praised, { list: list(aiSummary.strengths) }) : ""} ${aiSummary.weaknesses.length ? f(ins.watch, { list: list(aiSummary.weaknesses) }) : ins.noWeakness}`.trim()}
+                    : (aiSummary.text?.[locale] ??
+                      `${aiSummary.strengths.length ? f(ins.praised, { list: list(aiSummary.strengths) }) : ""} ${aiSummary.weaknesses.length ? f(ins.watch, { list: list(aiSummary.weaknesses) }) : ins.noWeakness}`.trim())}
                 </p>
                 {aiSummary && <p className="mt-1 text-xs text-muted-foreground">{f(ins.basedOn, { n: aiSummary.analysed })}</p>}
                 {aiSummary && (aiSummary.strengths.length > 0 || aiSummary.weaknesses.length > 0) && (

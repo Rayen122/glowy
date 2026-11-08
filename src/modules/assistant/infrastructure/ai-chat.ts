@@ -4,7 +4,7 @@ import { groqEnabled, groqJson } from "@/infrastructure/ai/groq";
 import { maskProfanity } from "@/modules/moderation";
 import { Salon } from "@/infrastructure/db";
 import { fr } from "@/i18n/dictionaries/fr";
-import { detectLang, parseMessage, SERVICES, type ChatLang, type DayPart, type ServiceIntent } from "../domain/nlu";
+import { audienceOf, categoriesFor, detectLang, parseMessage, SERVICES, type Audience, type ChatLang, type DayPart, type ServiceIntent } from "../domain/nlu";
 import { findSlots, knownCities, ruleChat, type ChatReply } from "./assistant";
 
 /**
@@ -58,6 +58,8 @@ const ARABIZI: Record<string, string> = {
   ا: "a", أ: "a", إ: "i", آ: "a", ب: "b", ت: "t", ث: "th", ج: "j", ح: "7", خ: "5", د: "d", ذ: "dh", ر: "r", ز: "z", س: "s", ش: "ch", ص: "s",
   ض: "dh", ط: "t", ظ: "dh", ع: "3", غ: "gh", ف: "f", ق: "9", ك: "k", ل: "l", م: "m", ن: "n", ه: "h", ة: "a", و: "ou", ي: "i", ى: "a", ء: "2", ؤ: "ou", ئ: "i", "؟": "?", "،": ",",
 };
+/** Surnom en tête de réponse (« عزيزتي، », « ma chère, ») : interdit par la consigne, retiré s'il est produit quand même */
+const NICKNAME = /^\s*(?:عزيزتي|حبيبتي|ma ch[eè]re|ma chérie|habibti|7abibti|ya 7elwa)\s*[،,!:]?\s*/iu;
 const latinOnly = (text: string) => text.replace(/[\u064b-\u065f\u0640]/g, "").replace(/\p{Script=Arabic}/gu, (c) => ARABIZI[c] ?? "");
 
 const langLine = (lang: ChatLang) => `LANGUE IMPOSÉE DE LA RÉPONSE : ${LANG_RULE[lang]}.`;
@@ -85,6 +87,8 @@ Arabizi : 3 = ع, 7 = ح, 9 = ق, 5 = خ, 2 = ء ; « ch » = ش, « gh » = غ,
   bonjour = 3aslema / ahla bik ; il y a = famma ; il n'y a pas = ma famech ; je peux = najjem ; tu peux = tnajjem ; je veux = nheb ;
   combien = 9addech ; quoi = chnowa ; quand = wa9tech ; où = win ; chez / dans = fi, fel ; avec = m3a ; pour = bech, l ;
   demain = ghodwa ; aujourd'hui = lyoum ; après-demain = ba3d ghodwa ; matin = sbe7 ; après-midi = 3chiya ; soir = lil ;
+  dimanche = el a7ad ; lundi = el thnin ; mardi = ethletha ; mercredi = el erb3a ; jeudi = el khmis ; vendredi = ej-jem3a ; samedi = essebt ;
+  ouvert = m7loul ; fermé = msakker (un jour « FERMÉ » dans les horaires : le salon est fermé, dis-le clairement) ;
   à 10 h = 3al 10 ; libre = fergha ; place / créneau = blasa ; beaucoup = barcha ; bien = behi / mezyen ; maintenant = taw ;
   aussi = zeda ; si = ken ; mais = ama ; il coûte 30 DT = bel 30 dinar / b 30 DT ; choisis = ikhtar ; confirme = akked ;
   merci = ya3tik essa7a ; de rien = bel 9dar ; je t'en prie = 3la rasi ; à bientôt = nchoufek 9rib ; désolée = sam7ni.
@@ -113,8 +117,8 @@ TA TÂCHE — comprendre le dernier message du client (avec la conversation réc
 - intent : "book" si le client veut un rendez-vous ou un créneau, même incomplet (« nheb n9os cha3ri », « famma blasa ghodwa ? ») ;
   "info" pour une question (prix, salon conseillé, adresse, horaires, annulation, acompte, points…) ; "greeting" ; "thanks" ; "other".
   Tiens compte de la conversation : « w ghodwa ? » juste après une demande de coupe = "book", coupe, demain.
-- service : la prestation parmi la liste, sinon "none" (coupe/cheveux/n9os → coupe ; brushing/sechwar → brushing ;
-  couleur/mèches/balayage/sbigha → couleur ; mariée/chignon/3ers → chignon ; barbe/rasage/7ajjem → barbe ; ongles/manucure/vernis → ongles ;
+- service : la prestation parmi la liste, sinon "none" (coupe/cheveux/n9os → coupe ; n7ajjem/7jéma/7ajjem (coupe d'homme chez le barbier) → coupe ;
+  brushing/sechwar → brushing ; couleur/mèches/balayage/sbigha → couleur ; mariée/chignon/3ers → chignon ; barbe/rasage/le7ya → barbe ; ongles/manucure/vernis → ongles ;
   soin du visage/bechra → soin ; massage/hammam/spa → massage ; maquillage/makiyaj → maquillage ; épilation → epilation).
 - date : "AAAA-MM-JJ" d'après le calendrier fourni (« ghodwa » = demain, « ba3d ghodwa » = après-demain, « nhar essebt » = samedi…), sinon "".
 - time : "HH:MM" si une heure est donnée (« 3 ba3d dhohr » = 15:00, « 10 sbe7 » = 10:00), sinon "".
@@ -130,12 +134,12 @@ TA TÂCHE — le site vient de chercher de vrais créneaux libres pour la demand
 choisir un dans la liste ci-dessous puis à confirmer — ne recopie pas toute la liste, elle s'affiche en boutons. S'il n'y en a pas,
 dis-le avec tact et propose un autre jour ou un autre moment.`;
 
-/** Horaires compacts : jours consécutifs aux mêmes heures regroupés (« lun-sam 09:00-19:00, dim fermé ») */
+/** Horaires compacts : jours consécutifs aux mêmes heures regroupés (« lundi à samedi 09:00-19:00, dimanche FERMÉ ») */
 function compactHours(hours: { weekday?: number | null; opensAt?: string | null; closesAt?: string | null }[]) {
   const order = [1, 2, 3, 4, 5, 6, 0];
   const label = (weekday: number) => {
     const h = hours.find((o) => o.weekday === weekday && o.opensAt && o.closesAt);
-    return h ? `${h.opensAt}-${h.closesAt}` : "fermé";
+    return h ? `${h.opensAt}-${h.closesAt}` : "FERMÉ";
   };
   const groups: { from: number; to: number; label: string }[] = [];
   for (const day of order) {
@@ -143,7 +147,8 @@ function compactHours(hours: { weekday?: number | null; opensAt?: string | null;
     if (last && last.label === label(day)) last.to = day;
     else groups.push({ from: day, to: day, label: label(day) });
   }
-  return groups.map((g) => `${DAYS[g.from].slice(0, 3)}${g.from === g.to ? "" : `-${DAYS[g.to].slice(0, 3)}`} ${g.label}`).join(", ");
+  // Jours en toutes lettres : « dim fermé » abrégé a été lu « ouvert le dimanche » (test réel du 8 novembre 2026, IA-10)
+  return groups.map((g) => `${DAYS[g.from]}${g.from === g.to ? "" : ` à ${DAYS[g.to]}`} ${g.label}`).join(", ");
 }
 
 /**
@@ -185,20 +190,29 @@ async function catalog() {
 
 type CatalogSalon = Awaited<ReturnType<typeof catalog>>[number];
 
-/** Salons détaillés : celui de la page, ceux nommés, et ceux de la ville / catégorie dont parle le client (6 au plus) */
+/** Salons détaillés : celui de la page, ceux nommés, et ceux de la ville / catégorie dont parle le client (6 au plus, barbiers d'abord pour un homme) */
 function relevantSalons(salons: CatalogSalon[], text: string, cities: string[], now: Date, pageSlug?: string) {
   const lower = text.toLowerCase();
   const parsed = parseMessage(text, now, cities);
-  const category = parsed.service ? SERVICES[parsed.service].category : null;
+  const audience = audienceOf(text);
+  const categories = parsed.service ? categoriesFor(parsed.service, audience) : audience === "homme" ? ["barbier", "coiffure"] : null;
   const city = parsed.city?.toLowerCase() ?? null;
   const picked = salons.filter((s) => {
     if (s.slug === pageSlug || lower.includes(s.name.toLowerCase())) return true;
     const sameCity = city !== null && s.city.toLowerCase().includes(city);
-    const sameCategory = category !== null && s.category === category;
-    return (sameCity && (sameCategory || !category)) || (sameCategory && !city);
+    const sameCategory = categories !== null && categories.includes(s.category);
+    return (sameCity && (sameCategory || !categories)) || (sameCategory && !city);
   });
+  if (categories) picked.sort((a, b) => Math.max(categories.indexOf(a.category), 0) - Math.max(categories.indexOf(b.category), 0));
   return picked.slice(0, 6);
 }
+
+/** Consigne quand le client a dit pour qui est le rendez-vous (« ena rajl », « coupe femme », « lil sghir ») */
+const AUDIENCE_RULE: Record<Audience, string> = {
+  homme: "un homme : ne propose et ne cite que des barbiers et des prestations pour homme (Coupe homme, barbe, rasage), jamais une coupe femme, un brushing ni une prestation de mariée",
+  femme: "une femme : ne propose ni barbier ni prestation écrite « homme »",
+  enfant: "un enfant : de préférence les prestations « enfant », jamais une prestation écrite « homme » ou « femme »",
+};
 
 function context(opts: { salons: CatalogSalon[]; cities: string[]; salonSlug?: string; history: ChatTurn[]; message: string; lang: ChatLang; now: Date }) {
   const today = tunisToday(opts.now);
@@ -208,9 +222,10 @@ function context(opts: { salons: CatalogSalon[]; cities: string[]; salonSlug?: s
   const history = opts.history.map((t) => `${t.role === "user" ? "Client" : "Assistante"} : ${t.text}`).join("\n");
   const recentUser = [...opts.history.filter((t) => t.role === "user").slice(-2).map((t) => t.text), opts.message].join(" ");
   const detailed = relevantSalons(opts.salons, recentUser, opts.cities, opts.now, opts.salonSlug);
+  const audience = audienceOf(recentUser);
   return `Aujourd'hui : ${calendar[0]}, ${utcToTunis(opts.now).time} (heure de Tunis).
 Calendrier : ${calendar.join(" ; ")}.
-Page ouverte : ${page ? `salon « ${page.name} » (slug ${page.slug})` : "aucune page de salon"}.
+Page ouverte : ${page ? `salon « ${page.name} » (slug ${page.slug})` : "aucune page de salon"}.${audience ? `\nPour qui : ${AUDIENCE_RULE[audience]}.` : ""}
 Villes : ${opts.cities.join(", ")}.
 
 Règles du site :
@@ -258,7 +273,10 @@ async function aiChat(input: { message: string; salonSlug?: string; history?: Ch
   const u = await askJson<Understanding>(UNDERSTAND, prompt, UNDERSTAND_SCHEMA);
   if (!u) return null;
   const lang = input.lang;
-  const tidy = (text: string) => (["tn_arabizi", "fr", "en"].includes(lang) ? latinOnly(text) : text).trim();
+  const tidy = (text: string) => {
+    const clean = (["tn_arabizi", "fr", "en"].includes(lang) ? latinOnly(text) : text).replace(NICKNAME, "").trim();
+    return clean.charAt(0).toUpperCase() + clean.slice(1);
+  };
   const reply = tidy(u.reply);
 
   if (u.intent !== "book") return reply ? { kind: "answer", text: reply } : null;
@@ -266,7 +284,9 @@ async function aiChat(input: { message: string; salonSlug?: string; history?: Ch
 
   // Valeurs de l'IA vérifiées avant de chercher : date dans les 60 jours, heure HH:MM, ville et salon connus
   const today = tunisToday(now);
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(u.date) && u.date >= today && u.date <= addDays(today, 60) ? u.date : null;
+  // Jour nommé dans le message (« jeudi », « ghodwa », « الخميس ») : date calculée par les règles, le modèle peut se tromper de case du calendrier
+  const named = parseMessage(input.message, now, cities).date;
+  const date = named ?? (/^\d{4}-\d{2}-\d{2}$/.test(u.date) && u.date >= today && u.date <= addDays(today, 60) ? u.date : null);
   const time = /^([01]\d|2[0-3]):[0-5]\d$/.test(u.time) ? u.time : null;
   const city = cities.find((c) => c.toLowerCase() === u.city.trim().toLowerCase()) ?? null;
   const onlySlug = salons.some((s) => s.slug === u.salonSlug) ? u.salonSlug : undefined;
@@ -274,11 +294,13 @@ async function aiChat(input: { message: string; salonSlug?: string; history?: Ch
   const request = [...history.filter((t) => t.role === "user").slice(-2).map((t) => t.text), input.message].join(" ");
   const result = await findSlots({ service: u.service, date, part, time, city }, { userId, now, onlySlug, firstSlug: input.salonSlug, request });
 
+  // Jour dit en clair (« demain »), sinon le modèle annonce « lyoum » pour des créneaux du lendemain
+  const when = (d: string) => `${d === today ? "aujourd'hui, " : d === addDays(today, 1) ? "demain, " : ""}${DAYS[weekdayOf(d)]} ${d}`;
   const found =
     result.kind === "slots"
-      ? `Créneaux libres trouvés (${result.query.date}) : ${result.slots.map((s) => `${s.salon} à ${s.time}, ${s.serviceName} ${s.price} DT avec ${s.employeeName}`).join(" ; ")}`
+      ? `Créneaux libres trouvés pour ${when(result.query.date)} — annonce bien ce jour-là : ${result.slots.map((s) => `${s.salon} à ${s.time}, ${s.serviceName} ${s.price} DT avec ${s.employeeName}`).join(" ; ")}`
       : result.closed
-        ? `Fermé : ${onlySlug ? (salons.find((s) => s.slug === onlySlug)?.name ?? "le salon") : "les salons trouvés"} ne sont pas ouverts le ${result.query.date}. Dis-le clairement et propose un autre jour.`
+        ? `Fermé : ${onlySlug ? (salons.find((s) => s.slug === onlySlug)?.name ?? "le salon") : "les salons trouvés"} ne sont pas ouverts le ${DAYS[weekdayOf(result.query.date)]} ${result.query.date}. Dis-le clairement et propose un autre jour, jamais ce ${DAYS[weekdayOf(result.query.date)]} (par exemple le ${DAYS[weekdayOf(addDays(result.query.date, 1))]} ${addDays(result.query.date, 1)}).`
         : `Aucun créneau libre trouvé pour ${u.service} le ${result.query.date}${onlySlug ? ` chez ${salons.find((s) => s.slug === onlySlug)?.name}` : ""}${city ? ` à ${city}` : ""}.`;
   try {
     // Rédaction : pas besoin du catalogue, seulement la conversation et le résultat (contexte réduit)

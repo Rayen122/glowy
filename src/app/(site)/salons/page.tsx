@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { SalonResults } from "@/components/salon/salon-results";
 import { SearchBar } from "@/components/site/search-bar";
-import { getI18n } from "@/i18n/server";
+import { getI18n, getLocale } from "@/i18n/server";
 import { CATEGORIES } from "@/lib/data";
-import { searchSalons } from "@/modules/catalog";
+import { searchSalons, withAiRanking } from "@/modules/catalog";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -24,7 +24,8 @@ export default async function SalonsPage({ searchParams }: PageProps<"/salons">)
 
   // « Autour de moi » (proche=1) : sans géolocalisation côté serveur, on ne filtre pas par ville
   const session = await auth();
-  const salons = await searchSalons({ q: q || undefined, city: ville || undefined, category: category?.id }, session?.user.id);
+  // IA P1 : ordre « Recommandé pour vous » choisi par le modèle d'IA pour une cliente connectée
+  const salons = await withAiRanking(await searchSalons({ q: q || undefined, city: ville || undefined, category: category?.id }, session?.user.id), session?.user.id, await getLocale());
 
   const where = ville ? f(t.salonsPage.inCity, { city: tc(ville) }) : t.salonsPage.nearYou;
   const title = category

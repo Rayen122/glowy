@@ -2,7 +2,8 @@ import "./setup";
 import assert from "node:assert/strict";
 import { after, beforeEach, describe, test } from "node:test";
 import { addDays, tunisToUtc } from "@/core/domain/time";
-import { chat, detectLang, matchesTime, parseMessage, pickService } from "@/modules/assistant";
+import { Salon } from "@/infrastructure/db";
+import { audienceOf, chat, detectLang, matchesTime, parseMessage, pickService } from "@/modules/assistant";
 import { closeDb, FUTURE_MONDAY, makeSalon, resetDb } from "./helpers";
 
 const MONDAY_9AM = tunisToUtc(FUTURE_MONDAY, "09:00");
@@ -75,6 +76,47 @@ describe("IA P3 : assistante de réservation", () => {
     assert.equal(pickService([{ name: "Coupe femme", price: 30, active: true }], "coupe", "coupe homme"), undefined, "jamais une coupe femme pour un homme");
   });
 
+  test("un homme (« ena rajl », « n7ajem ») : coupe homme ou barbier, jamais une coupe femme ni un brushing", () => {
+    for (const said of ["ena rajl ou in7b n7ajem", "t7ajem lil rjel?", "nheb n7ajjem ghodwa", "نحب نحجّم غدوة", "je suis un homme, une coupe svp"]) assert.equal(audienceOf(said), "homme", said);
+    assert.equal(audienceOf("coupe femme"), "femme");
+    assert.equal(audienceOf("ena rajl ama el coupe l mrati, coupe femme"), "femme", "le dernier public dit l'emporte");
+    assert.equal(audienceOf("nheb n9os cha3ri"), null);
+    assert.equal(parseMessage("ena rajl ou in7b n7ajem", MONDAY_9AM, CITIES).service, "coupe");
+    assert.equal(parseMessage("nheb n9assar le7ya", MONDAY_9AM, CITIES).service, "barbe");
+    assert.equal(parseMessage("Can I book a beard trim tomorrow evening?", MONDAY_9AM, CITIES).service, "barbe", "IA-11 : trim de barbe");
+    assert.equal(parseMessage("nheb n9os le7ya ghodwa", MONDAY_9AM, CITIES).service, "barbe");
+    assert.equal(parseMessage("a quick trim tomorrow", MONDAY_9AM, CITIES).service, "coupe");
+    assert.equal(parseMessage("une coupe chez le barbier samedi", MONDAY_9AM, CITIES).service, "coupe", "barbier = lieu, pas la barbe");
+    assert.equal(parseMessage("coupe et barbe samedi", MONDAY_9AM, CITIES).service, "coupe", "mot de cheveux : coupe d'abord");
+
+    const item = (name: string, price: number) => ({ name, price, active: true });
+    const yasmine = [item("Coupe + soin hydratant", 65), item("Coupe femme + brushing", 35), item("Coupe + brushing", 30), item("Coupe homme", 15), item("Taille de barbe", 10)];
+    assert.equal(pickService(yasmine, "coupe", "ena rajl ou in7b n7ajem", "coiffure")?.name, "Coupe homme");
+    assert.equal(pickService([item("Coupe femme", 30), item("Coupe + brushing", 25)], "coupe", "ena rajl ou in7b n7ajem", "coiffure"), undefined, "coiffeur sans coupe homme : aucun créneau");
+    assert.equal(pickService([item("Coupe", 20), item("Taille de barbe", 10)], "coupe", "n7ajem", "barbier")?.name, "Coupe", "chez le barbier, la coupe est pour homme");
+    assert.equal(pickService([item("Coupe homme", 20)], "coupe", "coupe femme", "barbier"), undefined, "jamais le barbier pour une femme");
+    assert.equal(pickService(yasmine, "barbe", "ena rajl, nheb nhezz le7ya", "coiffure")?.name, "Taille de barbe");
+  });
+
+  test("mots arabes, derja et anglais reliés aux noms des prestations (IA-07) : « مساج » → massage, pas le forfait le moins cher", () => {
+    const spa = [{ name: "Hammam + gommage", price: 60, active: true }, { name: "Massage relaxant", price: 90, active: true }, { name: "Rituel duo", price: 220, active: true }];
+    assert.equal(pickService(spa, "massage", "نحب نعمل مساج غدوة العشية في الحمامات")?.name, "Massage relaxant");
+    assert.equal(pickService(spa, "massage", "nheb massaj ghodwa")?.name, "Massage relaxant");
+    assert.equal(pickService(spa, "massage", "نحب حمام ghodwa")?.name, "Hammam + gommage");
+    assert.equal(pickService(spa, "massage", "nheb 7ammam nhar essebt")?.name, "Hammam + gommage");
+    assert.equal(pickService(spa, "massage", "un soin au spa")?.name, "Hammam + gommage", "sans précision : la moins chère");
+  });
+
+  test("un homme qui veut se faire couper les cheveux : créneaux chez le barbier, pas de coupe femme chez le coiffeur", async () => {
+    await makeSalon("salon-a");
+    await Salon.updateOne({ slug: "salon-a" }, { $set: { services: [{ key: "coupe-femme", name: "Coupe femme", group: "Coupe", durationMin: 30, price: 30 }] } });
+    await makeSalon("barber-b");
+    await Salon.updateOne({ slug: "barber-b" }, { $set: { category: "barbier", services: [{ key: "coupe-homme", name: "Coupe homme", group: "Coupe", durationMin: 30, price: 15 }] } });
+    const reply = await chat({ message: "ena rajl w nheb n7ajem ghodwa sbe7" }, undefined, MONDAY_9AM);
+    assert.equal(reply.kind, "slots");
+    if (reply.kind === "slots") assert.deepEqual([...new Set(reply.slots.map((s) => `${s.slug} ${s.serviceName}`))], ["barber-b Coupe homme"]);
+  });
+
   test("langue de la réponse : tounsi en arabizi ou en lettres arabes, arabe, français, anglais", () => {
     assert.equal(detectLang("aslema"), "tn_arabizi");
     assert.equal(detectLang("9addech el brushing fi Sousse ?"), "tn_arabizi");
@@ -83,5 +125,7 @@ describe("IA P3 : assistante de réservation", () => {
     assert.equal(detectLang("أريد حجز موعد غدا"), "ar");
     assert.equal(detectLang("Je voudrais une coupe le 15/01 à 14h30"), "fr");
     assert.equal(detectLang("What is the best salon for a haircut?"), "en");
+    assert.equal(detectLang("Can I book a beard trim on Tuesday evening at Les Berges du Lac?"), "en", "le nom du lieu ne compte pas comme du français");
+    assert.equal(detectLang("Une coupe lundi matin à La Marsa"), "fr");
   });
 });

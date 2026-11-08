@@ -1,5 +1,6 @@
 /**
- * IA P4 — analyse des avis, sans service externe (fonctions pures, testées).
+ * IA P4 — analyse des avis. Le modèle d'IA (Gemini, voir infrastructure/ai-analysis) lit l'avis ; ce fichier contient
+ * les règles locales (fonctions pures, testées), utilisées en secours et pour les indices objectifs de faux avis :
  * Sentiment : lexique français / anglais / arabe (dont darija courante) avec négations et emojis,
  * combiné à la note ; repli sur la note seule quand le texte ne contient aucun indice.
  * Aspects : accueil, résultat, attente, prix, propreté, conseil, ponctualité, chacun positif ou négatif.
@@ -9,11 +10,49 @@
 export const ASPECTS = ["accueil", "resultat", "attente", "prix", "proprete", "conseil", "ponctualite"] as const;
 export type Aspect = (typeof ASPECTS)[number];
 export type Sentiment = "positif" | "neutre" | "negatif";
-export type ReviewAnalysis = { sentiment: Sentiment; score: number; aspects: { aspect: Aspect; polarity: 1 | -1 }[]; suspicion: number; source: "lexicon" | "rating" };
+export type ReviewAnalysis = {
+  sentiment: Sentiment;
+  score: number;
+  aspects: { aspect: Aspect; polarity: 1 | -1 }[];
+  suspicion: number;
+  /** « ai » : lu par le modèle d'IA ; « lexicon » / « rating » : règles locales (secours) */
+  source: "ai" | "lexicon" | "rating";
+  /** Pourquoi l'avis paraît faux (modèle d'IA), affiché aux modérateurs */
+  suspicionReason?: string;
+};
+
+/** Réponse brute du modèle d'IA, avant contrôle */
+export type AiReviewReading = { sentiment: string; score: number; aspects: { aspect: string; polarity: number }[]; suspicion: number; suspicionReason?: string };
+
+/**
+ * Lecture du modèle d'IA validée et combinée aux règles locales : sentiment, score et aspects du modèle (il comprend
+ * l'ironie, les avis mitigés, la derja) ; suspicion = la plus haute des deux. `objective` : suspicion des règles sans
+ * la « note contredite par le texte » (lien, répétitions, majuscules…) ; quand le modèle a bien lu l'avis, c'est lui qui
+ * juge la contradiction : le lexique rate les négations (« aimable mais ne correspond pas » à 2★ n'est pas un faux avis, IA-08).
+ */
+export function mergeAiAnalysis(local: ReviewAnalysis, ai: AiReviewReading, objective = local.suspicion): ReviewAnalysis {
+  const read = (["positif", "neutre", "negatif"] as const).find((s) => s === ai.sentiment);
+  const sentiment = read ?? local.sentiment;
+  const ruled = read ? objective : local.suspicion;
+  const aspects: ReviewAnalysis["aspects"] = [];
+  for (const a of ai.aspects ?? []) {
+    const aspect = ASPECTS.find((x) => x === a.aspect);
+    if (aspect && (a.polarity === 1 || a.polarity === -1) && !aspects.some((x) => x.aspect === aspect)) aspects.push({ aspect, polarity: a.polarity });
+  }
+  const aiSuspicion = Number.isFinite(ai.suspicion) ? Math.round(Math.min(100, Math.max(0, ai.suspicion))) : 0;
+  return {
+    sentiment,
+    score: Number.isFinite(ai.score) ? Math.round(Math.min(1, Math.max(-1, ai.score)) * 100) / 100 : local.score,
+    aspects,
+    suspicion: Math.max(ruled, aiSuspicion),
+    source: "ai",
+    ...(aiSuspicion >= ruled && ai.suspicionReason?.trim() ? { suspicionReason: ai.suspicionReason.trim().slice(0, 200) } : {}),
+  };
+}
 
 const ASPECT_WORDS: Record<Aspect, string[]> = {
   accueil: ["accueil", "accueillant", "accueillante", "gentil", "gentille", "aimable", "sympa", "chaleureux", "chaleureuse", "souriant", "souriante", "équipe", "welcome", "welcoming", "friendly", "kind", "staff", "ترحيب", "استقبال", "لطيف", "لطيفة", "الفريق"],
-  resultat: ["résultat", "coupe", "couleur", "coloration", "coiffure", "brushing", "chignon", "balayage", "manucure", "ongles", "soin", "tient", "tenue", "rendu", "result", "cut", "color", "colour", "hair", "nails", "نتيجة", "قصة", "لون", "تسريحة"],
+  resultat: ["résultat", "coupe", "couleur", "coloration", "coiffure", "brushing", "chignon", "balayage", "manucure", "ongles", "soin", "tient", "tenue", "rendu", "result", "cut", "haircut", "color", "colour", "hair", "nails", "نتيجة", "قصة", "لون", "تسريحة"],
   attente: ["attente", "attendre", "attendu", "attendue", "patienté", "wait", "waited", "waiting", "queue", "انتظار", "استنيت", "انتظرت"],
   prix: ["prix", "cher", "chère", "chers", "tarif", "tarifs", "abordable", "price", "prices", "expensive", "cheap", "affordable", "سعر", "الأسعار", "غالي", "غالية", "رخيص"],
   proprete: ["propre", "propreté", "sale", "hygiène", "clean", "dirty", "hygiene", "نظيف", "نظيفة", "نظافة", "وسخ"],
@@ -46,6 +85,12 @@ const NEGATIVE_EMOJI = /[😡😠👎😞😔💔🤬😤]/u;
 /** Mots en minuscules ; l'apostrophe sépare (« d'attente » → « d », « attente » ; « didn't » → « didn », « t ») */
 const tokenize = (text: string) => text.toLowerCase().normalize("NFC").split(/[^\p{L}\p{N}]+/u).filter(Boolean);
 const sentences = (text: string) => text.split(/[.!?؟\n]+/).map((s) => s.trim()).filter(Boolean);
+/** Propositions : virgule, « mais », « par contre »… séparent des avis opposés (« soin agréable, mais attente longue ») */
+const clauses = (text: string) =>
+  sentences(text)
+    .flatMap((s) => s.split(/\s*[,;]\s*|\s+(?:mais|cependant|par contre|but|however|ama|لكن|أما|اما)\s+/iu))
+    .map((s) => s.trim())
+    .filter(Boolean);
 const has = (list: string[], token: string) => list.includes(token);
 
 /** Polarité d'un passage : +1 par mot positif, −1 par mot négatif, inversée après une négation (3 mots) */
@@ -102,13 +147,16 @@ function suspicionOf(text: string, rating: number, lexical: number, hits: number
   return Math.min(100, s);
 }
 
+/** Indices objectifs seulement (lien, répétitions, majuscules, lettres étirées, avis creux), sans la note contredite */
+export const objectiveSuspicion = (input: { text: string; rating: number }) => suspicionOf(input.text, input.rating, 0, 0);
+
 export function analyzeReview(input: { text: string; rating: number }): ReviewAnalysis {
   const { score, hits } = polarity(input.text);
   const lexical = hits ? Math.max(-1, Math.min(1, score / Math.max(2, hits))) : 0;
   const combined = hits ? 0.6 * lexical + 0.4 * ratingScore(input.rating) : ratingScore(input.rating);
 
   const aspects: ReviewAnalysis["aspects"] = [];
-  for (const sentence of sentences(input.text)) {
+  for (const sentence of clauses(input.text)) {
     const lower = sentence.toLowerCase();
     const tokens = tokenize(sentence);
     const p = polarity(sentence);

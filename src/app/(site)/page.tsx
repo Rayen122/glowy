@@ -40,7 +40,7 @@ export default async function HomePage() {
   const { t, f, nf } = i18n;
   const h = t.home;
   const session = await auth();
-  const [recommended, showcase] = await Promise.all([recommendedSalons(4, session?.user.id), platformShowcase()]);
+  const [recommended, showcase] = await Promise.all([recommendedSalons(4, session?.user.id, { lang: i18n.locale }), platformShowcase()]);
 
   return (
     <>

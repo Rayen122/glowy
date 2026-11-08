@@ -2,22 +2,22 @@ import type { Actor } from "@/core/domain/actor";
 import type { Clock } from "@/core/domain/clock";
 import { conflict, forbidden, notFound } from "@/core/domain/errors";
 import type { EventPublisher } from "@/core/domain/events";
-import { analyzeReview, SUSPICION_ALERT } from "../domain/analysis";
+import { SUSPICION_ALERT } from "../domain/analysis";
 import { assertCanReview } from "../domain/policy";
-import type { ModerationPort, ReviewRepository, SalonAccessPort } from "./ports";
+import type { ModerationPort, ReviewAnalyzerPort, ReviewRepository, SalonAccessPort } from "./ports";
 import type { CreateReviewInput, ReviewActionInput } from "./schemas";
 
 /** Avis vérifiés, réponses, signalements et modération (P4) */
-export function makeReviews({ reviews, access, moderation, events, clock }: { reviews: ReviewRepository; access: SalonAccessPort; moderation: ModerationPort; events: EventPublisher; clock: Clock }) {
+export function makeReviews({ reviews, access, moderation, analyzer, events, clock }: { reviews: ReviewRepository; access: SalonAccessPort; moderation: ModerationPort; analyzer: ReviewAnalyzerPort; events: EventPublisher; clock: Clock }) {
   async function createReview(actor: Actor, input: CreateReviewInput) {
     const booking = await reviews.bookingForReview(input.bookingId);
     assertCanReview(booking, actor.id, clock.now());
     // IA P4 : sentiment, aspects et suspicion calculés à la publication ; avis suspect → file de modération
-    const analysis = analyzeReview(input);
+    const analysis = await analyzer.analyze(input);
     // Gros mots masqués « *** » (lexique tounsi / arabizi + IA) ; l'analyse garde le texte d'origine
     const text = await moderation.cleanText(input.text);
     const review = await reviews.create({ ...input, text, clientId: actor.id, salonId: booking!.salonId, employeeId: booking!.employeeId, analysis });
-    if (analysis.suspicion >= SUSPICION_ALERT) await reviews.report({ reviewId: review.id, reporterId: null, source: "AI", reason: `Analyse automatique : suspicion ${analysis.suspicion} %` });
+    if (analysis.suspicion >= SUSPICION_ALERT) await reviews.report({ reviewId: review.id, reporterId: null, source: "AI", reason: `Analyse automatique : suspicion ${analysis.suspicion} %${analysis.suspicionReason ? ` — ${analysis.suspicionReason}` : ""}` });
     await reviews.refreshSalonRating(review.salonId);
     await events.publish("review.published", { reviewId: review.id });
     return review;

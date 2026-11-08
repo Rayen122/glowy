@@ -27,6 +27,11 @@ export interface SalonAccessPort {
   canManageSalon(actor: Actor, salonId: string): Promise<boolean>;
 }
 
+/** IA P4 : lecture d'un avis (sentiment, aspects, suspicion) par le modèle d'IA, règles locales en secours */
+export interface ReviewAnalyzerPort {
+  analyze(input: { text: string; rating: number }): Promise<ReviewAnalysis>;
+}
+
 /** Modération IA : gros mots masqués avant publication */
 export interface ModerationPort {
   cleanText(text: string): Promise<string>;

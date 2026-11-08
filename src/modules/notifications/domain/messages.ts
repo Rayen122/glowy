@@ -115,6 +115,14 @@ export const planExpiring = (plan: string, until: Date): Message => ({
   link: "/dashboard/abonnement",
 });
 
+/** Paie : fiche du mois validée par le gérant */
+export const payslipReady = (month: string, payslipId: string): Message => ({
+  type: "payslip.ready",
+  title: `Fiche de paie de ${month}`,
+  body: "Votre fiche de paie est disponible : consultez-la et téléchargez-la depuis votre dossier.",
+  link: `/dashboard/paie/${payslipId}`,
+});
+
 export const planExpired = (plan: string): Message => ({
   type: "plan.expired",
   title: `Plan ${PLAN_NAMES[plan] ?? plan} terminé`,

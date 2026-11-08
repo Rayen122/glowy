@@ -104,3 +104,24 @@ export function buildProfile(input: { visits: { category: string; services: stri
     visits: input.visits.length,
   };
 }
+
+/**
+ * Classement proposé par le modèle d'IA, contrôlé : uniquement des salons de la liste, sans doublon (6 au plus), raison
+ * courte ; les autres suivent dans l'ordre du score. Les scores sont réajustés pour que le tri « Recommandé pour vous »
+ * (fait aussi dans le navigateur) respecte ce classement.
+ */
+export function applyAiRanking<T extends { slug: string; matchScore: number }>(salons: T[], ranking: { slug: string; reason: string }[], max = 6) {
+  const bySlug = new Map(salons.map((s) => [s.slug, s]));
+  const ranked: (T & { aiReason: string })[] = [];
+  for (const r of ranking) {
+    const salon = bySlug.get(r.slug);
+    if (!salon || ranked.length >= max || ranked.some((x) => x.slug === r.slug)) continue;
+    ranked.push({ ...salon, aiReason: String(r.reason ?? "").trim().slice(0, 160), matchScore: 100 - ranked.length });
+  }
+  const floor = 100 - ranked.length - 1;
+  const rest = salons
+    .filter((s) => !ranked.some((x) => x.slug === s.slug))
+    .sort((a, b) => b.matchScore - a.matchScore)
+    .map((s) => ({ ...s, matchScore: Math.min(s.matchScore, floor) }));
+  return { ranked, rest };
+}

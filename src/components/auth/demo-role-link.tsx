@@ -5,10 +5,10 @@ import { signIn } from "next-auth/react";
 import { useState, type ReactNode } from "react";
 import { forgetOfflinePages } from "@/components/pwa/pwa";
 
-type DemoRole = "CLIENT" | "MANAGER" | "ADMIN";
+type DemoRole = "CLIENT" | "MANAGER" | "EMPLOYEE" | "ADMIN";
 
 /**
- * Lien vers un espace de démonstration (client, dashboard salon, Super Admin). Avec la connexion démo active,
+ * Lien vers un espace de démonstration (client, dashboard salon, employé, Super Admin). Avec la connexion démo active,
  * il se connecte d'abord au compte démo du bon rôle : sinon un Super Admin déjà connecté ouvrait
  * le dashboard salon avec son propre compte. Sans connexion démo : simple lien (connexion demandée).
  */

@@ -37,6 +37,7 @@ export async function SiteFooter() {
             links: [
               { href: "/compte", label: f.clientSpace, role: "CLIENT" },
               { href: "/dashboard", label: f.salonDashboard, role: "MANAGER" },
+              { href: "/dashboard/paie", label: f.employeeSpace, role: "EMPLOYEE" },
               { href: "/admin", label: f.superAdmin, role: "ADMIN" },
             ] as const,
           },

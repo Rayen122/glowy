@@ -32,6 +32,12 @@ describe("IA P4 : analyse des avis (sentiment, aspects, suspicion)", () => {
     assert.equal(analyzeReview({ text: "Très bonne coupe, un peu d'attente le samedi.", rating: 4 }).suspicion, 0);
   });
 
+  test("avis mitigé : chaque aspect garde le sens de sa propre proposition (« …, mais l'attente était longue »)", () => {
+    const mixed = analyzeReview({ text: "Soin très agréable et Dorra est adorable, mais l'attente était longue.", rating: 4 });
+    assert.deepEqual(mixed.aspects, [{ aspect: "resultat", polarity: 1 }, { aspect: "attente", polarity: -1 }]);
+    assert.deepEqual(analyzeReview({ text: "Great haircut but the wait was terrible.", rating: 4 }).aspects, [{ aspect: "resultat", polarity: 1 }, { aspect: "attente", polarity: -1 }]);
+  });
+
   test("derja en arabizi et négation française « ne … pas » comprises sans la note", () => {
     assert.equal(analyzeReview({ text: "Behi barcha, el coiffeuse mezyena", rating: 3 }).sentiment, "positif");
     assert.equal(analyzeReview({ text: "Khayeb barcha, ma3jebnich jemla", rating: 3 }).sentiment, "negatif");

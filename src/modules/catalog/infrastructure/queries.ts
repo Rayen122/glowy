@@ -8,6 +8,7 @@ import { liveAffluence } from "@/modules/affluence";
 import { getAvailability } from "@/modules/booking";
 import { buildProfile, emptyProfile, recommend, type TasteProfile } from "../domain/recommend";
 import { effectivePlan } from "@/modules/subscription";
+import { aiRank, type RankLang } from "./ai-recommend";
 
 /** Bonus de recommandation d'un salon Premium (score sur 100) */
 const FEATURED_BOOST = 10;
@@ -163,9 +164,18 @@ export async function searchSalons(params: SalonSearch, userId?: string, now = n
   return salons.sort(sorters[params.sort ?? "recommande"]);
 }
 
-/** Salons recommandés (accueil, espace client) : tri par score de l'IA de recommandation (P1) */
-export async function recommendedSalons(limit: number, userId?: string, opts: { excludeVisited?: boolean } = {}) {
-  const salons = await searchSalons({ sort: "recommande" }, userId);
+/**
+ * IA P1 : classement par le modèle d'IA pour une cliente connectée qui a un historique (raison « Pourquoi ce salon ? »
+ * écrite par l'IA, dans la langue de la page) ; sinon, ou si le modèle n'est pas disponible, ordre du score local
+ */
+export async function withAiRanking(salons: SalonView[], userId: string | undefined, lang: RankLang): Promise<SalonView[]> {
+  if (!userId) return salons;
+  return aiRank(salons, await tasteProfile(userId), userId, lang);
+}
+
+/** Salons recommandés (accueil, espace client) : classés par l'IA de recommandation (P1) */
+export async function recommendedSalons(limit: number, userId?: string, opts: { excludeVisited?: boolean; lang?: RankLang } = {}) {
+  const salons = await withAiRanking(await searchSalons({ sort: "recommande" }, userId), userId, opts.lang ?? "fr");
   return salons.filter((s) => !opts.excludeVisited || !s.visited).slice(0, limit);
 }
 

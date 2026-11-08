@@ -5,7 +5,7 @@ import { RescheduleButton } from "@/components/account/booking-actions";
 import { rebookHref } from "@/lib/rebook";
 import { TierProgress } from "@/components/loyalty/tier-progress";
 import { SalonCard } from "@/components/salon/salon-card";
-import { getI18n } from "@/i18n/server";
+import { getI18n, getLocale } from "@/i18n/server";
 import { tierFor } from "@/lib/data";
 import { getAccountSummary, lastPhotoAnalysis } from "@/modules/account";
 import { recommendedSalons } from "@/modules/catalog";
@@ -17,7 +17,7 @@ export default async function ComptePage() {
   const [{ t, tc, f, nf, money, df }, { profile, account, bookings, next, toReview }, reco, lastAnalysis] = await Promise.all([
     getI18n(),
     getAccountSummary(user.id),
-    recommendedSalons(3, user.id, { excludeVisited: true }),
+    getLocale().then((lang) => recommendedSalons(3, user.id, { excludeVisited: true, lang })),
     lastPhotoAnalysis(user.id),
   ]);
   const o = t.account.overview;

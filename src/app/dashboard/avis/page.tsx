@@ -21,7 +21,7 @@ export default async function SalonReviewsPage({ searchParams }: PageProps<"/das
   const asked = Array.isArray(sp.filtre) ? sp.filtre[0] : sp.filtre;
   const filter: StaffReviewFilter = (STAFF_REVIEW_FILTERS as readonly string[]).includes(asked ?? "") ? (asked as StaffReviewFilter) : "all";
   const salon = await staffSalon(user);
-  const [{ t, f, nf }, data, insights] = await Promise.all([getI18n(), salonReviewsForStaff(salon.id, filter), salonReviewInsights(salon.id)]);
+  const [{ t, f, nf, locale }, data, insights] = await Promise.all([getI18n(), salonReviewsForStaff(salon.id, filter), salonReviewInsights(salon.id)]);
   const m = t.manage.reviews;
   const ins = t.insights;
   return (
@@ -32,6 +32,7 @@ export default async function SalonReviewsPage({ searchParams }: PageProps<"/das
         <h2 id="insights-title" className="flex items-center gap-2 text-sm font-semibold text-plum-800">
           <Sparkles className="size-4" aria-hidden /> {t.salon.aiSummary}
         </h2>
+        {insights.analysed >= 3 && insights.text && <p className="mt-2 text-sm leading-relaxed">{insights.text[locale]}</p>}
         {insights.analysed < 3 ? (
           <p className="mt-2 text-sm text-muted-foreground">{ins.notEnough}</p>
         ) : (

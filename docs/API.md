@@ -111,6 +111,16 @@ Le gérant règle son plan Pro (79 DT) ou Premium (149 DT) hors ligne (virement,
 
 Un salon qui choisit un plan payant à l'inscription démarre en plan gratuit avec une demande de paiement en attente.
 
+## IA (modèles Groq et Gemini, algorithme local en secours)
+
+| Méthode | Route | Accès | Rôle |
+|---|---|---|---|
+| POST | `/api/ai/chat` | tous (6 / minute) | `{ message, salonSlug?, history? }` → créneaux réels ou réponse de l'assistante (Groq GPT-OSS 120B, Gemini en secours, règles en dernier recours). `masked` : message renvoyé avec les gros mots masqués |
+| GET | `/api/ai/recommendations?limit=6&discover=1` | tous | salons recommandés : `score`, `reason` (score local) ou `aiReason` (raison écrite par Gemini pour une cliente qui a un historique) |
+| POST | `/api/ai/reviews/analyze` | connecté | `{ text, rating }` → `{ sentiment, score, aspects, suspicion, suspicionReason?, source }` ; `source` = `ai` (Gemini) ou `lexicon` / `rating` (règles) |
+| POST | `/api/ai/beauty` | tous (10 / minute) | `{ mode, metrics, image? }` → diagnostic. `image` : photo réduite (data URL JPEG, 768 px) regardée par Gemini Vision puis oubliée ; `note` : explication de l'IA ; `source` = `ai` ou `rules`. `retake.reason = subject` si aucun visage ou cheveu n'est visible |
+| POST | `/api/ai/try-on` | tous (6 / 10 min et 20 / jour par personne, 300 / jour pour la plateforme) | `{ shade, image, small, width, height }` → `{ image, shade }` : rendu photoréaliste de l'essai couleur. Fournisseurs dans l'ordre : FLUX.2 [klein] 4B sur Cloudflare Workers AI (gratuit, `small` = photo de moins de 512 px), puis Gemini (`image` = photo de travail de 1024 px au plus, payant) si le premier a épuisé son quota. Photos envoyées seulement à la demande de la cliente puis oubliées ; le navigateur ne recolle que les cheveux du rendu sur la photo d'origine. Erreurs : `TRY_ON_UNAVAILABLE` (503 : aucun fournisseur, quotas atteints), `TRY_ON_BLOCKED` (422), `TRY_ON_FAILED` (502) |
+
 ## Supervision
 
 | Méthode | Route | Description |

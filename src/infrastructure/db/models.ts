@@ -119,6 +119,10 @@ const salonSchema = new Schema(
     salonPointsPerVisit: { type: Number, default: 10 },
     ratingAvg: { type: Number, default: 0 },
     reviewCount: { type: Number, default: 0 },
+    /** Paie : taux des retenues indicatives (CNSS salarié et CSS en %, IRPP au barème ou non) */
+    payrollSettings: { type: { _id: false, cnssRate: Number, cssRate: Number, irpp: Boolean }, default: null },
+    /** IA P4 : résumé des avis rédigé par le modèle d'IA (3 langues), pour `count` avis publiés */
+    reviewSummary: { type: { _id: false, fr: String, ar: String, en: String, count: Number, at: Date }, default: null },
     owner: { type: ObjectId, ref: "User", required: true },
     photos: { type: [{ url: String, kind: { type: String, enum: PHOTO_KINDS, default: "GALLERY" }, position: { type: Number, default: 0 } }], default: [] },
     openingHours: { type: [{ _id: false, weekday: Number, opensAt: String, closesAt: String }], default: [] },
@@ -143,6 +147,9 @@ const employeeSchema = new Schema(
     active: { type: Boolean, default: true },
     /** Commission du professionnel en % du chiffre d'affaires de ses rendez-vous terminés (SAL-13) */
     commissionRate: { type: Number, default: 0 },
+    /** Paie : salaire de base mensuel brut (DT) et majoration des heures supplémentaires (%) */
+    baseSalary: { type: Number, default: 0 },
+    overtimeRate: { type: Number, default: 25 },
     /** Horaires propres d'un jour (sinon ceux du salon) ; `off` = jour de repos */
     workingHours: { type: [{ _id: false, weekday: Number, startsAt: String, endsAt: String, off: { type: Boolean, default: false } }], default: [] },
   },
@@ -391,6 +398,54 @@ supportTicketSchema.index({ status: 1, priority: -1, lastMessageAt: 1 });
 // ── Caisse et factures (SAL-09) ─────────────────────────────
 /** Compteurs de numérotation (factures : une suite par salon et par année, sans trou) */
 const counterSchema = new Schema({ _id: { type: String, required: true }, seq: { type: Number, default: 0 } });
+
+/**
+ * Pointage d'un professionnel pour une journée (heure de Tunis) : périodes arrivée → départ (pauses possibles) ;
+ * le gérant peut corriger les heures ou marquer une absence (justifiée ou non)
+ */
+const attendanceSchema = new Schema(
+  {
+    salon: { type: ObjectId, ref: "Salon", required: true },
+    employee: { type: ObjectId, ref: "Employee", required: true },
+    date: { type: String, required: true },
+    segments: { type: [{ _id: false, in: { type: Date, required: true }, out: { type: Date, default: null } }], default: [] },
+    /** null : selon le pointage ; ABSENT : absence non justifiée ; EXCUSED : absence justifiée (payée) */
+    status: { type: String, enum: ["ABSENT", "EXCUSED", null], default: null },
+    note: optional(String),
+    correctedBy: { type: ObjectId, ref: "User", default: null },
+  },
+  { timestamps: true }
+);
+attendanceSchema.index({ employee: 1, date: 1 }, { unique: true });
+attendanceSchema.index({ salon: 1, date: 1 });
+
+/** Fiche de paie mensuelle : brouillon recalculable jusqu'à la validation par le gérant, puis figée et visible par l'employé */
+const payslipSchema = new Schema(
+  {
+    salon: { type: ObjectId, ref: "Salon", required: true },
+    employee: { type: ObjectId, ref: "Employee", required: true },
+    /** « 2026-10 » */
+    period: { type: String, required: true },
+    status: { type: String, enum: ["DRAFT", "VALIDATED"], default: "DRAFT" },
+    employeeName: { type: String, required: true },
+    employeeTitle: { type: String, default: "" },
+    baseSalary: { type: Number, default: 0 },
+    overtimeRate: { type: Number, default: 0 },
+    commissionRate: { type: Number, default: 0 },
+    revenue: { type: Number, default: 0 },
+    bonus: { type: Number, default: 0 },
+    advance: { type: Number, default: 0 },
+    note: optional(String),
+    summary: { type: Schema.Types.Mixed, default: {} },
+    lines: { type: Schema.Types.Mixed, default: {} },
+    rates: { type: Schema.Types.Mixed, default: {} },
+    validatedAt: optional(Date),
+    validatedBy: { type: ObjectId, ref: "User", default: null },
+  },
+  { timestamps: true }
+);
+payslipSchema.index({ employee: 1, period: 1 }, { unique: true });
+payslipSchema.index({ salon: 1, period: 1 });
 
 /** Facture : copie figée des lignes et de la cliente au moment de l'encaissement ; annulée, jamais supprimée */
 const invoiceSchema = new Schema(
@@ -677,6 +732,8 @@ export const WaitlistEntry = defineModel("WaitlistEntry", waitlistEntrySchema);
 export const SupportTicket = defineModel("SupportTicket", supportTicketSchema);
 export const Counter = defineModel("Counter", counterSchema);
 export const Invoice = defineModel("Invoice", invoiceSchema);
+export const Attendance = defineModel("Attendance", attendanceSchema);
+export const Payslip = defineModel("Payslip", payslipSchema);
 
 /** Document lu avec .lean() : champs du schéma + _id (+ dates automatiques) */
 type Lean<S extends Schema> = InferSchemaType<S> & { _id: Types.ObjectId; createdAt: Date; updatedAt: Date };
@@ -692,7 +749,7 @@ export type PromotionDoc = Lean<typeof promotionSchema>;
 export type PointTransactionDoc = Omit<Lean<typeof pointTransactionSchema>, "updatedAt">;
 
 /** Toutes les collections, pour vider la base (seed, tests) */
-export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, PointCampaign, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog, ClientNote, Promotion, SalonWallet, SalonPointEntry, PlatformSetting, Announcement, QueueEntry, Product, StockMovement, WaitlistEntry, SupportTicket, Counter, Invoice];
+export const ALL_MODELS = [User, Salon, Employee, TimeOff, SlotLock, Booking, PlanPayment, Notification, PushSubscription, OutboxMessage, AccountToken, PointRule, PointTransaction, PointCampaign, Reward, Redemption, Review, ReviewReport, PhotoAnalysis, AuditLog, ClientNote, Promotion, SalonWallet, SalonPointEntry, PlatformSetting, Announcement, QueueEntry, Product, StockMovement, WaitlistEntry, SupportTicket, Counter, Invoice, Attendance, Payslip];
 
 /** Vide toutes les collections et recrée les index, dont les index uniques (seed, tests) */
 export async function resetAll() {

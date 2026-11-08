@@ -9,10 +9,16 @@ import { addDays, tunisToday, utcToTunis } from "@/core/domain/time";
 
 export const SERVICES = {
   chignon: { words: ["chignon", "mariage", "mariée", "wedding", "bride", "bridal", "عرس", "عروسة", "عروس", "3ers", "aers", "3rousa", "arousa", "3arousa"], category: "coiffure", search: ["chignon", "mariée"] },
-  coupe: { words: ["coupe", "couper", "cut", "haircut", "trim", "قص", "قصة", "n9os", "nqos", "n9ossou", "9os", "9assa", "qassa", "ta7fifa", "tahfifa", "nkoupi"], category: "coiffure", search: ["coupe"] },
+  coupe: {
+    // « n7ajjem », « 7jéma », « حجّام » (derja) : la coupe d'un homme chez le barbier
+    words: ["coupe", "couper", "cut", "haircut", "trim", "قص", "قصة", "n9os", "nqos", "n9ossou", "9os", "9assa", "qassa", "ta7fifa", "tahfifa", "nkoupi",
+      "n7ajjem", "n7ajem", "nhajjem", "nhajem", "t7ajjem", "t7ajem", "7ajjem", "7ajem", "hajjem", "7jema", "7jéma", "7jama", "حجام", "نحجم", "حجامة"],
+    category: "coiffure",
+    search: ["coupe"],
+  },
   brushing: { words: ["brushing", "blow", "blowdry", "سشوار", "بروشينغ", "brouching", "brochin", "sechwar", "nsachwer"], category: "coiffure", search: ["brushing"] },
   couleur: { words: ["couleur", "coloration", "color", "colour", "balayage", "mèches", "racines", "highlights", "صبغة", "ميش", "sbigha", "sbegha", "sbagh", "nsabbagh", "meches"], category: "coiffure", search: ["coloration", "balayage", "couleur"] },
-  barbe: { words: ["barbe", "barbier", "beard", "rasage", "shave", "لحية", "حلاق", "l7ya", "le7ya", "lehya", "la7ya", "7ajjem", "hajjem", "7ajem"], category: "barbier", search: ["barbe", "rasage"] },
+  barbe: { words: ["barbe", "barbier", "beard", "rasage", "shave", "لحية", "حلاق", "l7ya", "le7ya", "lehya", "la7ya"], category: "barbier", search: ["barbe", "rasage"] },
   ongles: { words: ["manucure", "ongles", "nails", "manicure", "pédicure", "pedicure", "vernis", "gel", "أظافر", "مانيكير", "dhfer", "dhafer", "adhafer", "dwafer", "manikir"], category: "ongles", search: ["manucure", "ongles", "pose"] },
   soin: { words: ["soin", "visage", "facial", "hydratant", "peau", "skin", "بشرة", "وجه", "wejh", "wajh", "bachra", "bechra"], category: "visage", search: ["soin"] },
   massage: { words: ["massage", "hammam", "spa", "gommage", "مساج", "حمام", "تدليك", "massaj", "7ammam", "hammem", "7ammem"], category: "spa", search: ["massage", "hammam"] },
@@ -20,6 +26,7 @@ export const SERVICES = {
   epilation: { words: ["épilation", "epilation", "waxing", "wax", "سير", "إزالة"], category: "visage", search: ["épilation"] },
 } as const;
 export type ServiceIntent = keyof typeof SERVICES;
+type SalonCategory = (typeof SERVICES)[ServiceIntent]["category"] | "barbier";
 
 export const FAQ_TOPICS = {
   cancel: ["annuler", "annulation", "reporter", "report", "cancel", "reschedule", "إلغاء", "نلغي", "تأجيل"],
@@ -100,9 +107,15 @@ function parseTime(text: string): string | null {
   return `${String(hour).padStart(2, "0")}:${match[2] ?? "00"}`;
 }
 
+const BEARD_WORDS = ["barbe", "beard", "rasage", "shave", "لحية", "l7ya", "le7ya", "lehya", "la7ya"];
+const HAIR_WORDS = ["coupe", "haircut", "hair", "cheveux", "cha3ri", "cha3r", "شعر", "شعري"];
+
 export function parseMessage(message: string, now: Date, cities: string[]): Parsed {
   const text = normalize(message);
-  const service = (Object.keys(SERVICES) as ServiceIntent[]).find((k) => SERVICES[k].words.some((w) => hasWord(text, w))) ?? null;
+  const matched = (Object.keys(SERVICES) as ServiceIntent[]).filter((k) => SERVICES[k].words.some((w) => hasWord(text, w)));
+  // « beard trim », « n9os le7ya » : un mot de barbe sans mot de cheveux, c'est la barbe (« trim », « n9os » sont aussi des mots de coupe, IA-11)
+  const beard = matched.includes("barbe") && BEARD_WORDS.some((w) => hasWord(text, w)) && !HAIR_WORDS.some((w) => hasWord(text, w));
+  const service = beard ? "barbe" : (matched[0] ?? null);
   const topic = (Object.keys(FAQ_TOPICS) as FaqTopic[]).find((k) => FAQ_TOPICS[k].some((w) => hasWord(text, w) || (w.includes(" ") && text.includes(w)))) ?? null;
   const part = (Object.keys(PARTS) as DayPart[]).find((k) => PARTS[k].some((w) => text.includes(w))) ?? null;
   const city = cities.find((c) => text.includes(` ${c.toLowerCase()} `) || text.includes(c.toLowerCase())) ?? null;
@@ -118,31 +131,76 @@ export function parseMessage(message: string, now: Date, cities: string[]): Pars
   return { intent, service, topic, date, part, time, city };
 }
 
-/** Public d'une prestation : mot écrit dans son nom (clé) et façons de le dire dans un message */
-const AUDIENCES: Record<string, string[]> = {
-  homme: ["homme", "hommes", "men", "man", "rajel", "rjel", "rjal", "راجل", "رجل", "رجال"],
-  femme: ["femme", "femmes", "women", "woman", "lady", "mra", "مرا", "امرأة", "نساء"],
-  enfant: ["enfant", "enfants", "kid", "kids", "child", "sghir", "صغير", "طفل", "أطفال"],
+/** Public d'une prestation : mot écrit dans son nom (clé) et façons de le dire dans un message (derja comprise) */
+const AUDIENCES = {
+  homme: ["homme", "hommes", "men", "man", "male", "monsieur", "masculin", "rajel", "rajl", "rajol", "rajil", "rjel", "rjal", "rjeel", "erajel", "راجل", "رجل", "رجال", "الرجال", "للرجال", "رجالي",
+    // « n7ajjem » : se faire couper les cheveux chez le barbier, ce que dit un homme
+    "n7ajjem", "n7ajem", "nhajjem", "nhajem", "7ajjem", "7ajem", "hajjem", "7jema", "7jama", "حجام", "نحجم", "حجامة"],
+  femme: ["femme", "femmes", "women", "woman", "lady", "ladies", "madame", "dame", "dames", "fille", "filles", "mra", "mrayet", "nsa", "bnet", "مرا", "امرأة", "امراة", "نساء", "نسا", "للنساء", "بنات", "نسائي"],
+  enfant: ["enfant", "enfants", "kid", "kids", "child", "children", "sghir", "sghar", "صغير", "صغار", "طفل", "أطفال"],
 };
-const words = (text: string) => text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+export type Audience = keyof typeof AUDIENCES;
+const AUDIENCE_KEYS = Object.keys(AUDIENCES) as Audience[];
+/** Mots d'un texte, sans accents ni voyelles arabes (« حجّام » = « حجام ») */
+const words = (text: string) =>
+  text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f\u064b-\u065f\u0670]/g, "").split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+
+/** Public demandé (« ena rajl », « coupe femme », « lil rjel ») : le dernier dit l'emporte ; null s'il n'est pas précisé */
+export function audienceOf(request: string): Audience | null {
+  let found: Audience | null = null;
+  for (const word of words(request)) found = AUDIENCE_KEYS.find((a) => (AUDIENCES[a] as readonly string[]).includes(word)) ?? found;
+  return found;
+}
+
+/** Catégories de salons à consulter : un homme qui veut une coupe ou une barbe va d'abord chez le barbier, puis chez le coiffeur */
+export function categoriesFor(intent: ServiceIntent, audience: Audience | null): SalonCategory[] {
+  const category = SERVICES[intent].category;
+  if (audience === "homme" && (category === "coiffure" || category === "barbier")) return ["barbier", "coiffure"];
+  if (audience && audience !== "homme" && category === "barbier") return [];
+  return [category];
+}
+
+/**
+ * Mots arabes, derja et anglais → mots des noms de prestations (en français, sans accents) : « مساج » choisit
+ * « Massage relaxant » et non le forfait le moins cher « Hammam + gommage » (test réel du 8 novembre 2026, IA-07)
+ */
+const NAME_WORDS: Record<string, string[]> = {
+  مساج: ["massage"], تدليك: ["massage"], massaj: ["massage"],
+  حمام: ["hammam"], "7ammam": ["hammam"], "7ammem": ["hammam"], hammem: ["hammam"],
+  عروس: ["mariee"], عروسة: ["mariee"], عرس: ["mariee"], "3rousa": ["mariee"], "3ers": ["mariee"], bride: ["mariee"], bridal: ["mariee"], wedding: ["mariee"],
+  تسريحة: ["chignon"], updo: ["chignon"],
+  صبغة: ["coloration"], sbigha: ["coloration"], sbegha: ["coloration"], color: ["coloration"], colour: ["coloration"],
+  بروشينغ: ["brushing"], سشوار: ["brushing"], sechwar: ["brushing"], blowdry: ["brushing"],
+  مانيكير: ["manucure"], manicure: ["manucure"],
+  مكياج: ["maquillage"], ماكياج: ["maquillage"], makiyaj: ["maquillage"], makyaj: ["maquillage"], makeup: ["maquillage"],
+  لحية: ["barbe"], beard: ["barbe"], shave: ["rasage"],
+};
 
 /**
  * Prestation d'un salon pour la demande : jamais pour un autre public que celui demandé (« coupe homme » ≠ « Coupe femme »),
- * de préférence celle qui reprend les mots du client, sinon une prestation sans public précis, puis la moins chère
- * (« brushing » → « Brushing 20 DT » plutôt que « Coupe femme + brushing »).
+ * de préférence celle écrite pour ce public, puis celle qui reprend les mots du client, sinon une prestation sans public précis,
+ * puis la moins chère (« brushing » → « Brushing 20 DT » plutôt que « Coupe femme + brushing »).
+ * Un homme : chez le barbier, toute prestation ; chez un coiffeur, une coupe ou un brushing seulement s'ils sont écrits « homme »
+ * (« Coupe + brushing » est une prestation pour femme). Une femme ou un enfant : jamais chez le barbier.
  */
-export function pickService<S extends { name: string; price: number; active: boolean }>(services: S[], intent: ServiceIntent, request = "") {
-  const said = new Set(words(request));
-  const asked = Object.keys(AUDIENCES).filter((a) => AUDIENCES[a].some((w) => said.has(w)));
+export function pickService<S extends { name: string; price: number; active: boolean }>(services: S[], intent: ServiceIntent, request = "", salonCategory?: string) {
+  const said = new Set(words(request).flatMap((w) => [w, ...(NAME_WORDS[w] ?? [])]));
+  const asked = audienceOf(request);
+  if (asked && asked !== "homme" && salonCategory === "barbier") return undefined;
+  const gendered = intent === "coupe" || intent === "brushing";
   const candidates = services
     .filter((s) => s.active && SERVICES[intent].search.some((term) => s.name.toLowerCase().includes(term)))
     .map((s) => {
       const name = words(s.name);
-      return { s, audience: Object.keys(AUDIENCES).filter((a) => name.includes(a)), hits: name.filter((w) => w.length >= 4 && said.has(w)).length };
+      return { s, audience: AUDIENCE_KEYS.filter((a) => name.includes(a)), hits: name.filter((w) => w.length >= 4 && said.has(w)).length };
     })
-    .filter((c) => !asked.length || !c.audience.length || c.audience.some((a) => asked.includes(a)));
-  const unasked = (c: (typeof candidates)[number]) => Number(!asked.length && c.audience.length > 0);
-  candidates.sort((a, b) => b.hits - a.hits || unasked(a) - unasked(b) || a.s.price - b.s.price);
+    .filter((c) => {
+      if (!asked) return true;
+      if (c.audience.length) return c.audience.includes(asked);
+      return asked !== "homme" || !gendered || salonCategory === "barbier";
+    });
+  const rank = (c: (typeof candidates)[number]) => (asked ? Number(!c.audience.includes(asked)) : Number(c.audience.length > 0));
+  candidates.sort((a, b) => rank(a) - rank(b) || b.hits - a.hits || a.s.price - b.s.price);
   return candidates[0]?.s;
 }
 
@@ -165,8 +223,13 @@ export type ChatLang = "tn_arabizi" | "tn_arabe" | "ar" | "fr" | "en";
 const DERJA_LATIN = ["nheb", "n7eb", "nhebb", "famma", "fama", "chnowa", "chnoua", "chniya", "ghodwa", "ghadwa", "barcha", "behi", "bahi", "aslema", "ahla", "yezzi", "kifech", "kifeh", "chkoun", "mte3", "mta3", "bech", "tawa", "ya3tik", "lyoum", "sbe7", "3chiya", "nhar", "9addech", "kadech", "9adech", "n9os", "brabi", "mrigel", "sahbi", "ken", "zeda", "zada"];
 const DERJA_ARABIC = ["نحب", "باش", "برشا", "فما", "فمّا", "شنوة", "شنية", "غدوة", "قداش", "توة", "عسلامة", "كيفاش", "وقتاش", "ياسر", "بلاصة", "نجم", "موش", "مش", "نهار", "العشية", "الصباح", "يعيشك", "بربي"];
 const STANDARD_ARABIC = ["أريد", "اريد", "هل", "ماذا", "لماذا", "يمكن", "يمكنني", "أود", "من فضلك", "غدا", "موعدا"];
-const ENGLISH = ["the", "is", "are", "you", "your", "my", "what", "how", "can", "i", "do", "does", "please", "hello", "hi", "thanks", "appointment", "tomorrow", "for", "with", "where", "which", "best", "want", "need", "price"];
-const FRENCH = ["le", "la", "les", "je", "tu", "vous", "est", "pour", "un", "une", "des", "du", "comment", "quel", "quelle", "bonjour", "merci", "demain", "avec", "où", "mon", "ma", "mes", "rendez-vous", "prix", "salut", "veux", "voudrais"];
+const ENGLISH = ["the", "is", "are", "you", "your", "my", "what", "how", "can", "i", "do", "does", "please", "hello", "hi", "thanks", "appointment", "tomorrow", "for", "with", "where", "which", "best", "want", "need", "price",
+  "book", "on", "at", "today", "morning", "afternoon", "evening", "tonight", "haircut", "beard", "trim", "nails", "much", "cost", "when", "open", "free", "slot",
+  "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+const FRENCH = ["le", "la", "les", "je", "tu", "vous", "est", "pour", "un", "une", "des", "du", "comment", "quel", "quelle", "bonjour", "merci", "demain", "avec", "où", "mon", "ma", "mes", "rendez-vous", "prix", "salut", "veux", "voudrais",
+  "matin", "soir", "aujourd'hui", "coupe", "combien", "quand", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
+/** Mots des noms de lieux (« Les Berges du Lac », « La Marsa »), ignorés pour choisir entre français et anglais */
+const PLACE_WORDS = /\b(?:[Ll]es|[Ll]a|[Ll]e|[Dd]u|[Ee]l)\s+(?=\p{Lu})/gu;
 
 export function detectLang(message: string): ChatLang {
   const arabic = (message.match(/\p{Script=Arabic}/gu) ?? []).length;
@@ -179,7 +242,8 @@ export function detectLang(message: string): ChatLang {
   // Arabizi : chiffres utilisés comme lettres (3aslema, n9os, 7ammam), hors heures et dates (14h30, 15/01)
   const arabizi = words.some((w) => /\p{L}/u.test(w) && /[235679]/.test(w) && !/^\d+(h\d*|am|pm|er|e|ème)?$/.test(w));
   if (arabizi || words.some((w) => DERJA_LATIN.includes(w))) return "tn_arabizi";
-  const en = words.filter((w) => ENGLISH.includes(w)).length;
-  const fr = words.filter((w) => FRENCH.includes(w)).length;
+  const counted = message.replace(PLACE_WORDS, "").toLowerCase().split(/[^\p{L}\p{N}'-]+/u);
+  const en = counted.filter((w) => ENGLISH.includes(w)).length;
+  const fr = counted.filter((w) => FRENCH.includes(w)).length;
   return en > fr ? "en" : "fr";
 }

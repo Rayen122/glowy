@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Boxes, Building2, CalendarDays, ChartColumn, ChevronsUpDown, CreditCard, Headset, Hourglass, LayoutGrid, ListOrdered, MessageSquareText, Percent, Plus, Receipt, Scissors, Settings, UserRound, Users } from "lucide-react";
+import { Boxes, Building2, CalendarDays, ChartColumn, ChevronsUpDown, CreditCard, Headset, Hourglass, LayoutGrid, ListOrdered, MessageSquareText, Percent, Plus, Receipt, Scissors, Settings, UserRound, Users, Wallet } from "lucide-react";
 import { AppShell, type NavGroup } from "@/components/app-shell/app-shell";
 import { getI18n } from "@/i18n/server";
 import { lowStockCount, staffSalon } from "@/modules/dashboard";
@@ -33,6 +33,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       items: [
         { href: "/dashboard/services", label: d.nav.services, icon: <Scissors /> },
         { href: "/dashboard/equipe", label: d.nav.team, icon: <Users /> },
+        // Paie & pointage : le professionnel y pointe et retrouve ses fiches de paie ; le gérant y valide celles de l'équipe
+        { href: "/dashboard/paie", label: user.role === "EMPLOYEE" ? t.manage.payroll.myTitle : t.manage.payroll.title, icon: <Wallet /> },
         { href: "/dashboard/clients", label: d.nav.clients, icon: <UserRound /> },
         { href: "/dashboard/avis", label: d.nav.reviews, icon: <MessageSquareText />, badge: "1" },
         { href: "/dashboard/promotions", label: d.nav.promotions, icon: <Percent /> },

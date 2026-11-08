@@ -44,6 +44,8 @@ export async function listTeam(salonId: string, now = new Date()) {
       title: e.title,
       color: e.color,
       commissionRate: e.commissionRate ?? 0,
+      baseSalary: e.baseSalary ?? 0,
+      overtimeRate: e.overtimeRate ?? 25,
       avatarUrl: e.avatarUrl ?? null,
       active: e.active,
       rating: e.rating,

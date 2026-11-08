@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
-import { Download, Share, X } from "lucide-react";
+import { Download, Ellipsis, Share, SquarePlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { LogoMark } from "@/components/brand/logo";
 import { useI18n } from "@/i18n/client";
@@ -43,6 +43,18 @@ export function useInstallPrompt() {
 const isIosBrowser = () =>
   /iPad|iPhone|iPod/.test(navigator.userAgent) && !(navigator as Navigator & { standalone?: boolean }).standalone;
 const noop = () => () => {};
+
+/**
+ * Navigateur iOS, pour le bon mode d'emploi : Safari 26 et plus (bouton Partager rangé dans le menu « ⋯ »),
+ * Safari plus ancien (Partager dans la barre), autre navigateur (Chrome, Firefox… : Partager dans la barre d'adresse)
+ */
+type IosBrowser = "safariNew" | "safari" | "other";
+function iosBrowser(): IosBrowser {
+  const ua = navigator.userAgent;
+  if (/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua)) return "other";
+  const version = Number(ua.match(/Version\/(\d+)/)?.[1] ?? 0);
+  return version >= 26 ? "safariNew" : "safari";
+}
 
 /** Pages toujours préchargées pour le hors-ligne, en plus des liens de la page ouverte */
 const ALWAYS_OFFLINE = ["/", "/salons", "/offline"];
@@ -131,14 +143,16 @@ const DISMISS_KEY = "bh-install-dismissed";
 
 /** Bannière discrète « Installer Glowy » (Android / desktop) ou mode d'emploi iOS */
 export function InstallBanner() {
-  const { t, rich } = useI18n();
+  const { t } = useI18n();
   const p = t.pwa.install;
   const { available, install } = useInstallPrompt();
   const ios = useSyncExternalStore(noop, isIosBrowser, () => false);
   const [dismissed, setDismissed] = useState(() => typeof window !== "undefined" && window.localStorage.getItem(DISMISS_KEY) === "1");
+  const [guide, setGuide] = useState(false);
   // Fiche salon et tunnel de réservation : la barre « Réserver » occupe déjà le bas de l'écran
   const busyBottom = /^\/salons\/[^/]+(\/reserver)?$/.test(usePathname());
 
+  if (guide) return <IosInstallGuide onClose={() => setGuide(false)} />;
   if (dismissed || busyBottom || !(available || ios)) return null;
 
   const close = () => {
@@ -156,13 +170,22 @@ export function InstallBanner() {
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold">{p.title}</p>
         <p className="text-xs text-muted-foreground">
-          {available ? p.text : rich(p.iosHint, { share: <Share key="s" className="inline size-3.5 align-[-2px]" aria-label="Partager" /> })}
+          {available ? p.text : p.iosText}
         </p>
       </div>
       {/* Téléphone : fermer à droite du texte, « Installer » sur toute la largeur en dessous ; écran large : une seule ligne */}
       <button type="button" onClick={close} aria-label={p.later} className="inline-flex size-10 shrink-0 items-center justify-center self-start rounded-full text-muted-foreground hover:bg-muted sm:order-last sm:size-8 sm:self-center">
         <X className="size-4" aria-hidden />
       </button>
+      {ios && !available && (
+        <button
+          type="button"
+          onClick={() => setGuide(true)}
+          className="inline-flex h-11 w-full shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary px-3 text-sm font-semibold text-primary-foreground hover:bg-plum-800 sm:h-9 sm:w-auto sm:text-xs"
+        >
+          <Download className="size-3.5" aria-hidden /> {p.iosCta}
+        </button>
+      )}
       {available && (
         <button
           type="button"
@@ -172,6 +195,48 @@ export function InstallBanner() {
           <Download className="size-3.5" aria-hidden /> {p.cta}
         </button>
       )}
+    </div>
+  );
+}
+
+/** Mode d'emploi iPhone en 3 étapes : Safari ne propose pas d'installation automatique, il faut passer par son menu */
+function IosInstallGuide({ onClose }: { onClose: () => void }) {
+  const { t, rich } = useI18n();
+  const p = t.pwa.install;
+  const steps = p.iosSteps[iosBrowser()];
+  const icons = {
+    more: <Ellipsis key="m" className="inline size-5 rounded bg-muted p-0.5 align-[-5px]" aria-label="⋯" />,
+    share: <Share key="s" className="inline size-5 rounded bg-muted p-0.5 align-[-5px] text-[#007aff]" aria-label={p.iosCta} />,
+    add: <SquarePlus key="a" className="inline size-5 rounded bg-muted p-0.5 align-[-5px]" aria-hidden />,
+  };
+  return (
+    <div className="fixed inset-0 z-50 flex items-end bg-ink/40 sm:items-center sm:justify-center" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={p.iosTitle}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full rounded-t-3xl bg-card p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-lift sm:max-w-md sm:rounded-3xl"
+      >
+        <div className="flex items-center gap-3">
+          <LogoMark className="size-10" />
+          <p className="flex-1 text-base font-semibold">{p.iosTitle}</p>
+          <button type="button" onClick={onClose} aria-label={p.later} className="inline-flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted">
+            <X className="size-4" aria-hidden />
+          </button>
+        </div>
+        <ol className="mt-4 space-y-3">
+          {steps.map((step, i) => (
+            <li key={i} className="flex items-start gap-3 text-sm leading-relaxed">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-plum-100 text-xs font-bold text-plum-800">{i + 1}</span>
+              <span className="pt-0.5">{rich(step, icons)}</span>
+            </li>
+          ))}
+        </ol>
+        <button type="button" onClick={onClose} className="mt-5 h-11 w-full rounded-full bg-primary text-sm font-semibold text-primary-foreground hover:bg-plum-800">
+          {p.iosDone}
+        </button>
+      </div>
     </div>
   );
 }

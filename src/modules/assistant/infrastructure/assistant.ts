@@ -3,7 +3,7 @@ import { Employee, idOf, Salon } from "@/infrastructure/db";
 import { getAvailability } from "@/modules/booking";
 import { searchSalons } from "@/modules/catalog";
 import { getPlatformSettings } from "@/modules/platform";
-import { matchesTime, parseMessage, pickService, SERVICES, type DayPart, type FaqTopic, type ServiceIntent } from "../domain/nlu";
+import { audienceOf, categoriesFor, matchesTime, parseMessage, pickService, type DayPart, type FaqTopic, type ServiceIntent } from "../domain/nlu";
 
 /**
  * IA P3 : assistante de réservation. Comprend la demande, propose de vrais créneaux libres dans les salons
@@ -43,20 +43,20 @@ export type SlotQuery = { service: ServiceIntent; date: string | null; part: Day
 /**
  * Vrais créneaux libres pour la prestation, dans les salons les mieux adaptés (ordre de la recommandation P1).
  * `onlySlug` : le client a nommé un salon ; `firstSlug` : salon de la page ouverte, essayé en premier ;
- * `request` : mots du client, pour choisir la bonne prestation de chaque salon (« coupe homme »).
+ * `request` : mots du client, pour choisir la bonne prestation de chaque salon et le public (« ena rajl » : barbiers d'abord, coupes homme).
  */
 export async function findSlots(query: SlotQuery, opts: { userId?: string; now: Date; onlySlug?: string; firstSlug?: string; request?: string }): Promise<Extract<ChatReply, { kind: "slots" | "none" }>> {
-  const intent = SERVICES[query.service];
   const wanted = { part: query.part, time: query.time };
   const firstDate = query.date ?? tunisToday(opts.now);
   // Sans date précise : aujourd'hui puis demain si plus rien d'adapté aujourd'hui
   const dates = query.date ? [query.date] : [firstDate, addDays(firstDate, 1)];
 
+  const categories = categoriesFor(query.service, audienceOf(opts.request ?? ""));
   const found = opts.onlySlug
     ? (await searchSalons({}, opts.userId, opts.now)).filter((s) => s.slug === opts.onlySlug)
-    : await searchSalons({ city: query.city ?? undefined, category: intent.category }, opts.userId, opts.now);
+    : (await Promise.all(categories.map((category) => searchSalons({ city: query.city ?? undefined, category }, opts.userId, opts.now)))).flat();
   const ordered = opts.firstSlug ? [...found.filter((s) => s.slug === opts.firstSlug), ...found.filter((s) => s.slug !== opts.firstSlug)] : found;
-  const docs = await Salon.find({ slug: { $in: ordered.slice(0, MAX_SALONS_CHECKED).map((s) => s.slug) } }, { slug: 1, name: 1, services: 1 }).lean();
+  const docs = await Salon.find({ slug: { $in: ordered.slice(0, MAX_SALONS_CHECKED).map((s) => s.slug) } }, { slug: 1, name: 1, category: 1, services: 1 }).lean();
   const employees = await Employee.find({ salon: { $in: docs.map((d) => d._id) } }, { salon: 1, key: 1, name: 1 }).lean();
 
   let checked = 0;
@@ -66,7 +66,7 @@ export async function findSlots(query: SlotQuery, opts: { userId?: string; now: 
     for (const view of ordered.slice(0, MAX_SALONS_CHECKED)) {
       if (slots.length >= 3) break;
       const doc = docs.find((d) => d.slug === view.slug);
-      const service = doc && pickService(doc.services, query.service, opts.request);
+      const service = doc && pickService(doc.services, query.service, opts.request, doc.category);
       if (!doc || !service) continue;
       const { slots: free, closed } = await getAvailability({ salonId: idOf(doc), date, durationMin: service.durationMin, withForecast: true });
       checked += 1;

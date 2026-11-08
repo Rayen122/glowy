@@ -11,7 +11,7 @@ Le projet est découpé en **5 gestions**, une par membre de l'équipe. Chaque g
 | 2 | Salon (dashboard du gérant) | P2 | Prédiction d'affluence |
 | 3 | Recherche et réservation | P3 | Assistante de réservation |
 | 4 | Avis, modération et support | P4 | Analyse des avis |
-| 5 | Espace client, fidélité et abonnements | P5 | Analyse beauté par photo |
+| 5 | Espace client, fidélité et abonnements | P5 | Analyse beauté par photo, essai virtuel de couleur |
 
 ---
 
@@ -26,7 +26,8 @@ Le projet est découpé en **5 gestions**, une par membre de l'équipe. Chaque g
   - `application` : cas d'usage et validation Zod ;
   - `infrastructure` : accès à MongoDB.
 - **Communication entre gestions** : par **événements** (`booking.completed`, `review.published`…), branchés dans `src/modules/subscribers.ts`. Une gestion réagit au travail d'une autre sans modifier son code.
-- **Les 5 IA** n'utilisent aucun service externe payant : ce sont des fonctions pures, explicables et testées. Chacune a un **repli** quand les données manquent.
+- **Les 6 IA utilisent de vrais modèles d'IA par API**, gratuits : **Groq GPT-OSS 120B** pour l'assistante, **Google Gemini Flash-Lite** pour la recommandation, les conseils d'affluence, l'analyse des avis, l'analyse photo (vision) et la modération. Clés `GROQ_API_KEY` et `GEMINI_API_KEY` dans `.env`.
+- Chaque IA garde un **algorithme local explicable et testé en secours** : sans clé, quota dépassé ou panne, le site fonctionne toujours (et les tests automatiques tournent sans clé). Les réponses des modèles sont **contrôlées** avant usage (valeurs connues, bornes, dates vérifiées).
 - **Tâches planifiées** (`src/modules/scheduler.ts`, toutes les 10 minutes) : rappels de rendez-vous, expiration des points, analyse des avis en attente.
 - **Tests** : `npm test`, soit 73 tests sur une base MongoDB dédiée.
 
@@ -68,13 +69,12 @@ Le projet est découpé en **5 gestions**, une par membre de l'équipe. Chaque g
 ### IA — Recommandation de salons
 
 - **Entrées** : rendez-vous terminés (catégories, prestations, ville, budget), salons favoris, note des salons, disponibilités du jour.
-- **Méthode** : un profil de goûts est construit à partir de l'historique. Chaque salon reçoit un **score** qui combine :
-  - la ressemblance avec ce profil ;
-  - sa qualité, calculée par une **note bayésienne** : un salon avec peu d'avis est ramené vers 4/5 ;
-  - ses créneaux libres aujourd'hui.
-- **Sortie** : une liste classée, avec **la raison affichée** (« même catégorie que vos visites », « bien noté », « disponible aujourd'hui »…).
-- **Repli** : sans historique (visiteur ou nouveau compte), ce sont les salons les plus populaires.
-- **Code** : `src/modules/catalog/domain/recommend.ts` · `GET /api/ai/recommendations`.
+- **Méthode** :
+  - un profil de goûts est construit à partir de l'historique, et un **score local** présélectionne les 8 meilleurs salons (ressemblance avec le profil, **note bayésienne**, créneaux libres du jour) ;
+  - le **modèle Gemini** reçoit ce profil et ces candidats, choisit et **classe les 6 salons** qui conviennent le mieux à la cliente et **écrit la raison** « Pourquoi ce salon ? » dans la langue de la page. Le résultat est gardé 30 minutes par cliente.
+- **Sortie** : une liste classée, avec la raison écrite par l'IA (« Retrouvez votre coiffeur favori à La Marsa pour votre coupe et brushing habituels »).
+- **Repli** : sans historique (visiteur ou nouveau compte), les salons les plus populaires ; si le modèle ne répond pas en 6 secondes, l'ordre du score local.
+- **Code** : `src/modules/catalog/infrastructure/ai-recommend.ts` (modèle) · `src/modules/catalog/domain/recommend.ts` (score et contrôle) · `GET /api/ai/recommendations`.
 
 ### Repères techniques
 
@@ -123,8 +123,9 @@ Le projet est découpé en **5 gestions**, une par membre de l'équipe. Chaque g
   - le meilleur créneau de 2 heures ;
   - l'**affluence en direct** et l'attente estimée dans la file ;
   - les **heures creuses**, transmises à la réservation (gestion 3) pour accorder **+10 points** aux clientes qui y réservent.
-- **Repli** : sans historique suffisant (nouveau salon), une courbe type d'un salon de quartier est utilisée. La source est affichée honnêtement.
-- **Code** : `src/modules/affluence/domain/forecast.ts` · `/api/salons/[slug]/live`, `/api/salons/[slug]/queue`.
+- **Conseils de l'IA** (dashboard du gérant) : le **modèle Gemini** analyse le tableau de la semaine et les prestations du salon et rédige **3 conseils chiffrés** : où renforcer l'équipe, quelle offre lancer (prestation, jour, heure) pour remplir un creux, comment s'organiser. Les chiffres viennent du tableau (vérifié). Gardés 6 heures.
+- **Repli** : sans historique suffisant (nouveau salon), une courbe type d'un salon de quartier est utilisée, sans conseils de l'IA. La source est affichée honnêtement.
+- **Code** : `src/modules/affluence/domain/forecast.ts` (prévision) · `src/modules/affluence/infrastructure/ai-advice.ts` (conseils) · `/api/salons/[slug]/live`, `/api/salons/[slug]/queue`.
 
 ### Repères techniques
 
@@ -166,11 +167,14 @@ Le projet est découpé en **5 gestions**, une par membre de l'équipe. Chaque g
 
 ### IA — Assistante de réservation
 
-- **Entrée** : une phrase libre en français, en arabe (darija courante comprise) ou en anglais. Par exemple : « je veux une coupe samedi après-midi à La Marsa ».
-- **Méthode** : l'assistante repère la prestation, la date, le moment de la journée, l'heure et la ville. Elle répond aussi aux questions fréquentes. Elle cherche ensuite de **vrais créneaux libres** dans les salons les mieux adaptés, dans l'ordre de la recommandation de la gestion 1.
+- **Entrée** : une phrase libre en français, en arabe, en derja tunisienne (lettres arabes ou arabizi) ou en anglais. Par exemple : « nheb n9os cha3ri nhar el thlath sbe7 ».
+- **Méthode** :
+  - le **modèle Groq GPT-OSS 120B** comprend la demande (prestation, date, moment, heure, ville, salon) avec les données du site, et répond aux questions (prix, horaires, règles) dans la langue et l'écriture du client ;
+  - le site cherche de **vrais créneaux libres** dans les salons les mieux adaptés (ordre de la recommandation de la gestion 1), puis le modèle rédige la réponse ;
+  - un jour nommé (« jeudi », « ghodwa ») est recalculé par les règles ; les gros mots sont masqués avant tout envoi au modèle.
 - **Sortie** : des créneaux réels proposés. La réservation n'est faite **qu'après confirmation explicite**, par l'API de réservation habituelle.
-- **Repli** : une demande non comprise renvoie vers le formulaire de réservation.
-- **Code** : `src/modules/assistant/domain/nlu.ts` · `POST /api/ai/chat`.
+- **Repli** : Gemini si Groq ne répond pas, puis l'assistante à règles (`nlu.ts`), puis le formulaire de réservation.
+- **Code** : `src/modules/assistant/infrastructure/ai-chat.ts` (modèles) · `src/modules/assistant/domain/nlu.ts` (règles) · `POST /api/ai/chat`.
 
 ### Repères techniques
 
@@ -203,14 +207,14 @@ Le projet est découpé en **5 gestions**, une par membre de l'équipe. Chaque g
 
 - **Entrée** : le texte et la note de chaque avis.
 - **Méthode** :
-  - **sentiment** calculé avec un lexique français, anglais et arabe (darija comprise) qui tient compte des négations et des emojis, puis croisé avec la note ;
-  - **aspects** : accueil, résultat, attente, prix, propreté, conseil et ponctualité, chacun jugé positif ou négatif ;
-  - **score de suspicion** de 0 à 100 : texte creux, note incohérente avec le texte, liens…
+  - le **modèle Gemini** lit chaque avis à sa publication : **sentiment** (il comprend l'ironie, les avis mitigés, la derja), **aspects** (accueil, résultat, attente, prix, propreté, conseil, ponctualité, chacun positif ou négatif) et **score de suspicion** de 0 à 100 avec sa raison ;
+  - les règles locales ajoutent les indices objectifs de faux avis (lien, mots répétés, majuscules, note contredite) : la suspicion retenue est la plus haute des deux ; à partir de 50, l'avis part en modération ;
+  - Gemini rédige aussi le **résumé des avis** du salon en français, arabe et anglais, recalculé quand de nouveaux avis arrivent.
 - **Sorties** :
-  - sur la fiche du salon : la synthèse (répartition des sentiments, points forts, points à améliorer) ;
-  - pour la modération : les avis suspects envoyés en file.
-- **Repli** : si le texte ne contient aucun indice, le sentiment vient de la note seule. Les avis anciens sont analysés par la tâche planifiée.
-- **Code** : `src/modules/reviews/domain/analysis.ts` · `POST /api/ai/reviews/analyze`.
+  - sur la fiche du salon et le dashboard : le résumé écrit par l'IA, la répartition des sentiments, les points forts et à améliorer ;
+  - pour la modération : les avis suspects envoyés en file, avec la raison donnée par l'IA.
+- **Repli** : lexique français, anglais, arabe et derja (négations, emojis) croisé avec la note. Les avis anciens sont analysés par la tâche planifiée avec ce lexique, pour préserver le quota.
+- **Code** : `src/modules/reviews/infrastructure/ai-analysis.ts` (modèle) · `src/modules/reviews/domain/analysis.ts` (règles et contrôle) · `POST /api/ai/reviews/analyze`.
 
 ### Repères techniques
 
@@ -271,25 +275,39 @@ Le projet est découpé en **5 gestions**, une par membre de l'équipe. Chaque g
 
 - **Entrée** : une photo des cheveux ou du visage, avec consentement.
 - **Méthode** :
-  - mesures calculées **dans le navigateur** à partir des pixels (luminosité, contraste, saturation, reflets, rougeurs, netteté, différence racines/pointes) : **la photo ne quitte jamais l'appareil** ;
-  - des **règles explicables** (seuils) en déduisent les points d'attention. Pour les cheveux : terne, frisottis, pointes sèches, racines. Pour le visage : rougeurs, brillance, teint irrégulier, pores, déshydratation.
+  - le navigateur mesure la photo (luminosité, netteté…) : une photo trop sombre ou floue est refusée **sans appel au modèle** ;
+  - la photo, réduite à 768 px, est regardée par le **modèle de vision Gemini**, qui relève les points d'attention réellement visibles (cheveux : terne, frisottis, pointes sèches, racines ; visage : rougeurs, brillance, teint irrégulier, teint terne, pores, déshydratation), un indice de santé et une phrase d'explication ;
+  - la photo n'est **jamais enregistrée** ni montrée aux salons (consentement explicite) ; si le modèle ne voit pas de visage ou de cheveux, une autre photo est demandée.
 - **Sortie** :
   - conseils et **vraies prestations** des salons adaptés, dans l'ordre de la recommandation de la gestion 1 ;
   - pour une cliente connectée : le résultat enregistré dans son historique, et +10 points une fois par mois.
 - **Message affiché** : « conseil indicatif, pas un diagnostic médical ».
-- **Repli** : si la photo est trop sombre ou floue, une nouvelle photo est demandée.
-- **Code** : `src/modules/beauty/domain/analysis.ts` · page `/analyse-beaute` · `POST /api/ai/beauty`.
+- **Repli** : si le modèle ne répond pas, des **règles explicables** (seuils sur les mesures, rougeur lue dans la teinte CIELAB) donnent le diagnostic.
+- **Code** : `src/modules/beauty/infrastructure/vision.ts` (modèle) · `src/modules/beauty/domain/analysis.ts` (mesures, règles, contrôle) · page `/analyse-beaute` · `POST /api/ai/beauty`.
+
+### IA — Essai virtuel de couleur
+
+- **Entrée** : une photo de face (caméra ou fichier) et une teinte parmi 12 (naturelles, chaudes, tendance), avec un curseur d'intensité.
+- **Méthode** :
+  - un **modèle de segmentation des cheveux** (MediaPipe *hair segmenter*, réseau de neurones de Google, licence Apache 2.0) s'exécute **dans le navigateur** (WebAssembly, carte graphique si possible) et donne, pixel par pixel, la probabilité « cheveux » ;
+  - la teinte est appliquée dans l'espace CIELAB : la luminosité moyenne des cheveux glisse vers celle de la teinte, le relief (mèches, boucles) est gardé, les ombres restent dorées et non kaki, le fond pris dans le contour et les reflets de lumière gardent leur couleur (pas de halo) ;
+  - comparaison avant / après par glissement, téléchargement de l'image, lien « Réserver une coloration » (salons qui proposent une coloration).
+- **Confidentialité** : la photo **ne quitte jamais l'appareil** (aucun envoi, aucun enregistrement) ; pas de consentement à demander.
+- **Pourquoi pas une IA générative ?** La génération d'images de Gemini (« Nano Banana ») a un quota gratuit de **0** (essai réel du 7 novembre 2026 : erreur 429 `limit: 0` sur les 6 modèles d'image) ; elle n'est utilisable qu'avec une clé payante.
+- **Limites** : simulation indicative (couleur seulement, pas la coupe) ; mèches folles hors du masque, cheveux vus de dos ou couverts mal détectés (« Cheveux introuvables » sous 1,5 % de la photo) ; passer du noir au blond polaire donne un rendu plus gris que réel.
+- **Fichiers** : moteur copié depuis `node_modules` vers `public/mediapipe` par `scripts/copy-mediapipe.mjs` (après `npm install` et avant `npm run build`, dossier non versionné), modèle `public/models/hair_segmenter.tflite` (780 Ko) ; premier essai ≈ 13 Mo à télécharger, ensuite en cache.
+- **Code** : `src/modules/beauty/domain/try-on.ts` (teintes, recoloration, testé) · `src/components/ai/hair-try-on.tsx` · `src/components/ai/camera.tsx` (caméra partagée avec l'analyse beauté) · page `/essai-couleur`.
 
 ### Repères techniques
 
 | | |
 |---|---|
 | Modules | `account`, `loyalty`, `notifications`, `subscription`, `beauty` |
-| Pages | `/compte/*`, `/analyse-beaute`, `/pro`, `/dashboard/abonnement`, `/admin/abonnements`, `/offline` |
+| Pages | `/compte/*`, `/analyse-beaute`, `/essai-couleur`, `/pro`, `/dashboard/abonnement`, `/admin/abonnements`, `/offline` |
 | API | `/api/me/*`, `/api/subscriptions`, `/api/admin/payments/*`, `/api/ai/beauty` |
 | Collections | `User` (compte fidélité et favoris imbriqués), `PointRule`, `PointTransaction`, `PointCampaign`, `Reward`, `Redemption`, `PhotoAnalysis`, `Notification`, `PushSubscription`, `OutboxMessage`, `PlanPayment` |
 | Événements écoutés | `booking.completed`, `booking.noShow`, `review.published`, `user.registered` |
-| Tests | `loyalty-reviews`, `loyalty-admin`, `subscription`, `beauty`, `scheduler` |
+| Tests | `loyalty-reviews`, `loyalty-admin`, `subscription`, `beauty`, `try-on`, `scheduler` |
 
 ---
 

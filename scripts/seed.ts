@@ -15,13 +15,15 @@ import { Types } from "mongoose";
 import type { BookingStatus, Category, PlanId, PointReason } from "../src/core/domain/enums";
 import { PLAN_PRICES } from "../src/core/domain/enums";
 import { slugify } from "../src/core/domain/text";
-import { addDays, toMinutes, tunisToday, tunisToUtc } from "../src/core/domain/time";
+import { addDays, toMinutes, tunisToday, tunisToUtc, weekdayOf } from "../src/core/domain/time";
 import {
+  Attendance,
   AuditLog,
   Booking,
   disconnectDb,
   Employee,
   Notification,
+  Payslip,
   PlanPayment,
   PointCampaign,
   Product,
@@ -59,6 +61,7 @@ import {
 } from "../src/lib/data";
 import { DEFAULT_RULES } from "../src/modules/loyalty";
 import { analyzeMissingReviews } from "../src/modules/reviews";
+import { generatePayslips, updatePayslip } from "../src/modules/payroll";
 import { ACTIVE_STATUSES } from "../src/modules/booking";
 import { acquireSlices } from "../src/modules/booking/infrastructure/slot-locks";
 
@@ -589,6 +592,51 @@ async function main() {
 
   // IA P4 : analyse des avis de démonstration (sentiment, aspects, suspicion)
   await analyzeMissingReviews();
+
+  // ── Paie & pointage du Salon Yasmine : salaires, pointage depuis le début du mois précédent, fiches du mois précédent ──
+  {
+    const salonId = (await Salon.findOne({ slug: "salon-yasmine-la-marsa" }, { _id: 1, openingHours: 1 }).lean())!;
+    const pay: Record<string, { baseSalary: number; commissionRate: number }> = {
+      amira: { baseSalary: 1400, commissionRate: 5 },
+      nour: { baseSalary: 1200, commissionRate: 5 },
+      ines: { baseSalary: 1100, commissionRate: 3 },
+      sami: { baseSalary: 1050, commissionRate: 3 },
+    };
+    for (const [key, values] of Object.entries(pay)) {
+      await Employee.updateOne({ _id: employeeIds.get(`salon-yasmine-la-marsa:${key}`)! }, { $set: { ...values, overtimeRate: 25 } });
+    }
+    const previous = (() => {
+      const [y, m] = TODAY.split("-").map(Number);
+      return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
+    })();
+    const rows: { salon: Types.ObjectId; employee: Types.ObjectId; date: string; segments: { in: Date; out: Date }[]; status?: "EXCUSED" }[] = [];
+    let seed = 7;
+    const jitter = (max: number) => ((seed = (seed * 9301 + 49297) % 233280) / 233280) * max;
+    for (let date = `${previous}-01`; date < TODAY; date = addDays(date, 1)) {
+      const opening = salonId.openingHours.find((o) => o.weekday === weekdayOf(date));
+      if (!opening?.opensAt || !opening.closesAt) continue;
+      Object.keys(pay).forEach((key, index) => {
+        const employee = employeeIds.get(`salon-yasmine-la-marsa:${key}`)!;
+        const day = Number(date.slice(8));
+        if (key === "sami" && day === 12) return; // une absence non justifiée
+        if (key === "ines" && day === 20) return void rows.push({ salon: salonId._id, employee, date, segments: [], status: "EXCUSED" }); // congé justifié
+        const start = toMinutes(opening.opensAt!) + Math.round(jitter(12)) - 4;
+        // Heures sup : Amira reste plus tard le samedi, Nour certains vendredis
+        const extra = (key === "amira" && weekdayOf(date) === 6) || (key === "nour" && weekdayOf(date) === 5 && index % 2 === 1) ? 60 + Math.round(jitter(30)) : 0;
+        const end = toMinutes(opening.closesAt!) - Math.round(jitter(10)) + extra;
+        const hhmm = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+        rows.push({ salon: salonId._id, employee, date, segments: [{ in: tunisToUtc(date, hhmm(start)), out: tunisToUtc(date, hhmm(end)) }] });
+      });
+    }
+    await Attendance.insertMany(rows);
+    await generatePayslips(String(salonId._id), previous);
+    // Fiches d'Amira et de Nour validées (Nour est prévenue) ; celles d'Ines et Sami restent en brouillon, à valider par la gérante
+    const manager = { id: yasmine._id.toString(), role: "MANAGER" as const };
+    for (const key of ["amira", "nour"]) {
+      const slip = await Payslip.findOne({ employee: employeeIds.get(`salon-yasmine-la-marsa:${key}`)!, period: previous }).lean();
+      if (slip) await updatePayslip(manager, String(slip._id), { bonus: key === "nour" ? 50 : 0, action: "validate" });
+    }
+  }
 
   const counts = await Promise.all([User.countDocuments(), Salon.countDocuments(), Booking.countDocuments(), Review.countDocuments()]);
   console.info(`Seed terminé (${TODAY}) : ${counts[0]} utilisateurs, ${counts[1]} salons, ${counts[2]} réservations, ${counts[3]} avis.`);

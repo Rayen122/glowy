@@ -1,7 +1,9 @@
-import { objectId, Review } from "@/infrastructure/db";
+import { geminiEnabled } from "@/infrastructure/ai/gemini";
+import { objectId, Review, Salon } from "@/infrastructure/db";
 import { analyzeReview, summarizeReviews, type Aspect } from "../domain/analysis";
+import { refreshReviewSummary, type ReviewSummaryText } from "./ai-analysis";
 
-/** IA P4 : avis pas encore analysés (anciens avis, données importées) — lancé par le planificateur */
+/** IA P4 : avis pas encore analysés (anciens avis, données importées) — lancé par le planificateur, règles locales (quota du modèle préservé) */
 export async function analyzeMissingReviews(limit = 500) {
   const pending = await Review.find({ analyzedAt: null }, { text: 1, rating: 1, suspicion: 1 }).limit(limit).lean();
   for (const r of pending) {
@@ -12,11 +14,20 @@ export async function analyzeMissingReviews(limit = 500) {
   return pending.length;
 }
 
-/** Synthèse des avis publiés d'un salon : sentiments, points forts, points à améliorer */
+/**
+ * Synthèse des avis publiés d'un salon : sentiments, points forts, points à améliorer, et résumé rédigé par le modèle d'IA.
+ * Le résumé est recalculé en arrière-plan quand le nombre d'avis a changé (la page ne l'attend pas).
+ */
 export async function salonReviewInsights(salonId: string) {
-  const reviews = await Review.find({ salon: objectId(salonId), status: "PUBLISHED", analyzedAt: { $ne: null } }, { sentiment: 1, aspects: 1 }).sort({ createdAt: -1 }).limit(300).lean();
+  const [reviews, salon] = await Promise.all([
+    Review.find({ salon: objectId(salonId), status: "PUBLISHED", analyzedAt: { $ne: null } }, { sentiment: 1, aspects: 1 }).sort({ createdAt: -1 }).limit(300).lean(),
+    Salon.findById(objectId(salonId), { reviewSummary: 1 }).lean(),
+  ]);
   const summary = summarizeReviews(reviews.map((r) => ({ sentiment: r.sentiment ?? null, aspects: (r.aspects ?? []).map((a) => ({ aspect: a.aspect ?? "", polarity: a.polarity ?? 0 })) })));
-  return { ...summary, strengths: summary.strengths as Aspect[], weaknesses: summary.weaknesses as Aspect[] };
+  const stored = salon?.reviewSummary;
+  if (geminiEnabled() && summary.analysed >= 3 && stored?.count !== reviews.length) void refreshReviewSummary(salonId);
+  const text: ReviewSummaryText | null = stored?.fr ? { fr: stored.fr, ar: stored.ar ?? stored.fr, en: stored.en ?? stored.fr } : null;
+  return { ...summary, strengths: summary.strengths as Aspect[], weaknesses: summary.weaknesses as Aspect[], text };
 }
 
 export type ReviewInsights = Awaited<ReturnType<typeof salonReviewInsights>>;

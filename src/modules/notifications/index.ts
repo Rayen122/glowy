@@ -26,6 +26,6 @@ export { emailIsSimulated, latestOutbox };
 /** RES-07 : rappels avant les rendez-vous (lancés par le planificateur) */
 export const sendReminders = (now = new Date()) => sendBookingReminders({ notify, email: sendEmail, sms: sendSms }, now);
 
-export { bookingReminder, planExpired, planExpiring, pointsEarned, pointsExpired, pointsExpiring, pushTest, type Message } from "./domain/messages";
+export { bookingReminder, payslipReady, planExpired, planExpiring, pointsEarned, pointsExpired, pointsExpiring, pushTest, type Message } from "./domain/messages";
 export { pushSubscriptionInput, pushUnsubscribeInput } from "./application/schemas";
 export type { Notify } from "./application/notifier";
