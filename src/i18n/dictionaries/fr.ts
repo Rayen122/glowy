@@ -104,6 +104,15 @@ export const fr = {
       cta: "Installer",
       later: "Plus tard",
       iosHint: "Touchez {share} puis « Sur l'écran d'accueil ».",
+      iosText: "Ajoutez Glowy à votre écran d'accueil : il s'ouvre comme une application, même hors connexion.",
+      iosCta: "Comment installer",
+      iosTitle: "Installer Glowy sur iPhone",
+      iosDone: "C'est fait",
+      iosSteps: {
+        safariNew: ["Touchez {more} à droite de l'adresse, en bas de l'écran.", "Touchez {share} « Partager ».", "Touchez {add} « Sur l'écran d'accueil », puis « Ajouter »."],
+        safari: ["Touchez {share} « Partager » dans la barre de Safari.", "Faites défiler et touchez {add} « Sur l'écran d'accueil ».", "Touchez « Ajouter » en haut à droite."],
+        other: ["Touchez {share} « Partager » dans la barre d'adresse.", "Touchez {add} « Ajouter à l'écran d'accueil ».", "Touchez « Ajouter »."],
+      },
       menu: "Installer l'application",
     },
     offline: {

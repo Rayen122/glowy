@@ -99,6 +99,15 @@ export const en: Dictionary = {
       cta: "Install",
       later: "Later",
       iosHint: "Tap {share} then “Add to Home Screen”.",
+      iosText: "Add Glowy to your Home Screen: it opens like an app, even offline.",
+      iosCta: "How to install",
+      iosTitle: "Install Glowy on iPhone",
+      iosDone: "Done",
+      iosSteps: {
+        safariNew: ["Tap {more} next to the address, at the bottom of the screen.", "Tap {share} “Share”.", "Tap {add} “Add to Home Screen”, then “Add”."],
+        safari: ["Tap {share} “Share” in Safari's toolbar.", "Scroll and tap {add} “Add to Home Screen”.", "Tap “Add” in the top right corner."],
+        other: ["Tap {share} “Share” in the address bar.", "Tap {add} “Add to Home Screen”.", "Tap “Add”."],
+      },
       menu: "Install the app",
     },
     offline: {
