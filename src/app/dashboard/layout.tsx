@@ -26,6 +26,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
         { href: "/dashboard", label: d.nav.myDay, icon: <LayoutGrid />, exact: true },
         { href: "/dashboard/agenda", label: d.nav.myAgenda, icon: <CalendarDays /> },
         { href: "/dashboard/file-attente", label: t.manage.queue.title, icon: <ListOrdered /> },
+        // Son pointage et ses fiches de paie (jamais celles de ses collègues)
+        { href: "/dashboard/paie", label: t.manage.payroll.myTitle, icon: <Wallet /> },
       ],
     },
     { label: d.nav.help, items: [{ href: "/dashboard/support", label: t.manage.support.title, icon: <Headset /> }] },
