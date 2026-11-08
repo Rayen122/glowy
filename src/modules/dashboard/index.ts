@@ -9,7 +9,7 @@ import { eventBus } from "@/infrastructure/event-bus";
 import type { BranchInput } from "./application/schemas";
 import { createBranch as applyCreateBranch } from "./infrastructure/branches";
 
-export { recentSalonReviews, salonDay, salonKpis, salonRange, staffSalon } from "./infrastructure/queries";
+export { employeeDay, recentSalonReviews, salonDay, salonKpis, salonRange, staffSalon } from "./infrastructure/queries";
 export { blockSlot, setupSalon, unblockSlot } from "./infrastructure/actions";
 export {
   blockSlotInput,

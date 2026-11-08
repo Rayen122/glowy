@@ -7,7 +7,9 @@ import { StatTile } from "@/components/charts/stat-tile";
 import { BookingStatusActions } from "@/components/dashboard/booking-status";
 import { getI18n } from "@/i18n/server";
 import { HEATMAP_HOURS, weekdayIso } from "@/lib/data";
-import { recentSalonReviews, salonKpis, salonStats, staffSalon } from "@/modules/dashboard";
+import { employeeDay, recentSalonReviews, salonKpis, salonStats, staffSalon } from "@/modules/dashboard";
+import { ownEmployee } from "@/modules/identity";
+import type { Actor } from "@/core/domain/actor";
 import { requirePageUser } from "@/infrastructure/session";
 import { tunisToday } from "@/core/domain/time";
 import { cn } from "@/lib/utils";
@@ -30,6 +32,7 @@ const PERIODS = ["today", "d7", "d30", "month"] as const;
 export default async function DashboardPage() {
   const user = await requirePageUser("MANAGER", "EMPLOYEE", "ADMIN");
   const salon = await staffSalon(user);
+  if (user.role === "EMPLOYEE") return <EmployeeDay actor={user} firstName={user.firstName} salonId={salon.id} />;
   const access = await planAccess(salon.id);
   const [{ t, tc, f, nf, money, df, hour }, kpis, reviews, stats30, week] = await Promise.all([
     getI18n(),
@@ -130,7 +133,7 @@ export default async function DashboardPage() {
               </ul>
             </>
           ) : (
-            <PlanUpsell feature="affluence" canUpgrade={user.role !== "EMPLOYEE"} compact className="mt-5" />
+            <PlanUpsell feature="affluence" canUpgrade compact className="mt-5" />
           )}
         </section>
 
@@ -257,6 +260,95 @@ export default async function DashboardPage() {
           <Lightbulb className="mt-0.5 size-3.5 shrink-0" aria-hidden /> {o.humanDecision}
         </p>
       </section>
+    </div>
+  );
+}
+
+/** « Ma journée » de l'employé : ses rendez-vous et ses chiffres, sans le chiffre d'affaires ni la gestion du salon */
+async function EmployeeDay({ actor, firstName, salonId }: { actor: Actor; firstName: string; salonId: string }) {
+  const [{ t, tc, f, nf, df }, me] = await Promise.all([getI18n(), ownEmployee(actor)]);
+  const d = t.dashboard;
+  const e = d.employee;
+  const today = tunisToday();
+  const header = (
+    <header>
+      <p className="text-sm text-muted-foreground first-letter:uppercase">{df(today, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
+      <h1 data-animate="split" className="display mt-1 text-3xl text-ink sm:text-4xl">
+        {f(t.account.overview.hello, { name: firstName })}
+      </h1>
+    </header>
+  );
+  if (!me) {
+    return (
+      <div className="space-y-6">
+        {header}
+        <p className="rounded-2xl bg-sand p-4 text-sm font-medium text-plum-800 ring-1 ring-border">{e.noProfile}</p>
+      </div>
+    );
+  }
+  const day = await employeeDay(salonId, me.id);
+  const done = day.bookings.filter((b) => b.status === "COMPLETED").length;
+  const open = day.bookings.filter((b) => b.status !== "COMPLETED" && b.status !== "NO_SHOW");
+  const upcoming = open.filter((b) => b.end > day.nowTime);
+  const toCheck = open.length - upcoming.length;
+  const next = upcoming[0];
+
+  return (
+    <div className="space-y-6">
+      {header}
+      <section data-animate="stagger" className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4" aria-label={e.kpiAria}>
+        <StatTile label={e.today} value={nf(day.bookings.length)} icon={<CalendarCheck />} />
+        <StatTile label={e.done} value={nf(done)} icon={<CircleCheck />} />
+        <StatTile label={e.next} value={next ? next.time : e.nextNone} icon={<Hourglass />} />
+        <StatTile label={e.month} value={nf(day.month)} icon={<Star />} />
+      </section>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+        <section className="flex min-w-0 flex-col rounded-3xl bg-card p-4 ring-1 ring-border sm:p-6" aria-labelledby="my-day-title">
+          <div className="flex items-center justify-between gap-3">
+            <h2 id="my-day-title" className="font-semibold">
+              {e.upcoming}
+            </h2>
+            <Link href="/dashboard/agenda" className="inline-flex items-center gap-1 text-sm font-semibold text-plum-700 hover:underline">
+              {d.nav.myAgenda} <ArrowRight className="size-4 rtl:rotate-180" aria-hidden />
+            </Link>
+          </div>
+          <ul className="mt-4 divide-y divide-border">
+            {upcoming.map((b) => {
+              const st = STATUS_STYLE[b.uiStatus];
+              return (
+                <li key={b.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
+                  <span className={cn("h-10 w-1 shrink-0 rounded-full", SERIES_BG[b.color])} aria-hidden />
+                  <span className="w-12 shrink-0 text-sm font-semibold tabular-nums">{b.time}</span>
+                  <span className="min-w-32 flex-1">
+                    <span className="block truncate text-sm font-medium">{b.client}</span>
+                    <span className="block truncate text-xs text-muted-foreground">{tc(b.service)}</span>
+                  </span>
+                  <span className={cn("ms-auto inline-flex shrink-0 items-center gap-1 text-xs font-medium", st.className)}>
+                    <st.icon className="size-3.5" aria-hidden />
+                    {d.bookingStatus[b.uiStatus]}
+                  </span>
+                  <div className="ms-auto">
+                    <BookingStatusActions bookingId={b.id} actions={b.actions} />
+                  </div>
+                </li>
+              );
+            })}
+            {upcoming.length === 0 && <li className="py-6 text-center text-sm text-muted-foreground">{e.empty}</li>}
+          </ul>
+          {toCheck > 0 && (
+            <Link href="/dashboard/agenda" className="mt-2 inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold text-plum-700 hover:underline">
+              {f(d.toCheck, { n: toCheck })} <ArrowRight className="size-4 rtl:rotate-180" aria-hidden />
+            </Link>
+          )}
+        </section>
+        <section className="rounded-3xl bg-card p-4 ring-1 ring-border sm:p-6" aria-labelledby="my-week-title">
+          <h2 id="my-week-title" className="font-semibold">
+            {e.week}
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">{f(e.weekText, { n: day.week })}</p>
+        </section>
+      </div>
     </div>
   );
 }

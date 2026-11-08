@@ -16,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** SAL-09 : caisse du jour */
 export default async function CashierPage({ searchParams }: PageProps<"/dashboard/caisse">) {
-  const user = await requirePageUser("MANAGER", "EMPLOYEE", "ADMIN");
+  const user = await requirePageUser("MANAGER", "ADMIN");
   const asked = (await searchParams).date;
   const today = tunisToday();
   const date = typeof asked === "string" && isIsoDate(asked) ? asked : today;

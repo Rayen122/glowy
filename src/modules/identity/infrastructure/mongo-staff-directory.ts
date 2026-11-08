@@ -17,4 +17,9 @@ export const mongoStaffDirectory: StaffDirectory = {
     const employee = user ? await Employee.findOne({ user }, { salon: 1 }).lean() : null;
     return employee ? employee.salon.toString() : null;
   },
+  employeeOf: async (userId) => {
+    const user = objectId(userId);
+    const employee = user ? await Employee.findOne({ user }, { key: 1, name: 1 }).lean() : null;
+    return employee ? { id: idOf(employee), key: employee.key, name: employee.name } : null;
+  },
 };

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { staffSalonId } from "@/modules/identity";
+import { ownEmployee, staffSalonId } from "@/modules/identity";
 import { salonAgenda } from "@/modules/booking";
 import { ok, readQuery, route } from "@/infrastructure/http";
 import { requireUser } from "@/infrastructure/session";
@@ -15,5 +15,9 @@ const query = z.object({
 export const GET = route(async (request) => {
   const actor = await requireUser("MANAGER", "EMPLOYEE", "ADMIN");
   const { date, salonId } = readQuery(request, query);
-  return ok(await salonAgenda(await staffSalonId(actor, salonId), date ?? tunisToday()));
+  const agenda = await salonAgenda(await staffSalonId(actor, salonId), date ?? tunisToday());
+  if (actor.role !== "EMPLOYEE") return ok(agenda);
+  // Employé : seulement sa colonne et ses rendez-vous
+  const me = await ownEmployee(actor);
+  return ok({ ...agenda, employees: agenda.employees.filter((e) => e.id === me?.id), bookings: agenda.bookings.filter((b) => b.employeeId === me?.id) });
 });

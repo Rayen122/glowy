@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
 /** SAL-09 : facture côté salon (impression, annulation par le gérant) */
 export default async function DashboardInvoicePage({ params }: PageProps<"/dashboard/caisse/[id]">) {
   const { id } = await params;
-  const user = await requirePageUser("MANAGER", "EMPLOYEE", "ADMIN");
+  const user = await requirePageUser("MANAGER", "ADMIN");
   const invoice = await invoiceDetail(user, id).catch((error) => {
     if (error instanceof AppError && error.status === 404) notFound();
     throw error;

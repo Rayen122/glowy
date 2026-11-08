@@ -16,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** AVI-04 (réponse publique) et AVI-05 (signalement) côté salon */
 export default async function SalonReviewsPage({ searchParams }: PageProps<"/dashboard/avis">) {
-  const user = await requirePageUser("MANAGER", "EMPLOYEE", "ADMIN");
+  const user = await requirePageUser("MANAGER", "ADMIN");
   const sp = await searchParams;
   const asked = Array.isArray(sp.filtre) ? sp.filtre[0] : sp.filtre;
   const filter: StaffReviewFilter = (STAFF_REVIEW_FILTERS as readonly string[]).includes(asked ?? "") ? (asked as StaffReviewFilter) : "all";

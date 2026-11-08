@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** SAL-12 : stocks du salon ; l'équipe enregistre les mouvements, le gérant gère les fiches produit */
 export default async function StocksPage() {
-  const user = await requirePageUser("MANAGER", "EMPLOYEE", "ADMIN");
+  const user = await requirePageUser("MANAGER", "ADMIN");
   const salon = await staffSalon(user);
   // Fonction réservée à un plan supérieur : présentation du plan à la place de la page
   if (!(await planAccess(salon.id)).features.includes("stocks")) return <PlanUpsell feature="stocks" canUpgrade={user.role !== "EMPLOYEE"} />;

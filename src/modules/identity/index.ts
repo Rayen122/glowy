@@ -12,7 +12,7 @@ import { cryptoTokens } from "./infrastructure/crypto-tokens";
 import { mongoAccountRepository } from "./infrastructure/mongo-account-repository";
 import { mongoStaffDirectory } from "./infrastructure/mongo-staff-directory";
 
-export const { staffSalonId, canManageSalon } = makeAccess(mongoStaffDirectory);
+export const { staffSalonId, canManageSalon, ownEmployee, canHandleBooking } = makeAccess(mongoStaffDirectory);
 export const { register, authenticate, demoAccount, sessionUser, createStaffAccount, requestPasswordReset, resetPassword, sendEmailVerification, verifyEmail, changePassword, oauthSignIn } = makeIdentity({
   accounts: mongoAccountRepository,
   hasher: bcryptPasswordHasher,

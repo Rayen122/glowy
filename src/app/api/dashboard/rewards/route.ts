@@ -5,7 +5,7 @@ import { createSalonReward, listSalonRewards, salonRewardInput } from "@/modules
 
 /** GET /api/dashboard/rewards — récompenses fidélité propres au salon (FID-06) */
 export const GET = route(async () => {
-  const actor = await requireUser("MANAGER", "EMPLOYEE", "ADMIN");
+  const actor = await requireUser("MANAGER", "ADMIN");
   return ok(await listSalonRewards(await currentSalonId(actor)));
 });
 

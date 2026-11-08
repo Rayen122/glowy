@@ -135,7 +135,7 @@ export function makeBooking({ bookings, access, promotions, events, clock, offPe
     const now = clock.now();
     const booking = await load(bookingId);
     const byClient = booking.clientId === actor.id;
-    if (!byClient && !(await access.canManageSalon(actor, booking.salonId))) throw forbidden();
+    if (!byClient && !(await access.canHandleBooking(actor, booking))) throw forbidden();
     if (!isActive(booking.status)) throw conflict("NOT_CANCELLABLE", "Ce rendez-vous ne peut plus être annulé.");
     // Après l'heure, la cliente ne transforme pas une absence en annulation : c'est au salon de pointer la visite
     if (byClient && hasStarted(booking.startsAt, now)) {
@@ -183,7 +183,7 @@ export function makeBooking({ bookings, access, promotions, events, clock, offPe
   /** Suivi par le salon : en cours, terminé (déclenche les points, AVI-01) ou absent (pénalité) */
   async function setBookingStatus(bookingId: string, actor: Actor, action: StaffAction) {
     const booking = await load(bookingId);
-    if (!(await access.canManageSalon(actor, booking.salonId))) throw forbidden();
+    if (!(await access.canHandleBooking(actor, booking))) throw forbidden();
     const to = nextStatus(action, booking.status);
     if (!to) throw conflict("INVALID_TRANSITION", "Changement de statut impossible.");
     if (isTooLate(action, booking.startsAt, clock.now())) throw conflict("TOO_LATE", "L'heure de cette demande est passée : elle ne peut plus être confirmée.");

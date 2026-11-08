@@ -6,7 +6,7 @@ import { systemClock, type Clock } from "@/core/domain/clock";
 import type { EventSubscriber } from "@/core/domain/events";
 import { eventBus } from "@/infrastructure/event-bus";
 import { offPeakHoursFor } from "@/modules/affluence";
-import { canManageSalon } from "@/modules/identity";
+import { canHandleBooking, canManageSalon } from "@/modules/identity";
 import { notify } from "@/modules/notifications";
 import { createPromotionsModule } from "@/modules/promotions";
 import { makeBooking } from "./application/use-cases";
@@ -18,7 +18,7 @@ export const createBookingModule = (overrides: { clock?: Clock } = {}) => {
   const clock = overrides.clock ?? systemClock;
   return makeBooking({
     bookings: mongoBookingRepository,
-    access: { canManageSalon },
+    access: { canManageSalon, canHandleBooking },
     promotions: createPromotionsModule({ clock }),
     offPeak: { hours: offPeakHoursFor },
     events: eventBus,

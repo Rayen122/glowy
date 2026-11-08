@@ -8,6 +8,7 @@ import { getI18n } from "@/i18n/server";
 import { cn } from "@/lib/utils";
 import { salonDay, staffSalon } from "@/modules/dashboard";
 import { requirePageUser } from "@/infrastructure/session";
+import { ownEmployee } from "@/modules/identity";
 import { addDays, isIsoDate, tunisToday, utcToTunis } from "@/core/domain/time";
 import { PlanUpsell } from "@/components/dashboard/plan-upsell";
 import { planAccess } from "@/modules/subscription";
@@ -46,6 +47,12 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
   const salon = await staffSalon(user);
   const [{ t, tc, f, df }, day, access] = await Promise.all([getI18n(), salonDay(salon.id, date), planAccess(salon.id)]);
   const a = t.dashboard.agenda;
+  // Employé : seulement sa colonne et ses rendez-vous, pas ceux de ses collègues
+  const me = user.role === "EMPLOYEE" ? await ownEmployee(user) : null;
+  if (user.role === "EMPLOYEE") {
+    day.employees = day.employees.filter((e) => e.id === me?.id);
+    day.bookings = day.bookings.filter((b) => b.employeeId === me?.id);
+  }
   const EMPLOYEES = day.employees.map((e) => ({ id: e.id, name: e.name, avatar: e.avatarUrl, color: e.color, hours: e.workingHours }));
   const clamp = (minutes: number) => Math.min(END, Math.max(START, minutes));
   const now = utcToTunis(new Date());
