@@ -1,5 +1,5 @@
 
-const VERSION = "v3";
+const VERSION = "v4";
 const STATIC_CACHE = `bh-static-${VERSION}`;
 const PAGES_CACHE = `bh-pages-${VERSION}`;
 const PRIVATE_CACHE = `bh-private-${VERSION}`;
@@ -91,8 +91,11 @@ async function page(event) {
   }
 }
 
-/** Fichiers du site cités dans une page ou un script (« /_next/static/… » ou « static/chunks/… ») */
-const ASSET_RE = /(?:\/_next\/)?static\/(?:chunks|media|css)\/[^"'\s\\)]+/g;
+/**
+ * Fichiers du site cités dans une page ou un script (« /_next/static/… » ou « static/chunks/… ») ; en production
+ * sur Vercel, Next.js les range sous « static/immutable/chunks/… »
+ */
+const ASSET_RE = /(?:\/_next\/)?static\/(?:immutable\/)?(?:chunks|media|css)\/[^"'\s\\)]+/g;
 const assetUrls = (text) => (text.match(ASSET_RE) ?? []).map((u) => (u.startsWith("/_next/") ? u : `/_next/${u}`));
 /** Scripts déjà parcourus depuis le démarrage du service worker */
 const scanned = new Set();
