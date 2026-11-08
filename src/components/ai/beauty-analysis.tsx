@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Camera, Check, CircleAlert, ImagePlus, Info, LoaderCircle, Lock, RotateCcw, ScanFace, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { CameraView, useCamera, type Facing } from "@/components/ai/camera";
 import { PointsBadge } from "@/components/salon/badges";
 import { useI18n } from "@/i18n/client";
 import { api } from "@/lib/api";
@@ -16,29 +17,38 @@ import { cn } from "@/lib/utils";
 
 type Phase = "idle" | "analyzing" | "result" | "retake";
 type Mode = BeautyMode;
-type RetakeReason = "dark" | "blurry" | "overexposed" | "tainted";
+type RetakeReason = "dark" | "blurry" | "overexposed" | "subject" | "tainted";
 type Result = Extract<BeautyResult, { kind: "result" }>;
 
-/** Mesures de la photo dans le navigateur (image réduite à 128 px) : la photo n'est jamais envoyée */
-async function measurePhoto(src: string): Promise<Metrics> {
-  const img = new window.Image();
-  img.crossOrigin = "anonymous";
-  img.src = src;
-  await img.decode();
-  const scale = Math.min(1, 128 / Math.max(img.naturalWidth, img.naturalHeight));
+/** Image redessinée à `size` px de côté au plus */
+function drawScaled(img: HTMLImageElement, size: number) {
+  const scale = Math.min(1, size / Math.max(img.naturalWidth, img.naturalHeight));
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(3, Math.round(img.naturalWidth * scale));
   canvas.height = Math.max(3, Math.round(img.naturalHeight * scale));
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) throw new Error("canvas");
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height); // SecurityError si l'image n'est pas lisible
-  return measure(data, canvas.width, canvas.height);
+  return { canvas, ctx };
 }
 
 /**
- * Analyse beauté par photo (IA P5) : mesures calculées sur l'appareil, diagnostic et soins par l'API
- * POST /api/ai/beauty ; résultat enregistré et points crédités pour une cliente connectée.
+ * Mesures de la photo dans le navigateur (image réduite à 128 px : contrôle de qualité et secours) et copie réduite
+ * à 768 px en JPEG pour le modèle de vision (envoyée seulement après consentement, jamais enregistrée)
+ */
+async function readPhoto(src: string): Promise<{ metrics: Metrics; image: string }> {
+  const img = new window.Image();
+  img.crossOrigin = "anonymous";
+  img.src = src;
+  await img.decode();
+  const small = drawScaled(img, 128);
+  const { data } = small.ctx.getImageData(0, 0, small.canvas.width, small.canvas.height); // SecurityError si l'image n'est pas lisible
+  return { metrics: measure(data, small.canvas.width, small.canvas.height), image: drawScaled(img, 768).canvas.toDataURL("image/jpeg", 0.82) };
+}
+
+/**
+ * Analyse beauté par photo (IA P5) : la photo est regardée par le modèle de vision (Gemini) via POST /api/ai/beauty,
+ * les mesures faites sur l'appareil servent de contrôle de qualité et de secours ; résultat enregistré et points pour une cliente connectée.
  */
 export function BeautyAnalysis() {
   const { t, f, nf, money } = useI18n();
@@ -61,6 +71,15 @@ export function BeautyAnalysis() {
     [],
   );
 
+  /** Sélecteur de fichier ; `capture` : appareil photo du téléphone (repli quand la caméra dans la page est impossible) */
+  const pickFile = (capture?: Facing) => {
+    const input = inputRef.current;
+    if (!input) return;
+    if (capture) input.setAttribute("capture", capture);
+    else input.removeAttribute("capture");
+    input.click();
+  };
+
   const loadFile = (file?: File | null) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
@@ -73,16 +92,19 @@ export function BeautyAnalysis() {
     setPhase("idle");
   };
 
+  const camera = useCamera({ texts: a.camera, onPhoto: loadFile, onFallback: pickFile });
+  const openCamera = () => void camera.open(mode === "cheveux" ? "environment" : "user");
+
   async function analyze() {
     if (!photo) return;
     setPhase("analyzing");
     setStepIdx(0);
     try {
-      const metrics = await measurePhoto(photo);
+      const { metrics, image } = await readPhoto(photo);
       setStepIdx(1);
       const res = await api<BeautyResult>("/api/ai/beauty", {
         method: "POST",
-        body: { mode, metrics },
+        body: { mode, metrics, image },
       });
       setStepIdx(2);
       if (res.kind === "retake") {
@@ -167,10 +189,12 @@ export function BeautyAnalysis() {
           }}
           className={cn(
             "relative aspect-[4/5] max-h-[70vh] w-full overflow-hidden rounded-3xl border-2 border-dashed transition-colors sm:max-h-none",
-            photo ? "border-transparent bg-ink" : dragging ? "border-plum-400 bg-plum-50" : "border-plum-200 bg-card",
+            photo || camera.state !== "off" ? "border-transparent bg-ink" : dragging ? "border-plum-400 bg-plum-50" : "border-plum-200 bg-card",
           )}
         >
-          {photo ? (
+          {camera.state !== "off" ? (
+            <CameraView {...camera} />
+          ) : photo ? (
             <>
               <Image src={photo} alt={a.photoAlt} fill unoptimized sizes="(min-width:1024px) 40vw, 100vw" className="object-cover" />
               {phase === "analyzing" && (
@@ -189,13 +213,23 @@ export function BeautyAnalysis() {
                 ))}
               </div>
               <div className="absolute inset-x-4 bottom-4 flex justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={() => inputRef.current?.click()}
-                  className="inline-flex h-10 items-center gap-2 rounded-full bg-card/95 px-4 text-sm font-medium backdrop-blur hover:bg-card"
-                >
-                  <RotateCcw className="size-4" aria-hidden /> {a.change}
-                </button>
+                <span className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => pickFile()}
+                    className="inline-flex h-10 items-center gap-2 rounded-full bg-card/95 px-4 text-sm font-medium backdrop-blur hover:bg-card"
+                  >
+                    <RotateCcw className="size-4" aria-hidden /> {a.change}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openCamera}
+                    aria-label={a.openCamera}
+                    className="inline-flex size-10 items-center justify-center rounded-full bg-card/95 backdrop-blur hover:bg-card"
+                  >
+                    <Camera className="size-4" aria-hidden />
+                  </button>
+                </span>
                 <button
                   type="button"
                   onClick={removePhoto}
@@ -217,10 +251,17 @@ export function BeautyAnalysis() {
               <div className="flex flex-wrap justify-center gap-2">
                 <button
                   type="button"
-                  onClick={() => inputRef.current?.click()}
+                  onClick={openCamera}
                   className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-plum-800"
                 >
-                  <Camera className="size-4" aria-hidden /> {a.pick}
+                  <Camera className="size-4" aria-hidden /> {a.openCamera}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => pickFile()}
+                  className="inline-flex h-11 items-center gap-2 rounded-full border border-border bg-card px-5 text-sm font-semibold hover:bg-muted"
+                >
+                  <ImagePlus className="size-4" aria-hidden /> {a.pick}
                 </button>
                 <button
                   type="button"
@@ -232,7 +273,7 @@ export function BeautyAnalysis() {
               </div>
             </div>
           )}
-          <input ref={inputRef} type="file" accept="image/*" capture="user" className="sr-only" aria-label={a.pickAria} onChange={(e) => loadFile(e.target.files?.[0])} />
+          <input ref={inputRef} type="file" accept="image/*" className="sr-only" aria-label={a.pickAria} onChange={(e) => loadFile(e.target.files?.[0])} />
         </div>
 
         <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-card p-4 text-sm ring-1 ring-border">
@@ -325,6 +366,15 @@ export function BeautyAnalysis() {
                   <p className="text-xs text-muted-foreground">{a.healthIndex}</p>
                 </div>
               </div>
+              {r.profile.length > 0 && (
+                <ul className="mt-4 flex flex-wrap gap-1.5" aria-label={a.profileTitle}>
+                  {r.profile.map((p) => (
+                    <li key={p} className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium" dir="auto">
+                      {p}
+                    </li>
+                  ))}
+                </ul>
+              )}
               <p className="mt-4 leading-relaxed">
                 {r.healthy
                   ? f(a.summaryHealthy, { mode: a.modes[mode].toLowerCase() })
@@ -332,6 +382,28 @@ export function BeautyAnalysis() {
                       list: r.issues.map((i) => a.issues[i.key].toLowerCase()).join(", "),
                     })}
               </p>
+              {r.note && (
+                <p className="mt-3 flex gap-2 rounded-2xl bg-blush/60 p-3 text-sm leading-relaxed" dir="auto">
+                  <Sparkles className="mt-0.5 size-4 shrink-0 text-plum-700" aria-hidden />
+                  <span>
+                    <span className="font-semibold">{a.aiNote} : </span>
+                    {r.note}
+                  </span>
+                </p>
+              )}
+
+              {r.strengths.length > 0 && (
+                <>
+                  <h3 className="mt-6 text-sm font-semibold">{a.strengthsTitle}</h3>
+                  <ul className="mt-2 space-y-1.5">
+                    {r.strengths.map((x) => (
+                      <li key={x} className="flex gap-2 text-sm leading-relaxed" dir="auto">
+                        <Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden /> {x}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
 
               {!r.healthy && (
                 <>
@@ -350,8 +422,8 @@ export function BeautyAnalysis() {
 
               <h3 className="mt-6 text-sm font-semibold">{a.tipsTitle}</h3>
               <ol className="mt-2 space-y-2">
-                {(r.healthy ? a.healthyTips[mode] : r.issues.map((i) => a.tipsByIssue[i.key])).map((tip, i) => (
-                  <li key={tip} className="flex gap-3 text-sm leading-relaxed">
+                {(r.routine.length ? r.routine : r.healthy ? a.healthyTips[mode] : r.issues.map((i) => a.tipsByIssue[i.key])).map((tip, i) => (
+                  <li key={tip} className="flex gap-3 text-sm leading-relaxed" dir="auto">
                     <span className="font-bold text-plum-600">{i + 1}.</span>
                     {tip}
                   </li>
@@ -371,6 +443,11 @@ export function BeautyAnalysis() {
                       <span className="min-w-0">
                         <span className="block font-medium">{s.name}</span>
                         <span className="text-sm text-muted-foreground">{s.salon}</span>
+                        {s.reason && (
+                          <span className="mt-1 block text-xs leading-relaxed text-plum-800" dir="auto">
+                            {s.reason}
+                          </span>
+                        )}
                       </span>
                       <span className="shrink-0 text-sm font-semibold">{money(s.price)}</span>
                     </Link>

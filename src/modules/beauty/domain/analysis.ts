@@ -1,7 +1,8 @@
 /**
  * IA P5 — analyse beauté par photo. Fonctions pures, partagées par le navigateur et le serveur :
- * - measure() calcule des mesures d'image à partir des pixels (dans le navigateur : la photo ne quitte jamais l'appareil) ;
- * - diagnose() applique des règles explicables (seuils) et renvoie points d'attention, conseils et soins à chercher.
+ * - measure() calcule des mesures d'image à partir des pixels, dans le navigateur (contrôle de qualité avant tout envoi) ;
+ * - le modèle d'IA (Gemini Vision, voir infrastructure/vision) regarde la photo ; fromVision() valide sa lecture ;
+ * - diagnose() applique des règles explicables (seuils) : secours quand le modèle n'est pas disponible.
  * Indicatif, pas un diagnostic médical. Repli : photo trop sombre ou floue → demande d'une nouvelle photo.
  */
 
@@ -134,8 +135,46 @@ export function measure(rgba: Uint8ClampedArray | number[], width: number, heigh
 }
 
 export type Diagnosis =
-  | { kind: "retake"; reason: "dark" | "blurry" | "overexposed" }
+  /** subject : le modèle d'IA ne voit pas de visage / de cheveux sur la photo */
+  | { kind: "retake"; reason: "dark" | "blurry" | "overexposed" | "subject" }
   | { kind: "result"; score: number; healthy: boolean; issues: { key: IssueKey; level: Level }[]; terms: string[] };
+
+/** Points d'attention (3 au plus, les modérés d'abord), indice de santé et termes des soins à chercher dans les salons */
+function resultFor(mode: BeautyMode, issues: { key: IssueKey; level: Level }[], score?: number): Diagnosis {
+  const top = [...issues].sort((a, b) => (a.level === b.level ? 0 : a.level === "moderate" ? -1 : 1)).slice(0, 3);
+  const computed = Math.max(40, 100 - top.reduce((s, i) => s + (i.level === "moderate" ? 14 : 7), 0));
+  const terms = [...new Set((top.length ? top.map((i) => i.key) : [mode === "cheveux" ? "healthyHair" : "healthyFace"]).flatMap((k) => SERVICE_TERMS[k as keyof typeof SERVICE_TERMS]))];
+  return { kind: "result", score: score ?? computed, healthy: top.length === 0, issues: top, terms };
+}
+
+/** Qualité de la photo jugée par le modèle : « ok » ou la raison de demander une autre photo */
+export const VISION_QUALITY = ["ok", "dark", "blurry", "overexposed", "subject"] as const;
+
+/** Réponse brute du modèle d'IA (vision), avant contrôle */
+export type VisionReading = { quality: string; score: number; issues: { key: string; level: string }[] };
+
+/** Contrôle local avant l'envoi au modèle : seulement les photos inexploitables à coup sûr (le modèle juge le reste) */
+export function unusablePhoto(m: Metrics): Extract<Diagnosis, { kind: "retake" }> | null {
+  if (m.brightness < 0.06) return { kind: "retake", reason: "dark" };
+  if (m.brightness > 0.97) return { kind: "retake", reason: "overexposed" };
+  if (m.sharpness < 0.003) return { kind: "retake", reason: "blurry" };
+  return null;
+}
+
+/** Lecture du modèle validée : qualité de la photo, points d'attention connus pour ce mode, niveaux valides, indice borné (40–100) */
+export function fromVision(mode: BeautyMode, reading: VisionReading): Diagnosis {
+  if (reading.quality !== "ok") {
+    const reason = (["dark", "blurry", "overexposed", "subject"] as const).find((q) => q === reading.quality) ?? "subject";
+    return { kind: "retake", reason };
+  }
+  const allowed: readonly string[] = mode === "cheveux" ? HAIR_ISSUES : FACE_ISSUES;
+  const issues: { key: IssueKey; level: Level }[] = [];
+  for (const i of reading.issues ?? []) {
+    if (allowed.includes(i.key) && (i.level === "moderate" || i.level === "light") && !issues.some((x) => x.key === i.key)) issues.push({ key: i.key as IssueKey, level: i.level });
+  }
+  const score = Number.isFinite(reading.score) ? Math.round(Math.min(100, Math.max(40, reading.score))) : undefined;
+  return resultFor(mode, issues, issues.length === 0 ? Math.max(score ?? 100, 85) : score);
+}
 
 /** Règles explicables, seuils fixés sur des photos d'essai en lumière naturelle */
 export function diagnose(mode: BeautyMode, m: Metrics): Diagnosis {
@@ -158,8 +197,5 @@ export function diagnose(mode: BeautyMode, m: Metrics): Diagnosis {
     if (m.sharpness > 0.1) add("pores", m.sharpness > 0.15);
     if (m.saturation < 0.18 && m.highlights < 0.005) add("dehydration", m.saturation < 0.12);
   }
-  const top = issues.sort((a, b) => (a.level === b.level ? 0 : a.level === "moderate" ? -1 : 1)).slice(0, 3);
-  const score = Math.max(40, 100 - top.reduce((s, i) => s + (i.level === "moderate" ? 14 : 7), 0));
-  const terms = [...new Set((top.length ? top.map((i) => i.key) : [mode === "cheveux" ? "healthyHair" : "healthyFace"]).flatMap((k) => SERVICE_TERMS[k as keyof typeof SERVICE_TERMS]))];
-  return { kind: "result", score, healthy: top.length === 0, issues: top, terms };
+  return resultFor(mode, issues);
 }

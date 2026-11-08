@@ -21,6 +21,7 @@ import { SectionHeading } from "@/components/site/section-heading";
 import { getI18n } from "@/i18n/server";
 import { IMAGES, PLANS } from "@/lib/data";
 import { cn } from "@/lib/utils";
+import { platformShowcase } from "@/modules/catalog";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -31,7 +32,7 @@ const FEATURE_ICONS = [CalendarDays, Users, UserRound, TrendingUp, ChartColumn, 
 const STEP_ICONS = [UserRound, FileCheck, BadgeCheck];
 
 export default async function ProPage() {
-  const { t, tc, f, nf } = await getI18n();
+  const [{ t, tc, f, nf }, showcase] = await Promise.all([getI18n(), platformShowcase()]);
   const p = t.pro;
 
   return (
@@ -59,7 +60,7 @@ export default async function ProPage() {
             </DemoRoleLink>
           </div>
           <p className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
-            <BadgeCheck className="size-4 shrink-0 text-plum-600" aria-hidden /> {f(p.trust, { n: nf(1342) })}
+            <BadgeCheck className="size-4 shrink-0 text-plum-600" aria-hidden /> {f(p.trust, { n: nf(showcase.salons) })}
           </p>
         </div>
         <div className="relative mx-auto w-full max-w-md lg:max-w-none">

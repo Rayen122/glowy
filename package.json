@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/copy-mediapipe.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -11,11 +12,13 @@
     "db:down": "docker compose down",
     "db:seed": "tsx scripts/seed.ts",
     "test": "node --import tsx --test --test-concurrency=1 \"tests/**/*.test.ts\"",
-    "test:unit": "node --import tsx --test \"tests/unit/**/*.test.ts\""
+    "test:unit": "node --import tsx --test \"tests/unit/**/*.test.ts\"",
+    "postinstall": "node scripts/copy-mediapipe.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
     "@gsap/react": "^2.1.2",
+    "@mediapipe/tasks-vision": "1.1.1",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",

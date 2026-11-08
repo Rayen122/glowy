@@ -1,8 +1,13 @@
 import { z } from "zod";
+import { isWeakPassword, PASSWORD_MIN } from "@/core/domain/password";
 
 /** Entrées validées des cas d'usage « comptes » (formulaires d'inscription et de connexion) */
 
-const PASSWORD = z.string().min(8, "8 caractères minimum").max(128);
+const PASSWORD = z
+  .string()
+  .min(PASSWORD_MIN, "8 caractères minimum")
+  .max(128)
+  .refine((v) => !isWeakPassword(v), "Mot de passe trop simple : mélangez des lettres et au moins un chiffre ou symbole.");
 const EMAIL = z.email("Adresse e-mail invalide").trim().toLowerCase();
 const LOCALE = z.enum(["fr", "ar", "en"]).default("fr");
 

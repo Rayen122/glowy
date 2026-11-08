@@ -18,7 +18,7 @@ export async function currentUser() {
 export async function requireUser(...roles: Role[]): Promise<Actor & { firstName: string; lastName: string; email: string }> {
   const session = await currentUser();
   if (!session) throw unauthorized();
-  const user = await sessionUser(session.id);
+  const user = await sessionUser(session.id, session.authAt);
   if (!user) throw unauthorized("Session expirée. Reconnectez-vous.");
   if (roles.length && !roles.includes(user.role)) throw forbidden();
   return { id: user.id, role: user.role, firstName: user.firstName, lastName: user.lastName, email: user.email };
@@ -27,7 +27,7 @@ export async function requireUser(...roles: Role[]): Promise<Actor & { firstName
 /** Utilisateur connecté et actif, ou null (routes ouvertes aux visiteurs) */
 export async function currentActor(): Promise<Actor | null> {
   const session = await currentUser();
-  const user = session ? await sessionUser(session.id) : null;
+  const user = session ? await sessionUser(session.id, session.authAt) : null;
   return user ? { id: user.id, role: user.role } : null;
 }
 

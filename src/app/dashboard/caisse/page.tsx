@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CashierQueue } from "@/components/manage/cashier";
 import { ManageHeader } from "@/components/manage/kit";
-import { addDays, tunisToday } from "@/core/domain/time";
+import { addDays, isIsoDate, tunisToday } from "@/core/domain/time";
 import { requirePageUser } from "@/infrastructure/session";
 import { getI18n } from "@/i18n/server";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,7 @@ export default async function CashierPage({ searchParams }: PageProps<"/dashboar
   const user = await requirePageUser("MANAGER", "EMPLOYEE", "ADMIN");
   const asked = (await searchParams).date;
   const today = tunisToday();
-  const date = typeof asked === "string" && /^\d{4}-\d{2}-\d{2}$/.test(asked) ? asked : today;
+  const date = typeof asked === "string" && isIsoDate(asked) ? asked : today;
   const salon = await staffSalon(user);
   const [{ t, money, nf, df }, day] = await Promise.all([getI18n(), cashierDay(salon.id, date)]);
   const m = t.manage.cashier;
@@ -92,7 +92,7 @@ export default async function CashierPage({ searchParams }: PageProps<"/dashboar
                     <Link href={`/dashboard/caisse/${i.id}`} className="font-semibold hover:underline" dir="ltr">
                       {i.number}
                     </Link>
-                    {i.status === "VOID" && <span className="ms-2 rounded-full bg-danger-soft px-2 py-0.5 text-[11px] font-semibold text-destructive">{m.voided}</span>}
+                    {i.status === "VOID" && <span className="ms-2 rounded-full bg-danger-soft px-2 py-0.5 text-xs font-semibold text-destructive">{m.voided}</span>}
                   </td>
                   <td className="px-5 py-3 tabular-nums" dir="ltr">
                     {i.time}

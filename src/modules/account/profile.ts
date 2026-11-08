@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { notFound } from "@/core/domain/errors";
+import { tunisToday } from "@/core/domain/time";
 import { objectId, User, type UserDoc } from "@/infrastructure/db";
 import { alreadyAwarded, award } from "@/modules/loyalty";
 
@@ -11,7 +12,12 @@ export const profileInput = z.object({
   lastName: z.string().trim().min(1, "Indiquez votre nom").max(60).optional(),
   phone: z.string().trim().regex(/^[+\d\s]{8,20}$/, "Numéro invalide").nullable().optional(),
   city: z.string().trim().max(60).nullable().optional(),
-  birthDate: z.iso.date("Date invalide").nullable().optional(),
+  // Date réelle, passée, et âge plausible (pas de naissance en 2999)
+  birthDate: z.iso
+    .date("Date invalide")
+    .refine((d) => d >= "1900-01-01" && d <= tunisToday(), "Date de naissance invalide")
+    .nullable()
+    .optional(),
   locale: z.enum(["fr", "ar", "en"]).optional(),
   avatarUrl: IMAGE_URL.nullable().optional(),
 });

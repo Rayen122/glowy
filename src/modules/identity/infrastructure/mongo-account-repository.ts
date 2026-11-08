@@ -12,6 +12,7 @@ const toAccount = (u: UserDoc): UserAccount => ({
   passwordHash: u.passwordHash ?? null,
   failedLogins: u.failedLogins,
   lockedUntil: u.lockedUntil ?? null,
+  passwordChangedAt: u.passwordChangedAt ?? null,
 });
 
 export const mongoAccountRepository: AccountRepository = {
@@ -41,8 +42,8 @@ export const mongoAccountRepository: AccountRepository = {
     return { id: idOf(user) };
   },
 
-  setPasswordHash: async (userId, passwordHash) => {
-    await User.updateOne({ _id: objectId(userId) }, { $set: { passwordHash, failedLogins: 0, lockedUntil: null } });
+  setPasswordHash: async (userId, passwordHash, at) => {
+    await User.updateOne({ _id: objectId(userId) }, { $set: { passwordHash, passwordChangedAt: at, failedLogins: 0, lockedUntil: null } });
   },
 
   saveToken: async (userId, purpose, tokenHash, expiresAt) => {

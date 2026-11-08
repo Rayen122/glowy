@@ -23,6 +23,7 @@ import {
 import { getSession, signIn } from "next-auth/react";
 import { toast } from "sonner";
 import { homeForRole } from "@/auth.config";
+import { isWeakPassword } from "@/core/domain/password";
 import { AUTH_SUCCESS_EVENT } from "@/components/auth/auth-stage";
 import { useI18n } from "@/i18n/client";
 import { api, ApiError, safeCallback } from "@/lib/api";
@@ -258,12 +259,14 @@ function useAfterLogin(callbackUrl?: string) {
 const DEMO_ROLES = ["CLIENT", "MANAGER", "EMPLOYEE", "ADMIN"] as const;
 
 export function LoginForm({ callbackUrl, demoEnabled, googleEnabled = false }: { callbackUrl?: string; demoEnabled: boolean; googleEnabled?: boolean }) {
-  const { t, f } = useI18n();
+  const { t } = useI18n();
   const a = t.auth.form;
   const formRef = useRef<HTMLFormElement>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [demoPending, setDemoPending] = useState<string | null>(null);
+  // Échecs de cette page : à partir du 2e, rappel du blocage à 5 essais (sans dire si le compte existe)
+  const [failures, setFailures] = useState(0);
   const { shake, exit } = useCardMotion(formRef);
   const afterLogin = useAfterLogin(callbackUrl);
 
@@ -299,8 +302,12 @@ export function LoginForm({ callbackUrl, demoEnabled, googleEnabled = false }: {
     if (!result || result.error) {
       setStatus("idle");
       const code = result?.code;
+      const failed = failures + 1;
+      setFailures(failed);
+      const invalid = failed >= 2 ? `${t.errors.invalidCredentials} ${t.errors.lockoutHint}` : t.errors.invalidCredentials;
       setErrors({
-        password: code === "account_locked" ? t.errors.accountLocked : code === "account_blocked" ? t.errors.accountBlocked : t.errors.invalidCredentials,
+        password:
+          code === "account_locked" ? t.errors.accountLocked : code === "account_blocked" ? t.errors.accountBlocked : code === "rate_limited" ? t.errors.rateLimited : invalid,
       });
       (form.elements.namedItem("password") as HTMLInputElement | null)?.focus();
       shake();
@@ -337,7 +344,7 @@ export function LoginForm({ callbackUrl, demoEnabled, googleEnabled = false }: {
       <p data-auth-item className="text-center text-sm text-muted-foreground">
         {a.newHere}{" "}
         <Link href="/inscription" className="font-semibold text-plum-700 hover:underline">
-          {f(a.createAccount, { pts: f(t.common.plusPoints, { n: 20 }) })}
+          {a.createAccount}
         </Link>
       </p>
 
@@ -371,7 +378,8 @@ export function LoginForm({ callbackUrl, demoEnabled, googleEnabled = false }: {
 type SignupErrors = Partial<Record<"firstName" | "lastName" | "email" | "password" | "salonName" | "city" | "address" | "phone" | "terms", string>>;
 
 export function SignupForm({ initialType = "client", googleEnabled = false }: { initialType?: "client" | "salon"; googleEnabled?: boolean }) {
-  const { t, f, money, locale } = useI18n();
+  const i18n = useI18n();
+  const { t, f, money, locale } = i18n;
   const a = t.auth.form;
   const formRef = useRef<HTMLFormElement>(null);
   const fieldsRef = useRef<HTMLDivElement>(null);
@@ -413,7 +421,7 @@ export function SignupForm({ initialType = "client", googleEnabled = false }: { 
       if (v("phone").replace(/\D/g, "").length < 8) next.phone = a.errors.phone;
     }
     if (!EMAIL.test(v("email"))) next.email = a.errors.email;
-    if (String(d.get("password") ?? "").length < 8) next.password = a.errors.password;
+    if (isWeakPassword(String(d.get("password") ?? ""))) next.password = a.errors.password;
     if (!d.get("terms")) next.terms = a.errors.terms;
     setErrors(next);
     const firstError = Object.keys(next)[0];
@@ -580,14 +588,27 @@ export function SignupForm({ initialType = "client", googleEnabled = false }: { 
               aria-describedby={errors.terms ? "terms-error" : undefined}
               className="mt-0.5 size-4 accent-[#6b2a5c]"
             />
-            <span className="text-muted-foreground">{a.terms}</span>
+            <span className="text-muted-foreground">
+              {i18n.rich(a.terms, {
+                terms: (
+                  <Link key="terms" href="/conditions" target="_blank" className="font-semibold text-plum-700 underline-offset-2 hover:underline">
+                    {t.legal.terms}
+                  </Link>
+                ),
+                privacy: (
+                  <Link key="privacy" href="/confidentialite" target="_blank" className="font-semibold text-plum-700 underline-offset-2 hover:underline">
+                    {t.legal.privacy}
+                  </Link>
+                ),
+              })}
+            </span>
           </label>
           <FieldError id="terms-error" message={errors.terms} />
         </div>
 
         <SubmitButton
           status={status}
-          idle={type === "client" ? f(a.createCta, { pts: f(t.common.plusPoints, { n: 20 }) }) : a.sendRequest}
+          idle={type === "client" ? a.createCta : a.sendRequest}
           loading={a.sending}
           success={a.created}
         />

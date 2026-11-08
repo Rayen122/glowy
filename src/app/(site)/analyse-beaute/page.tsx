@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { Palette, ShieldCheck } from "lucide-react";
 import { BeautyAnalysis } from "@/components/ai/beauty-analysis";
 import { getI18n } from "@/i18n/server";
 
@@ -27,6 +28,14 @@ export default async function AnalysePage() {
           <ShieldCheck className="size-4 shrink-0 text-plum-600" aria-hidden />
           {p.privacy}
         </p>
+        <Link
+          data-animate="fade-up"
+          href="/essai-couleur"
+          className="mt-4 flex w-fit items-center gap-2 rounded-full bg-blush px-4 py-2 text-sm font-semibold text-plum-800 hover:bg-plum-100"
+        >
+          <Palette className="size-4 shrink-0" aria-hidden />
+          {p.tryOnLink}
+        </Link>
       </div>
       <div data-animate="fade-up" className="mt-10">
         <BeautyAnalysis />

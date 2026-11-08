@@ -208,7 +208,7 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
                           <p className="flex flex-wrap items-center gap-2 font-medium text-foreground">
                             {tc(sv.name)}
                             {sv.popular && (
-                              <span className="rounded-full bg-blush px-2 py-0.5 text-[11px] font-semibold text-plum-700">{s.popular}</span>
+                              <span className="rounded-full bg-blush px-2 py-0.5 text-xs font-semibold text-plum-700">{s.popular}</span>
                             )}
                           </p>
                           {sv.description && <p className="mt-1 text-sm text-muted-foreground">{tc(sv.description)}</p>}
@@ -386,7 +386,7 @@ export default async function SalonPage({ params }: PageProps<"/salons/[slug]">)
                         {r.text}
                       </p>
                       {locale !== r.lang && r.lang === "fr" && (
-                        <p className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <p className="mt-1.5 inline-flex items-center gap-1 text-xs text-muted-foreground">
                           <Languages className="size-3" aria-hidden /> {s.reviewOriginal}
                         </p>
                       )}

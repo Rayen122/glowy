@@ -38,7 +38,8 @@ function Chip({ children, className }: { children: React.ReactNode; className?: 
  * Scène visuelle de l'authentification : l'arche (miroir de salon) laisse voir des colonnes
  * de photos qui défilent, entourée de puces flottantes et d'un titre à mots tournants.
  */
-export function AuthStage() {
+/** Chiffres réels passés par la mise en page serveur (salons vérifiés, salon le mieux noté) */
+export function AuthStage({ verifiedSalons, topSalon }: { verifiedSalons: number; topSalon: { name: string; rating: number } | null }) {
   const { t, f, nf } = useI18n();
   const st = t.auth.stage;
   const ref = useRef<HTMLDivElement>(null);
@@ -127,7 +128,7 @@ export function AuthStage() {
 
   const verified = (
     <>
-      <BadgeCheck className="size-3.5" aria-hidden /> {f(st.verified, { n: nf(1342) })}
+      <BadgeCheck className="size-3.5" aria-hidden /> {f(st.verified, { n: nf(verifiedSalons) })}
     </>
   );
   /** Puces flottantes autour de l'arche (≥ sm) ; sur téléphone, mêmes puces en rangée sous le titre */
@@ -137,7 +138,7 @@ export function AuthStage() {
       pos: "-start-16 top-[16%]",
       content: (
         <>
-          <Star className="size-4 fill-[#e9c979] text-[#e9c979]" aria-hidden /> {nf(4.9, { minimumFractionDigits: 1 })} · Salon Yasmine
+          <Star className="size-4 fill-[#e9c979] text-[#e9c979]" aria-hidden /> {topSalon && `${nf(topSalon.rating, { minimumFractionDigits: 1 })} · ${topSalon.name}`}
         </>
       ),
     },
@@ -168,7 +169,7 @@ export function AuthStage() {
         </>
       ),
     },
-  ];
+  ].filter((chip) => chip.id !== "rating" || topSalon);
 
   return (
     <div

@@ -1,7 +1,7 @@
 import { z } from "zod";
+import { DATE } from "@/core/schemas";
 import { POINT_REASONS } from "@/core/domain/enums";
 
-const DATE = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date attendue au format AAAA-MM-JJ");
 const CAP = z.coerce.number().int().min(1).max(1000).nullable().default(null);
 
 /** ADM-09 : réglage d'une ligne du barème */

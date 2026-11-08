@@ -79,6 +79,16 @@ const STATUS: Record<string, BookingStatus> = {
   en_attente: "PENDING",
 };
 
+/** Libellés de l'historique de démo → prestation du catalogue (sinon doublons « Coupe + brushing » / « Coupe femme + brushing ») */
+const SERVICE_ALIASES: Record<string, string> = {
+  "Coupe + brushing": "Coupe femme + brushing",
+  Gloss: "Gloss / patine",
+  "Soin hydratant": "Soin hydratant profond",
+};
+const canonicalService = (name: string) => SERVICE_ALIASES[name] ?? name;
+/** Durée réaliste des prestations ajoutées depuis l'historique (45 min par défaut) */
+const EXTRA_DURATIONS: Record<string, number> = { "Coupe homme": 30, "Taille de barbe": 20, Brushing: 30 };
+
 const CATEGORY_LABEL: Record<Category, string> = {
   coiffure: "Coiffure",
   barbier: "Barbier",
@@ -196,8 +206,9 @@ async function main() {
       return key;
     };
     for (const e of extra) {
-      if (!services.some((sv) => sv.name === e.name)) {
-        services.push({ key: uniqueKey(e.name), name: e.name, description: null, group: CATEGORY_LABEL[s.category], durationMin: 45, price: e.price, oldPrice: null, popular: false, position: 50 });
+      const name = canonicalService(e.name);
+      if (!services.some((sv) => sv.name === name)) {
+        services.push({ key: uniqueKey(name), name, description: null, group: CATEGORY_LABEL[s.category], durationMin: EXTRA_DURATIONS[name] ?? 45, price: e.price, oldPrice: null, popular: false, position: 50 });
       }
     }
 
@@ -270,7 +281,7 @@ async function main() {
   // ── Réservation utilitaire ──
   async function book(opts: { slug: string; employeeKey: string; clientId: Types.ObjectId; date: string; time: string; serviceNames: string[]; status: BookingStatus; paymentMethod?: "ONLINE" | "ONSITE"; createdDaysBefore?: number; durationOverride?: number }) {
     const items = opts.serviceNames.map((name) => {
-      const sv = serviceRows.get(`${opts.slug}:${name}`);
+      const sv = serviceRows.get(`${opts.slug}:${canonicalService(name)}`);
       if (!sv) throw new Error(`Service inconnu : ${opts.slug} / ${name}`);
       return sv;
     });
@@ -386,7 +397,7 @@ async function main() {
       reply: r.reply,
       photo: r.photo,
       helpful: r.helpful,
-      serviceName: serviceRows.has(`salon-yasmine-la-marsa:${r.service}`) ? r.service : undefined,
+      serviceName: serviceRows.has(`salon-yasmine-la-marsa:${canonicalService(r.service)}`) ? canonicalService(r.service) : undefined,
     });
   }
   for (const s of SALONS.filter((x) => x.slug !== "salon-yasmine-la-marsa")) {

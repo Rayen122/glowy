@@ -5,7 +5,7 @@ import { useState, type CSSProperties, type ReactNode } from "react";
 import { Clock, NotebookPen, Phone, Scissors, User, Wallet } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useI18n } from "@/i18n/client";
-import { BookingStatusActions } from "./booking-status";
+import { BookingStatusActions, type BookingAction } from "./booking-status";
 
 export type AgendaBookingDetails = {
   id: string;
@@ -21,12 +21,12 @@ export type AgendaBookingDetails = {
   price: number;
   deposit: number;
   note: string | null;
-  actions: readonly ("confirm" | "decline" | "start" | "complete" | "noShow")[];
+  actions: readonly BookingAction[];
 };
 
 /**
  * Rendez-vous de l'agenda : le bloc s'ouvre au clic sur sa fiche (cliente, prestations, horaire, professionnel,
- * statut, prix, note) avec les actions possibles maintenant (confirmer, refuser, commencer, terminer, absente).
+ * statut, prix, note) avec les actions possibles maintenant (confirmer, refuser, annuler, commencer, terminer, absente).
  */
 export function AgendaBooking({ booking, className, style, ariaLabel, children }: { booking: AgendaBookingDetails; className: string; style: CSSProperties; ariaLabel: string; children: ReactNode }) {
   const { t, money } = useI18n();
@@ -80,7 +80,7 @@ export function AgendaBooking({ booking, className, style, ariaLabel, children }
               {d.clientFile}
             </Link>
             {booking.actions.length > 0 ? (
-              <BookingStatusActions bookingId={booking.id} actions={booking.actions} />
+              <BookingStatusActions bookingId={booking.id} actions={booking.actions} labelled />
             ) : (
               <span className="text-xs text-muted-foreground">{d.noAction}</span>
             )}

@@ -18,6 +18,11 @@ export const mongoLoyaltyRepository: LoyaltyRepository = {
       ...(ref.reviewId ? { review: objectId(ref.reviewId) } : {}),
     })) !== null,
 
+  async reviewPoints(userId, reviewId) {
+    const rows = await PointTransaction.find({ user: objectId(userId), review: objectId(reviewId), reason: { $in: ["REVIEW", "REVIEW_PHOTO", "ADJUSTMENT"] } }, { points: 1 }).lean();
+    return rows.reduce((sum, r) => sum + r.points, 0);
+  },
+
   async account(userId) {
     const user = await User.findById(objectId(userId), { loyalty: 1 }).orFail().lean();
     return { balance: user.loyalty?.balance ?? 0, lifetime: user.loyalty?.lifetime ?? 0, lastActivityAt: user.loyalty?.lastActivityAt ?? user.createdAt };

@@ -54,10 +54,10 @@ export function registerNotificationSubscribers(bus: EventSubscriber, { notify, 
     if (booking.clientPhone) await sms.send(booking.clientPhone, `Glowy : RDV confirmé, ${confirmed.body}`);
   });
 
-  bus.on("booking.cancelled", async ({ bookingId, by }) => {
+  bus.on("booking.cancelled", async ({ bookingId, by, expired }) => {
     const booking = await facts.booking(bookingId);
     const recipient = by === "client" ? "salon" : "client";
-    await notify(recipient === "salon" ? booking.salonOwnerId : booking.clientId, messages.bookingCancelled(booking.salonName, utcToTunis(booking.startsAt).date, recipient));
+    await notify(recipient === "salon" ? booking.salonOwnerId : booking.clientId, messages.bookingCancelled(booking.salonName, utcToTunis(booking.startsAt).date, recipient, expired));
   });
 
   bus.on("review.published", async ({ reviewId }) => {

@@ -49,14 +49,14 @@ export function BookingsArea({ data }: { data: Datum[] }) {
               tickLine={false}
               axisLine={{ stroke: "#d9ccc6" }}
               tickMargin={8}
-              fontSize={11}
+              fontSize={12}
               tickFormatter={(iso: string) => df(iso, { month: "short" })}
             />
             <YAxis
               tickLine={false}
               axisLine={false}
               width={52}
-              fontSize={11}
+              fontSize={12}
               ticks={ticks}
               domain={[0, ticks[3]]}
               tickFormatter={(v: number) => nf(v)}

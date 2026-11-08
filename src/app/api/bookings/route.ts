@@ -1,5 +1,6 @@
 import { createBooking, createBookingInput, listClientBookings } from "@/modules/booking";
 import { ok, readJson, route } from "@/infrastructure/http";
+import { rateLimit } from "@/infrastructure/rate-limit";
 import { requireUser } from "@/infrastructure/session";
 
 /** GET /api/bookings — historique de la cliente connectée (CLI-02) */
@@ -14,6 +15,7 @@ export const GET = route(async () => {
  */
 export const POST = route(async (request) => {
   const user = await requireUser("CLIENT");
+  rateLimit("booking", user.id);
   const input = await readJson(request, createBookingInput);
   const booking = await createBooking(user.id, input);
   return ok(booking, { status: 201 });

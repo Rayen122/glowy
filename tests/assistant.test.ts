@@ -1,11 +1,13 @@
 import "./setup";
 import assert from "node:assert/strict";
 import { after, beforeEach, describe, test } from "node:test";
-import { tunisToUtc } from "@/core/domain/time";
+import { addDays, tunisToUtc } from "@/core/domain/time";
 import { chat, detectLang, matchesTime, parseMessage, pickService } from "@/modules/assistant";
 import { closeDb, FUTURE_MONDAY, makeSalon, resetDb } from "./helpers";
 
 const MONDAY_9AM = tunisToUtc(FUTURE_MONDAY, "09:00");
+/** Jour J + n à partir du lundi de test (mardi = 1, jeudi = 3, samedi = 5) */
+const day = (n: number) => addDays(FUTURE_MONDAY, n);
 const CITIES = ["Tunis", "La Marsa", "El Menzah"];
 
 describe("IA P3 : assistante de réservation", () => {
@@ -14,15 +16,17 @@ describe("IA P3 : assistante de réservation", () => {
 
   test("comprend prestation, jour, moment, heure et ville en français, anglais et arabe", () => {
     const fr = parseMessage("Je voudrais une coupe demain matin à La Marsa", MONDAY_9AM, CITIES);
-    assert.deepEqual([fr.intent, fr.service, fr.date, fr.part, fr.city], ["book", "coupe", "2030-01-08", "morning", "La Marsa"]);
+    assert.deepEqual([fr.intent, fr.service, fr.date, fr.part, fr.city], ["book", "coupe", day(1), "morning", "La Marsa"]);
     const en = parseMessage("Manicure on Saturday at 3pm", MONDAY_9AM, CITIES);
-    assert.deepEqual([en.service, en.date, en.time], ["ongles", "2030-01-12", "15:00"]);
+    assert.deepEqual([en.service, en.date, en.time], ["ongles", day(5), "15:00"]);
     const ar = parseMessage("نحب مساج نهار الخميس العشية", MONDAY_9AM, CITIES);
-    assert.deepEqual([ar.service, ar.date, ar.part], ["massage", "2030-01-10", "afternoon"]);
+    assert.deepEqual([ar.service, ar.date, ar.part], ["massage", day(3), "afternoon"]);
     assert.equal(parseMessage("Comment annuler mon rendez-vous ?", MONDAY_9AM, CITIES).topic, "cancel");
     assert.equal(parseMessage("Bonjour", MONDAY_9AM, CITIES).intent, "greeting");
     assert.equal(parseMessage("blablabla", MONDAY_9AM, CITIES).intent, "unknown");
-    assert.equal(parseMessage("rdv le 15/01 à 14h30", MONDAY_9AM, CITIES).date, "2030-01-15");
+    // Prochain 15 janvier à partir du lundi de test
+    const jan15 = `${Number(FUTURE_MONDAY.slice(0, 4)) + (FUTURE_MONDAY.slice(5) > "01-15" ? 1 : 0)}-01-15`;
+    assert.equal(parseMessage("rdv le 15/01 à 14h30", MONDAY_9AM, CITIES).date, jan15);
   });
 
   test("filtre les créneaux selon l'heure ou le moment demandés", () => {
@@ -39,7 +43,7 @@ describe("IA P3 : assistante de réservation", () => {
     if (reply.kind === "slots") {
       assert.equal(reply.slots[0].slug, "salon-a");
       assert.equal(reply.slots[0].serviceKey, "coupe");
-      assert.equal(reply.slots[0].date, "2030-01-08");
+      assert.equal(reply.slots[0].date, day(1));
       assert.ok(reply.slots[0].time < "12:00", "le matin");
     }
     assert.equal((await chat({ message: "je veux réserver demain" }, undefined, MONDAY_9AM)).kind, "clarify");

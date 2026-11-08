@@ -8,6 +8,8 @@ export interface LoyaltyRepository {
   /** Lignes du grand livre pour cette raison depuis `since` (plafonds mensuels), éventuellement dans un salon */
   countSince(userId: string, reason: PointReason, since: Date, salonId?: string): Promise<number>;
   hasEntry(userId: string, reason: PointReason, ref?: { bookingId?: string; reviewId?: string }): Promise<boolean>;
+  /** Points déjà gagnés pour un avis (texte + photo) */
+  reviewPoints(userId: string, reviewId: string): Promise<number>;
   account(userId: string): Promise<{ balance: number; lifetime: number; lastActivityAt: Date }>;
   /** Ligne du grand livre + solde (jamais négatif) + cumul, d'un seul tenant */
   record(entry: LedgerEntry): Promise<void>;

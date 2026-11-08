@@ -28,7 +28,9 @@ function assertSameOrigin(request: Request) {
   const origin = request.headers.get("origin");
   if (!origin) return; // appels serveur à serveur, tests : pas d'en-tête Origin
   const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
-  if (!host || new URL(origin).host !== host) throw forbidden("Origine de la requête refusée.");
+  // « null » (iframe isolée, redirection) ou adresse illisible : refus, jamais d'erreur 500
+  const originHost = URL.canParse(origin) ? new URL(origin).host : null;
+  if (!host || originHost !== host) throw forbidden("Origine de la requête refusée.");
 }
 
 /** Enveloppe une route API : contrôle d'origine + conversion des erreurs en réponses JSON. */

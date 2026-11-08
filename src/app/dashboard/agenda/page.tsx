@@ -8,7 +8,7 @@ import { getI18n } from "@/i18n/server";
 import { cn } from "@/lib/utils";
 import { salonDay, staffSalon } from "@/modules/dashboard";
 import { requirePageUser } from "@/infrastructure/session";
-import { addDays, tunisToday, utcToTunis } from "@/core/domain/time";
+import { addDays, isIsoDate, tunisToday, utcToTunis } from "@/core/domain/time";
 import { PlanUpsell } from "@/components/dashboard/plan-upsell";
 import { planAccess } from "@/modules/subscription";
 import { AgendaBooking } from "@/components/dashboard/agenda-booking";
@@ -42,7 +42,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
   const { date: requested, vue } = await searchParams;
   const view = vue === "semaine" ? "week" : vue === "mois" ? "month" : "day";
   const today = tunisToday();
-  const date = typeof requested === "string" && /^\d{4}-\d{2}-\d{2}$/.test(requested) ? requested : today;
+  const date = typeof requested === "string" && isIsoDate(requested) ? requested : today;
   const salon = await staffSalon(user);
   const [{ t, tc, f, df }, day, access] = await Promise.all([getI18n(), salonDay(salon.id, date), planAccess(salon.id)]);
   const a = t.dashboard.agenda;
@@ -159,7 +159,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
               {hours.map((h) => (
                 <span
                   key={h}
-                  className="absolute end-3 -translate-y-1/2 text-[11px] text-muted-foreground tabular-nums"
+                  className="absolute end-3 -translate-y-1/2 text-xs text-muted-foreground tabular-nums"
                   style={{ top: (h * 60 - START) * PX_PER_MIN }}
                 >
                   {h === START / 60 ? "" : `${String(h).padStart(2, "0")}:00`}
@@ -226,7 +226,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
                       style={{ top, height: h }}
                       ariaLabel={f(a.slotAria, { from: b.time, to: b.end, client: b.client, service: tc(b.service), status: t.dashboard.bookingStatus[status] })}
                     >
-                      <p className="truncate text-[11px] font-medium text-muted-foreground tabular-nums">
+                      <p className="truncate text-xs font-medium text-muted-foreground tabular-nums">
                         <span dir="ltr">
                           {b.time} – {b.end}
                         </span>
@@ -244,7 +244,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/dashboard
             {/* Maintenant */}
             {NOW !== null && NOW >= START && NOW <= END && (
               <div className="pointer-events-none absolute inset-x-0 z-30 flex items-center" style={{ top: (NOW - START) * PX_PER_MIN }} aria-hidden>
-                <span className="w-16 pe-2 text-end text-[11px] font-bold text-destructive tabular-nums">{now.time}</span>
+                <span className="w-16 pe-2 text-end text-xs font-bold text-destructive tabular-nums">{now.time}</span>
                 <span className="-ms-1 size-2 rounded-full bg-destructive" />
                 <span className="h-px flex-1 bg-destructive" />
               </div>

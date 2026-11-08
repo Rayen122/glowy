@@ -1,0 +1,30 @@
+# Déploiement de Glowy sur Vercel à chaque push (projet « glowy », https://glowy-beta.vercel.app).
+# Secret du dépôt : VERCEL_TOKEN (jeton du compte Vercel). Identifiants du projet (non secrets) : .vercel/project.json.
+# Les variables d'environnement du site (base, clés d'IA…) restent dans Vercel et sont récupérées par `vercel pull`.
+name: Déploiement Vercel
+
+on:
+  push:
+    branches: [main, fix-recette-2026-11-07]
+  workflow_dispatch:
+
+concurrency:
+  group: vercel-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: team_tuSUoBbyRTJ41LUP1P7tPyO6
+      VERCEL_PROJECT_ID: prj_lndDZZAieiteuL6eTOACe9GaDDig
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --global vercel@latest
+      - run: vercel pull --yes --environment=production
+      - run: vercel build --prod
+      - run: vercel deploy --prebuilt --prod

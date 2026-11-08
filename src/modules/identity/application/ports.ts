@@ -13,6 +13,7 @@ export type UserAccount = LoginState & {
   lastName: string;
   avatarUrl: string | null;
   passwordHash: string | null;
+  passwordChangedAt: Date | null;
 };
 
 export type NewClient = {
@@ -38,7 +39,8 @@ export interface AccountRepository {
   findById(id: string): Promise<UserAccount | null>;
   /** Compte du personnel créé par un gérant (AUTH-07) */
   createStaffUser(data: { email: string; passwordHash: string; firstName: string; lastName: string; referralCode: string }): Promise<{ id: string }>;
-  setPasswordHash(userId: string, passwordHash: string): Promise<void>;
+  /** Nouveau mot de passe : débloque le compte et date le changement (les autres sessions sont fermées) */
+  setPasswordHash(userId: string, passwordHash: string, at: Date): Promise<void>;
   /** Lien à usage unique (empreinte seulement) */
   saveToken(userId: string, purpose: "reset" | "verify", tokenHash: string, expiresAt: Date): Promise<void>;
   /** Date du dernier lien émis pour ce compte et cet usage, ou null */

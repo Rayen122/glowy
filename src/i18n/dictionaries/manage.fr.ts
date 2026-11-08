@@ -186,6 +186,7 @@ export const manageFr = {
     newPassword: "Nouveau mot de passe",
     confirm: "Confirmer le mot de passe",
     mismatch: "Les deux mots de passe ne correspondent pas.",
+    weak: "Mot de passe trop simple : 8 caractères minimum, avec des lettres et au moins un chiffre ou symbole.",
     resetSubmit: "Enregistrer le mot de passe",
     resetDone: "Mot de passe modifié. Vous pouvez vous connecter.",
     missingToken: "Ce lien est incomplet. Demandez-en un nouveau.",

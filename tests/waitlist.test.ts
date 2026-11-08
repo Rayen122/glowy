@@ -14,20 +14,24 @@ describe("Liste d'attente d'un jour complet (RES-09)", () => {
 
   test("prévenue quand une annulation libère un créneau compatible, une seule fois", async () => {
     await makeSalon("salon-a");
-    const booker = await makeUser();
     const waiting = await makeUser();
-    // Journée complète pour le balayage (2 h) : les deux professionnelles sont prises de 8 h à 20 h
+    // Journée complète pour le balayage (2 h) : les deux professionnelles sont prises de 8 h à 20 h,
+    // une cliente par rendez-vous (une même cliente ne peut ni être à deux endroits ni avoir plus de 3 demandes)
     const bookings = [];
     for (const employee of ["amira", "nour"]) {
-      for (const time of ALL_DAY) bookings.push(await createBooking(booker.id, { salonSlug: "salon-a", serviceKeys: ["balayage"], employee, date: FUTURE_MONDAY, time, paymentMethod: "ONSITE" }));
+      for (const time of ALL_DAY) {
+        const owner = await makeUser();
+        const booking = await createBooking(owner.id, { salonSlug: "salon-a", serviceKeys: ["balayage"], employee, date: FUTURE_MONDAY, time, paymentMethod: "ONSITE" });
+        bookings.push({ ...booking, owner });
+      }
     }
     await joinWaitlist(waiting.id, "salon-a", { date: FUTURE_MONDAY, serviceKeys: ["balayage"] });
     await assert.rejects(joinWaitlist(waiting.id, "salon-a", { date: FUTURE_MONDAY, serviceKeys: ["balayage"] }), (e: AppError) => e.code === "ALREADY_WAITING");
 
-    await cancelBooking(bookings[2].id, booker);
+    await cancelBooking(bookings[2].id, bookings[2].owner);
     assert.equal(await Notification.countDocuments({ user: waiting.id, type: "waitlist.slot" }), 1);
     assert.equal((await myWaitlist(waiting.id))[0].status, "NOTIFIED");
-    await cancelBooking(bookings[3].id, booker);
+    await cancelBooking(bookings[3].id, bookings[3].owner);
     assert.equal(await Notification.countDocuments({ user: waiting.id, type: "waitlist.slot" }), 1, "pas de doublon");
   });
 

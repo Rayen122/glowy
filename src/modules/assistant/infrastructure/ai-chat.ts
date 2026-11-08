@@ -277,7 +277,9 @@ async function aiChat(input: { message: string; salonSlug?: string; history?: Ch
   const found =
     result.kind === "slots"
       ? `Créneaux libres trouvés (${result.query.date}) : ${result.slots.map((s) => `${s.salon} à ${s.time}, ${s.serviceName} ${s.price} DT avec ${s.employeeName}`).join(" ; ")}`
-      : `Aucun créneau libre trouvé pour ${u.service} le ${result.query.date}${onlySlug ? ` chez ${salons.find((s) => s.slug === onlySlug)?.name}` : ""}${city ? ` à ${city}` : ""}.`;
+      : result.closed
+        ? `Fermé : ${onlySlug ? (salons.find((s) => s.slug === onlySlug)?.name ?? "le salon") : "les salons trouvés"} ne sont pas ouverts le ${result.query.date}. Dis-le clairement et propose un autre jour.`
+        : `Aucun créneau libre trouvé pour ${u.service} le ${result.query.date}${onlySlug ? ` chez ${salons.find((s) => s.slug === onlySlug)?.name}` : ""}${city ? ` à ${city}` : ""}.`;
   try {
     // Rédaction : pas besoin du catalogue, seulement la conversation et le résultat (contexte réduit)
     const conversation = [...history.map((t) => `${t.role === "user" ? "Client" : "Assistante"} : ${t.text}`), `Client : ${input.message}`].join("\n");

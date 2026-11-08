@@ -46,3 +46,6 @@ next-env.d.ts
 
 # Outils locaux
 /glowy/
+
+# moteur MediaPipe copié depuis node_modules (scripts/copy-mediapipe.mjs)
+/public/mediapipe

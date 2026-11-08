@@ -92,8 +92,9 @@ describe("Promotions et récompenses du salon (SAL-10, FID-06)", () => {
     assert.deepEqual({ discount: quote.discount, total: quote.total }, { discount: 20, total: 0 }, "remise plafonnée au prix de la coupe");
 
     // Un code moins avantageux que l'offre du moment : la cliente garde la meilleure remise, le code n'est pas consommé
+    // (une autre cliente : la première a déjà un rendez-vous à cette heure-là)
     await createPromotion(salon.id, promotionInput.parse({ kind: "CODE", code: "PETIT5", label: "−5 %", percent: 5 }));
-    const best = await bookAt(client.id, booking("salon-a", { time: "11:00", employee: "nour", promoCode: "PETIT5" }));
+    const best = await bookAt((await makeUser()).id, booking("salon-a", { time: "11:00", employee: "nour", promoCode: "PETIT5" }));
     assert.equal(best.discount, 25);
     assert.equal((await Promotion.findOne({ code: "PETIT5" }).orFail()).uses, 0);
   });

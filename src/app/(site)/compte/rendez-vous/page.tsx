@@ -46,9 +46,9 @@ function BookingList({ bookings, i18n }: { bookings: AccountBooking[]; i18n: I18
           <li key={b.id} className="flex flex-col gap-4 rounded-3xl bg-card p-4 ring-1 ring-border sm:flex-row sm:items-center sm:p-5">
             <div className="flex items-center gap-4">
               <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-blush text-plum-800">
-                <span className="text-[11px] font-medium">{df(b.local.date, { weekday: "short" })}</span>
+                <span className="text-xs font-medium">{df(b.local.date, { weekday: "short" })}</span>
                 <span className="text-xl leading-none font-semibold">{df(b.local.date, { day: "numeric" })}</span>
-                <span className="text-[11px]">{df(b.local.date, { month: "short" })}</span>
+                <span className="text-xs">{df(b.local.date, { month: "short" })}</span>
               </div>
               {b.salon.coverUrl && (
                 <div className="relative size-16 shrink-0 overflow-hidden rounded-2xl bg-muted">

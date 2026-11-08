@@ -40,6 +40,12 @@ export interface BookingRepository {
   /** Verrouille les tranches de l'employé puis enregistre la réservation ; null si une tranche est déjà prise */
   insertIfFree(data: NewBooking): Promise<BookingRecord | null>;
   findById(id: string): Promise<BookingRecord | null>;
+  /** La cliente a-t-elle déjà un rendez-vous actif qui chevauche [startsAt, endsAt[ (tous salons confondus) ? */
+  clientHasOverlap(clientId: string, startsAt: Date, endsAt: Date, ignoreBookingId?: string): Promise<boolean>;
+  /** Demandes à venir encore en attente de confirmation */
+  pendingCount(clientId: string, now: Date): Promise<number>;
+  /** Demandes jamais confirmées dont l'heure est passée */
+  staleRequests(now: Date): Promise<string[]>;
   /** Annule (si encore active) et libère les tranches ; rembourse l'acompte si `refund` */
   cancel(id: string, at: Date, refund: boolean): Promise<BookingRecord | null>;
   /** Déplace la réservation (même employé) si les nouvelles tranches sont libres ; null sinon */

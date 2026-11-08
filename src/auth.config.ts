@@ -15,6 +15,8 @@ export const authConfig = {
         token.id = user.id!;
         token.role = user.role;
         token.firstName = user.firstName;
+        // Heure de connexion : une session ouverte avant un changement de mot de passe est refusée
+        token.authAt = Date.now();
       }
       return token;
     },
@@ -22,6 +24,7 @@ export const authConfig = {
       session.user.id = token.id;
       session.user.role = token.role;
       session.user.firstName = token.firstName;
+      session.user.authAt = token.authAt;
       return session;
     },
   },

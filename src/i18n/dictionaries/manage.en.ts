@@ -184,6 +184,7 @@ export const manageEn: ManageDictionary = {
     newPassword: "New password",
     confirm: "Confirm password",
     mismatch: "The two passwords do not match.",
+    weak: "Password too simple: at least 8 characters, with letters and at least one number or symbol.",
     resetSubmit: "Save password",
     resetDone: "Password changed. You can now sign in.",
     missingToken: "This link is incomplete. Request a new one.",

@@ -47,14 +47,14 @@ export function RevenueBars({ data, monthly = false }: { data: Datum[]; monthly?
               axisLine={{ stroke: "#d9ccc6" }}
               interval={interval}
               tickMargin={8}
-              fontSize={11}
+              fontSize={12}
               tickFormatter={label}
             />
             <YAxis
               tickLine={false}
               axisLine={false}
               width={48}
-              fontSize={11}
+              fontSize={12}
               tickFormatter={(v: number) => nf(v)}
               ticks={ticks}
               domain={[0, ticks[ticks.length - 1]]}

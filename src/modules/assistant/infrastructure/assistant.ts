@@ -30,7 +30,8 @@ export type ChatReply =
   | { kind: "faq"; topic: FaqTopic; hours?: { weekday: number; opensAt: string; closesAt: string }[]; salon?: string }
   | { kind: "clarify" }
   | { kind: "slots"; query: { service: ServiceIntent; date: string; part: DayPart | null; time: string | null; city: string | null }; slots: ChatSlot[]; text?: string }
-  | { kind: "none"; query: { service: ServiceIntent; date: string; city: string | null }; text?: string }
+  /** closed : tous les salons consultés sont fermés ce jour-là (dimanche…) — réponse « fermé », pas « complet » */
+  | { kind: "none"; query: { service: ServiceIntent; date: string; city: string | null }; closed?: boolean; text?: string }
   /** Réponse rédigée par l'IA (Gemini), dans la langue du client — derja tunisienne comprise */
   | { kind: "answer"; text: string };
 
@@ -58,6 +59,8 @@ export async function findSlots(query: SlotQuery, opts: { userId?: string; now: 
   const docs = await Salon.find({ slug: { $in: ordered.slice(0, MAX_SALONS_CHECKED).map((s) => s.slug) } }, { slug: 1, name: 1, services: 1 }).lean();
   const employees = await Employee.find({ salon: { $in: docs.map((d) => d._id) } }, { salon: 1, key: 1, name: 1 }).lean();
 
+  let checked = 0;
+  let open = 0;
   for (const date of dates) {
     const slots: ChatSlot[] = [];
     for (const view of ordered.slice(0, MAX_SALONS_CHECKED)) {
@@ -65,7 +68,9 @@ export async function findSlots(query: SlotQuery, opts: { userId?: string; now: 
       const doc = docs.find((d) => d.slug === view.slug);
       const service = doc && pickService(doc.services, query.service, opts.request);
       if (!doc || !service) continue;
-      const { slots: free } = await getAvailability({ salonId: idOf(doc), date, durationMin: service.durationMin, withForecast: true });
+      const { slots: free, closed } = await getAvailability({ salonId: idOf(doc), date, durationMin: service.durationMin, withForecast: true });
+      checked += 1;
+      if (!closed) open += 1;
       const slot = free.find((s) => s.employees.length > 0 && matchesTime(s.time, wanted));
       if (!slot) continue;
       const employeeKey = slot.employees[0];
@@ -74,7 +79,7 @@ export async function findSlots(query: SlotQuery, opts: { userId?: string; now: 
     }
     if (slots.length) return { kind: "slots", query: { service: query.service, date, part: query.part, time: query.time, city: query.city }, slots };
   }
-  return { kind: "none", query: { service: query.service, date: firstDate, city: query.city } };
+  return { kind: "none", query: { service: query.service, date: firstDate, city: query.city }, ...(checked > 0 && open === 0 ? { closed: true } : {}) };
 }
 
 export async function knownCities() {

@@ -29,7 +29,12 @@ export async function salonDay(salonId: string, date = tunisToday(), now = new D
     color: keyOf.get(b.employeeId)?.color ?? 1,
     uiStatus: UI_STATUS[b.status],
     /** Boutons proposés au salon maintenant (pas de « terminé » / « absente » avant l'heure) */
-    actions: [...staffActions(b.status, b.startsAt, now), ...(b.status === "PENDING" ? (["decline"] as const) : [])],
+    // Refuser une demande ; annuler un rendez-vous confirmé pas encore commencé (professionnelle malade…)
+    actions: [
+      ...staffActions(b.status, b.startsAt, now),
+      ...(b.status === "PENDING" ? (["decline"] as const) : []),
+      ...(b.status === "CONFIRMED" && b.startsAt > now ? (["cancel"] as const) : []),
+    ],
   }));
   return { ...agenda, bookings };
 }

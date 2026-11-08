@@ -68,6 +68,20 @@ export const mongoReviewRepository: ReviewRepository = {
       return toRecord(await Review.findByIdAndUpdate(review, { $set: { status: outcome.review } }, { session, returnDocument: "after" }).orFail().lean());
     }),
 
+  async publishedForBooking(bookingId) {
+    const booking = objectId(bookingId);
+    const review = booking ? await Review.findOne({ booking, status: "PUBLISHED" }).lean() : null;
+    return review ? toRecord(review) : null;
+  },
+
+  withdraw: (id, at) =>
+    withTransaction(async (session) => {
+      const review = objectId(id)!;
+      await Review.updateOne({ _id: review }, { $set: { status: "HIDDEN" } }, { session });
+      await ReviewReport.updateMany({ review, status: "OPEN" }, { $set: { status: "HIDDEN", resolvedAt: at } }, { session });
+      await AuditLog.create([{ actor: null, action: "review.withdrawnNoShow", targetType: "Review", targetId: id }], { session });
+    }),
+
   async toggleHelpful(id, userId) {
     const _id = objectId(id);
     const user = objectId(userId);

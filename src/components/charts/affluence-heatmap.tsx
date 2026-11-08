@@ -75,7 +75,7 @@ export function AffluenceHeatmap({ days, hours, values }: { days: readonly numbe
           <span />
           {hours.map((h, hi) => (
             // Téléphone : une heure sur deux, pour que les libellés ne se chevauchent pas
-            <span key={h} className={cn("pb-1 text-center text-[11px] text-muted-foreground tabular-nums", hi % 2 === 1 && "max-sm:invisible")}>
+            <span key={h} className={cn("pb-1 text-center text-xs text-muted-foreground tabular-nums", hi % 2 === 1 && "max-sm:invisible")}>
               {hour(h)}
             </span>
           ))}
