@@ -5,7 +5,7 @@ import { salonPointsInput, salonPointsOverview, setSalonPointsPerVisit } from "@
 
 /** GET /api/dashboard/salon-points — points par visite, clientes membres, points en circulation (FID-06) */
 export const GET = route(async () => {
-  const actor = await requireUser("MANAGER", "EMPLOYEE", "ADMIN");
+  const actor = await requireUser("MANAGER", "ADMIN");
   return ok(await salonPointsOverview(await currentSalonId(actor)));
 });
 

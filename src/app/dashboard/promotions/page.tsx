@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** SAL-10 et FID-06 : promotions (gérant) ; récompenses et validation des codes (toute l'équipe) */
 export default async function PromotionsPage() {
-  const user = await requirePageUser("MANAGER", "EMPLOYEE", "ADMIN");
+  const user = await requirePageUser("MANAGER", "ADMIN");
   const salon = await staffSalon(user);
   const canEdit = user.role !== "EMPLOYEE";
   const promosAllowed = (await planAccess(salon.id)).features.includes("promotions");

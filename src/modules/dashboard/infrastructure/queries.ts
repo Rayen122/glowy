@@ -39,6 +39,21 @@ export async function salonDay(salonId: string, date = tunisToday(), now = new D
   return { ...agenda, bookings };
 }
 
+/**
+ * Espace employé : ses rendez-vous du jour (pas ceux de ses collègues), le nombre prévu sur 7 jours
+ * et ses prestations terminées du mois ; pas de chiffre d'affaires du salon
+ */
+export async function employeeDay(salonId: string, employeeId: string, now = new Date()) {
+  const employee = objectId(employeeId);
+  const today = tunisToday(now);
+  const [day, week, month] = await Promise.all([
+    salonDay(salonId, today, now),
+    Booking.countDocuments({ employee, status: { $in: ["PENDING", "CONFIRMED", "IN_PROGRESS"] }, startsAt: { $gte: now, $lt: new Date(now.getTime() + 7 * 86_400_000) } }),
+    Booking.countDocuments({ employee, status: "COMPLETED", startsAt: { $gte: tunisDayRange(`${today.slice(0, 8)}01`).start, $lte: now } }),
+  ]);
+  return { bookings: day.bookings.filter((b) => b.employeeId === employeeId), week, month, nowTime: utcToTunis(now).time };
+}
+
 /** Indicateurs du jour : rendez-vous, chiffre d'affaires, remplissage, absences sur 30 jours */
 export async function salonKpis(salonId: string, now = new Date()) {
   const date = tunisToday(now);

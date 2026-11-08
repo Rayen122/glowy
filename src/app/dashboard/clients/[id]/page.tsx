@@ -28,7 +28,7 @@ const STATUS_STYLE: Record<string, string> = {
 /** SAL-08 : fiche cliente du salon */
 export default async function ClientCardPage({ params }: PageProps<"/dashboard/clients/[id]">) {
   const { id } = await params;
-  const user = await requirePageUser("MANAGER", "EMPLOYEE", "ADMIN");
+  const user = await requirePageUser("MANAGER", "ADMIN");
   const salon = await staffSalon(user);
   // Fonction réservée à un plan supérieur : présentation du plan à la place de la page
   if (!(await planAccess(salon.id)).features.includes("crm")) return <PlanUpsell feature="crm" canUpgrade={user.role !== "EMPLOYEE"} />;

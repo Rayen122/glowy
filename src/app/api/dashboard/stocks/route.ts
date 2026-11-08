@@ -5,7 +5,7 @@ import { createProduct, currentSalonId, listProducts, productInput, requireFeatu
 
 /** GET /api/dashboard/stocks — produits, alertes de stock bas et derniers mouvements (SAL-12) */
 export const GET = route(async () => {
-  const actor = await requireUser("MANAGER", "EMPLOYEE", "ADMIN");
+  const actor = await requireUser("MANAGER", "ADMIN");
   await requireFeature(actor, "stocks");
   return ok(await listProducts(await currentSalonId(actor)));
 });

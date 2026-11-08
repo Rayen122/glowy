@@ -37,7 +37,20 @@ export function makeAccess(directory: StaffDirectory) {
     }
   }
 
-  return { staffSalonId, canManageSalon };
+  /** Fiche professionnelle d'un employé connecté (null pour le gérant et le Super Admin) */
+  const ownEmployee = (actor: Actor) => (actor.role === "EMPLOYEE" ? directory.employeeOf(actor.id) : Promise.resolve(null));
+
+  /**
+   * Un employé n'agit que sur ses propres rendez-vous (pas sur ceux de ses collègues) ;
+   * le gérant et le Super Admin, sur tout le salon
+   */
+  async function canHandleBooking(actor: Actor, booking: { salonId: string; employeeId: string }) {
+    if (!(await canManageSalon(actor, booking.salonId))) return false;
+    if (actor.role !== "EMPLOYEE") return true;
+    return (await ownEmployee(actor))?.id === booking.employeeId;
+  }
+
+  return { staffSalonId, canManageSalon, ownEmployee, canHandleBooking };
 }
 
 export type SalonAccess = ReturnType<typeof makeAccess>;

@@ -19,7 +19,7 @@ const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
 /** SAL-08 : clientes du salon */
 export default async function ClientsPage({ searchParams }: PageProps<"/dashboard/clients">) {
-  const user = await requirePageUser("MANAGER", "EMPLOYEE", "ADMIN");
+  const user = await requirePageUser("MANAGER", "ADMIN");
   const sp = await searchParams;
   const q = one(sp.q)?.slice(0, 60);
   const asked = one(sp.filtre);

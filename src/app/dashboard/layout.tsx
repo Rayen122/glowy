@@ -15,10 +15,23 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await requirePageUser("MANAGER", "EMPLOYEE", "ADMIN");
   const [{ t, tc }, salon] = await Promise.all([getI18n(), staffSalon(user)]);
-  const lowStock = await lowStockCount(salon.id);
+  const lowStock = user.role === "EMPLOYEE" ? 0 : await lowStockCount(salon.id);
   const d = t.dashboard;
 
-  const groups: NavGroup[] = [
+  // Employé : seulement son espace (sa journée, son agenda, la file d'attente) — rien de la gestion du salon
+  const employeeGroups: NavGroup[] = [
+    {
+      label: d.nav.mySpace,
+      items: [
+        { href: "/dashboard", label: d.nav.myDay, icon: <LayoutGrid />, exact: true },
+        { href: "/dashboard/agenda", label: d.nav.myAgenda, icon: <CalendarDays /> },
+        { href: "/dashboard/file-attente", label: t.manage.queue.title, icon: <ListOrdered /> },
+      ],
+    },
+    { label: d.nav.help, items: [{ href: "/dashboard/support", label: t.manage.support.title, icon: <Headset /> }] },
+  ];
+
+  const managerGroups: NavGroup[] = [
     {
       label: d.nav.pilot,
       items: [
@@ -61,7 +74,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <AppShell
       space={d.space}
       helpHref="/dashboard/support"
-      groups={groups}
+      groups={user.role === "EMPLOYEE" ? employeeGroups : managerGroups}
       user={{ name: `${user.firstName} ${user.lastName}`.trim(), role: user.role === "EMPLOYEE" ? t.auth.form.roles.employee : user.role === "ADMIN" ? t.admin.metaTitle : d.managerRole }}
       context={
         // SAL-14 : le gérant change de succursale depuis la page « Succursales »

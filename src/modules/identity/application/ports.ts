@@ -81,4 +81,6 @@ export interface StaffDirectory {
   firstActiveSalonId(): Promise<string | null>;
   ownedSalonId(ownerId: string, salonId?: string): Promise<string | null>;
   employerSalonId(userId: string): Promise<string | null>;
+  /** Fiche professionnelle liée au compte d'un employé (AUTH-07) */
+  employeeOf(userId: string): Promise<{ id: string; key: string; name: string } | null>;
 }

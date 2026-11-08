@@ -56,6 +56,8 @@ export interface BookingRepository {
 
 export interface SalonAccessPort {
   canManageSalon(actor: Actor, salonId: string): Promise<boolean>;
+  /** Le salon, et pour un employé seulement ses propres rendez-vous */
+  canHandleBooking(actor: Actor, booking: { salonId: string; employeeId: string }): Promise<boolean>;
 }
 
 /** Promotions du salon (module Promotions, SAL-10) */
