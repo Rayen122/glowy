@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { geminiEnabled } from "@/infrastructure/ai/gemini";
 import { objectId, Review, Salon } from "@/infrastructure/db";
 import { analyzeReview, summarizeReviews, type Aspect } from "../domain/analysis";
@@ -25,7 +26,14 @@ export async function salonReviewInsights(salonId: string) {
   ]);
   const summary = summarizeReviews(reviews.map((r) => ({ sentiment: r.sentiment ?? null, aspects: (r.aspects ?? []).map((a) => ({ aspect: a.aspect ?? "", polarity: a.polarity ?? 0 })) })));
   const stored = salon?.reviewSummary;
-  if (geminiEnabled() && summary.analysed >= 3 && stored?.count !== reviews.length) void refreshReviewSummary(salonId);
+  if (geminiEnabled() && summary.analysed >= 3 && stored?.count !== reviews.length) {
+    // Après l'envoi de la page (sur Vercel, une promesse laissée en cours retenait la réponse jusqu'à 30 s)
+    try {
+      after(() => refreshReviewSummary(salonId));
+    } catch {
+      void refreshReviewSummary(salonId); // hors d'une requête (script, test)
+    }
+  }
   const text: ReviewSummaryText | null = stored?.fr ? { fr: stored.fr, ar: stored.ar ?? stored.fr, en: stored.en ?? stored.fr } : null;
   return { ...summary, strengths: summary.strengths as Aspect[], weaknesses: summary.weaknesses as Aspect[], text };
 }
