@@ -15,10 +15,20 @@ mongoose.set("strictQuery", true);
 export function connectDb() {
   const uri = process.env.MONGODB_URI;
   if (!uri) throw new Error("MONGODB_URI manquant : copiez .env.example en .env (voir README)");
-  globalForMongo.glowyConnection ??= mongoose.connect(uri, { serverSelectionTimeoutMS: 8_000 }).catch((error) => {
-    globalForMongo.glowyConnection = undefined;
-    throw error;
-  });
+  globalForMongo.glowyConnection ??= mongoose
+    .connect(uri, {
+      serverSelectionTimeoutMS: 8_000,
+      // IPv4 directement : sur Vercel, l'essai IPv6 vers Atlas expirait avant le repli (démarrages à froid de 30 à 100 s)
+      family: 4,
+      // Peu de connexions par instance : moins de poignées de main TLS au démarrage d'une fonction serverless
+      maxPoolSize: 10,
+      // Production : index créés une fois (seed ou script), pas à chaque démarrage d'instance
+      autoIndex: process.env.NODE_ENV !== "production",
+    })
+    .catch((error) => {
+      globalForMongo.glowyConnection = undefined;
+      throw error;
+    });
   return globalForMongo.glowyConnection;
 }
 
