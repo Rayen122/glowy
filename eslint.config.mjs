@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Moteur MediaPipe copié depuis node_modules (scripts/copy-mediapipe.mjs)
+    "public/mediapipe/**",
   ]),
 ]);
 

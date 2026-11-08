@@ -10,7 +10,7 @@ const DEV = new URL(self.location.href).searchParams.get("dev") === "1";
 const PRECACHE = [OFFLINE_URL, "/icons/icon-192.png", "/icons/icon-512.png", "/icons/badge-96.png"];
 /** Pages enregistrées dès l'installation, avant même d'être consultées */
 const WARM_ON_INSTALL = ["/", "/salons"];
-const PUBLIC_PAGES = [/^\/$/, /^\/salons(\/[^/]+)?$/, /^\/pro$/, /^\/analyse-beaute$/, /^\/offline$/];
+const PUBLIC_PAGES = [/^\/$/, /^\/salons(\/[^/]+)?$/, /^\/pro$/, /^\/analyse-beaute$/, /^\/essai-couleur$/, /^\/offline$/];
 const PRIVATE_PAGES = /^\/(compte|dashboard|admin)(\/|$)/;
 const LOGIN_PAGES = /^\/(connexion|inscription)$/;
 const LIMITS = { [STATIC_CACHE]: 600, [PAGES_CACHE]: 60, [PRIVATE_CACHE]: 40, [IMAGES_CACHE]: 80 };

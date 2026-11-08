@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ScanFace, Store, UserRound } from "lucide-react";
+import { Palette, ScanFace, Store, UserRound } from "lucide-react";
 import { homeForRole } from "@/auth.config";
 import { NotificationBell } from "@/components/app-shell/notification-bell";
 import { Logo } from "@/components/brand/logo";
@@ -39,17 +39,18 @@ export function SiteHeader({ user }: { user: HeaderUser }) {
           scrolled ? "bg-background/85 shadow-[0_1px_0_var(--border)] backdrop-blur-md" : "bg-background"
         )}
       >
-        <div className="container-page flex h-16 items-center gap-2 sm:gap-6 lg:h-[72px]">
+        <div className="container-page flex h-16 items-center gap-2 sm:gap-6 lg:h-[72px] xl:gap-3">
           <Link href="/" aria-label={t.header.home} className="inline-flex min-h-11 shrink-0 items-center rounded-lg focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
             <Logo />
           </Link>
 
+          {/* Liens resserrés (13 px) : la barre tient dans le conteneur de 1280 px, connectée et prénom compris */}
           <nav aria-label={t.header.categories} className="hidden items-center gap-0.5 whitespace-nowrap xl:flex">
             {NAV.map((id) => (
               <Link
                 key={id}
                 href={`/salons?categorie=${id}`}
-                className="rounded-full px-3 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground"
+                className="rounded-full px-2 py-2 text-[13px] font-medium whitespace-nowrap text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground"
               >
                 {t.categories[id]}
               </Link>
@@ -57,12 +58,22 @@ export function SiteHeader({ user }: { user: HeaderUser }) {
             <Link
               href="/analyse-beaute"
               className={cn(
-                "ms-1 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors duration-200",
+                "ms-1 inline-flex items-center gap-1.5 rounded-full px-2 py-2 text-[13px] font-medium whitespace-nowrap transition-colors duration-200",
                 pathname === "/analyse-beaute" ? "bg-blush text-plum-700" : "text-plum-700 hover:bg-blush"
               )}
             >
               <ScanFace className="size-4" aria-hidden />
               {t.header.aiAnalysis}
+            </Link>
+            <Link
+              href="/essai-couleur"
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-2 py-2 text-[13px] font-medium whitespace-nowrap transition-colors duration-200",
+                pathname === "/essai-couleur" ? "bg-blush text-plum-700" : "text-plum-700 hover:bg-blush"
+              )}
+            >
+              <Palette className="size-4" aria-hidden />
+              {t.header.tryOn}
             </Link>
           </nav>
 
@@ -71,7 +82,7 @@ export function SiteHeader({ user }: { user: HeaderUser }) {
 
             <Link
               href="/pro"
-              className="hidden items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium whitespace-nowrap text-foreground transition-colors duration-200 hover:bg-muted xl:inline-flex"
+              className="hidden items-center gap-1.5 rounded-full px-2 py-2 text-[13px] font-medium whitespace-nowrap text-foreground transition-colors duration-200 hover:bg-muted xl:inline-flex"
             >
               <Store className="size-4" aria-hidden />
               {t.header.pro}
@@ -85,7 +96,7 @@ export function SiteHeader({ user }: { user: HeaderUser }) {
               >
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-blush text-xs font-semibold text-plum-700">{user.firstName.charAt(0)}</span>
                 {/* Sous 360 px : avatar seul, pour que la barre tienne sur les très petits écrans */}
-                <span className="hidden max-w-28 truncate min-[360px]:inline">{user.firstName}</span>
+                <span className="hidden max-w-28 truncate min-[360px]:inline xl:max-w-20">{user.firstName}</span>
               </Link>
             ) : (
               <Link
@@ -114,6 +125,13 @@ export function SiteHeader({ user }: { user: HeaderUser }) {
           >
             <ScanFace className="size-4" aria-hidden />
             {t.header.aiAnalysis}
+          </Link>
+          <Link
+            href="/essai-couleur"
+            className={cn(chip, pathname === "/essai-couleur" ? "bg-plum-700 text-white" : "bg-blush text-plum-700 hover:bg-plum-100")}
+          >
+            <Palette className="size-4" aria-hidden />
+            {t.header.tryOn}
           </Link>
           <Link href="/pro" className={cn(chip, "border border-border bg-card text-foreground hover:bg-muted")}>
             <Store className="size-4" aria-hidden />

@@ -9,6 +9,7 @@ import { AppError } from "@/core/domain/errors";
  */
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
 
 export const LIMITS = {
   register: [{ limit: 10, windowMs: HOUR }],
@@ -20,6 +21,13 @@ export const LIMITS = {
     { limit: 60, windowMs: HOUR },
   ],
   ai: [{ limit: 10, windowMs: MINUTE }],
+  /** Rendu photoréaliste de l'essai couleur : chaque image est facturée par Google (~0,04 $) */
+  tryOn: [
+    { limit: 6, windowMs: 10 * MINUTE },
+    { limit: 20, windowMs: DAY },
+  ],
+  /** Budget de toute la plateforme (clé « all ») : 300 rendus par jour au plus, soit ~12 $ */
+  tryOnBudget: [{ limit: 300, windowMs: DAY }],
   upload: [{ limit: 30, windowMs: HOUR }],
   write: [{ limit: 30, windowMs: HOUR }],
 } as const satisfies Record<string, readonly { limit: number; windowMs: number }[]>;
@@ -27,13 +35,14 @@ export const LIMITS = {
 export type LimitName = keyof typeof LIMITS;
 
 const hits = new Map<string, number[]>();
-const LONGEST_WINDOW = HOUR;
+const LONGEST_WINDOW = Math.max(...Object.values(LIMITS).flatMap((windows) => windows.map((w) => w.windowMs)));
 let lastSweep = 0;
 
 /** Enregistre un passage ; false si l'une des fenêtres de `name` est déjà pleine pour `id` */
 export function hit(name: LimitName, id: string, now = Date.now()) {
   const key = `${name}:${id}`;
-  const recent = (hits.get(key) ?? []).filter((t) => t > now - LONGEST_WINDOW);
+  const longest = Math.max(...LIMITS[name].map((w) => w.windowMs));
+  const recent = (hits.get(key) ?? []).filter((t) => t > now - longest);
   const full = LIMITS[name].some(({ limit, windowMs }) => recent.filter((t) => t > now - windowMs).length >= limit);
   if (!full) recent.push(now);
   hits.set(key, recent);
