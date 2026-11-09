@@ -58,6 +58,8 @@ function iosBrowser(): IosBrowser {
 
 /** Message « prêt hors connexion » déjà montré sur cet appareil */
 const OFFLINE_READY_KEY = "bh-offline-ready";
+/** Session (empreinte) avec laquelle les pages hors connexion ont été enregistrées */
+const SESSION_KEY = "bh-offline-session";
 
 /** Pages toujours préchargées pour le hors-ligne, en plus des liens de la page ouverte */
 const ALWAYS_OFFLINE = ["/", "/salons", "/offline"];
@@ -76,7 +78,23 @@ function warmOfflinePages() {
     .getEntriesByType("resource")
     .map((entry) => entry.name)
     .filter((url) => url.startsWith(`${window.location.origin}/`));
-  void navigator.serviceWorker.ready.then((registration) => registration.active?.postMessage({ type: "warm", paths, current, files }));
+  // Connexion, déconnexion ou autre compte depuis le dernier préchargement (empreinte de SessionMark) : les pages
+  // enregistrées montrent l'ancienne session, elles sont effacées puis refaites
+  const session = document.querySelector<HTMLMetaElement>('meta[name="glowy-session"]')?.content;
+  let forget = false;
+  try {
+    forget = !!session && window.localStorage.getItem(SESSION_KEY) !== session;
+  } catch {
+    /* stockage bloqué : rien à comparer */
+  }
+  void navigator.serviceWorker.ready.then((registration) => {
+    registration.active?.postMessage({ type: "warm", paths, current, files, forget });
+    try {
+      if (session) window.localStorage.setItem(SESSION_KEY, session);
+    } catch {
+      /* idem */
+    }
+  });
 }
 
 /**

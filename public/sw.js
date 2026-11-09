@@ -65,7 +65,25 @@ self.addEventListener("activate", (event) => {
 const pageCacheFor = (pathname) =>
   PUBLIC_PAGES.some((re) => re.test(pathname)) ? PAGES_CACHE : PRIVATE_PAGES.test(pathname) ? PRIVATE_CACHE : null;
 
-const forgetPages = () => Promise.all([caches.delete(PAGES_CACHE), caches.delete(PRIVATE_CACHE)]);
+/**
+ * Session des pages enregistrées : augmente à chaque oubli (connexion, déconnexion). Un enregistrement commencé avant
+ * s'arrête au lieu de remettre une page de l'ancienne session (« Se connecter », ou l'espace personnel après déconnexion).
+ */
+let generation = 0;
+
+/**
+ * Vide un cache sans le supprimer : un cache supprimé pendant qu'un préchargement le tient ouvert recevrait encore
+ * ses pages, mais hors de la liste des caches (perdues)
+ */
+async function clearCache(name) {
+  const cache = await caches.open(name);
+  await Promise.all((await cache.keys()).map((key) => cache.delete(key)));
+}
+
+const forgetPages = () => {
+  generation++;
+  return Promise.all([clearCache(PAGES_CACHE), clearCache(PRIVATE_CACHE)]);
+};
 
 /** Page hors ligne, ses fichiers et les icônes : jamais effacés pour faire de la place, ils s'affichent quand le reste manque */
 async function shellFiles() {
@@ -138,14 +156,18 @@ async function offlinePage() {
   return caches.match(OFFLINE_URL, MATCH);
 }
 
-async function afterNavigation(pathname, name, request, response) {
+async function afterNavigation(pathname, name, request, response, gen) {
   // Espace personnel redirigé vers la connexion : la session a expiré, ses pages enregistrées aussi
-  if (response.type === "opaqueredirect") return name === PRIVATE_CACHE ? caches.delete(PRIVATE_CACHE) : undefined;
+  if (response.type === "opaqueredirect") {
+    if (name !== PRIVATE_CACHE) return;
+    generation++;
+    return clearCache(PRIVATE_CACHE);
+  }
   if (!response.ok) return;
   if (LOGIN_PAGES.test(pathname)) return forgetPages();
   if (!name) return;
   // Scripts chargés avant que le service worker ne contrôle la page, ou plus tard à la demande (carte…)
-  await keepPage(name, request, response).catch(() => {});
+  await keepPage(name, request, response, gen).catch(() => {});
 }
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -154,6 +176,7 @@ async function page(event) {
   const { request } = event;
   const { pathname } = new URL(request.url);
   const name = pageCacheFor(pathname);
+  const gen = generation;
   const cached = cachedPage(request, name).then(usable);
   let copy;
   const network = (async () => {
@@ -162,7 +185,7 @@ async function page(event) {
     return response;
   })();
   // Enregistrement de la copie, même quand la page affichée vient du cache (réseau lent)
-  event.waitUntil(network.then(() => afterNavigation(pathname, name, request, copy), () => {}));
+  event.waitUntil(network.then(() => afterNavigation(pathname, name, request, copy, gen), () => {}));
   try {
     // Réseau faible : au-delà du délai, la copie enregistrée s'affiche (le réseau la met à jour pour la prochaine fois)
     return await Promise.race([network, delay(NETWORK_TIMEOUT_MS).then(async () => (await cached) ?? network)]);
@@ -214,21 +237,22 @@ async function followScripts(urls) {
  * (contenu animé masqué tant que le JavaScript n'a pas tourné, aucune interaction). Interrompu (application
  * fermée, réseau coupé), l'ancienne copie reste : elle n'est jamais remplacée par une copie incomplète.
  */
-async function keepPage(name, key, response) {
+async function keepPage(name, key, response, gen = generation) {
   const html = await response.clone().text();
   const files = assetUrls(html);
   await cacheFiles(files);
-  if (!(await complete(html))) return false;
+  // Pas complète, ou session changée entre-temps (connexion, déconnexion) : rien n'est remplacé
+  if (!(await complete(html)) || gen !== generation) return false;
   await store(name, key, response);
   await followScripts(files).catch(() => {}); // la page est déjà utilisable sans eux
   return true;
 }
 
 /** Télécharge une page et ses scripts ; échoue si le réseau est coupé ou si la page reste incomplète */
-async function savePage(name, href) {
+async function savePage(name, href, gen = generation) {
   const response = await fetch(href, { credentials: "same-origin" });
   if (!response.ok || response.redirected) throw new Error(`${href} : ${response.status}`);
-  if (!(await keepPage(name, href, response))) throw new Error(`${href} : fichiers manquants`);
+  if (!(await keepPage(name, href, response, gen))) throw new Error(`${href} : fichiers manquants`);
 }
 
 /**
@@ -237,7 +261,9 @@ async function savePage(name, href) {
  * service worker
  */
 async function warm(paths, current) {
+  const gen = generation;
   for (const path of paths) {
+    if (gen !== generation) return; // session changée : un autre préchargement suit
     const url = new URL(path, self.location.origin);
     if (url.origin !== self.location.origin) continue;
     const name = url.pathname === current ? pageCacheFor(url.pathname) : PUBLIC_PAGES.some((re) => re.test(url.pathname)) ? PAGES_CACHE : null;
@@ -246,7 +272,7 @@ async function warm(paths, current) {
     const cached = await (await caches.open(name)).match(url.href, MATCH);
     if (cached && Date.now() - new Date(cached.headers.get("date") ?? 0).getTime() < WARM_MAX_AGE_MS && (await usable(cached))) continue;
     try {
-      await savePage(name, url.href);
+      await savePage(name, url.href, gen);
     } catch (error) {
       if (error instanceof TypeError) return; // hors connexion : inutile d'insister
     }
@@ -337,9 +363,14 @@ self.addEventListener("fetch", (event) => {
 
 /* Messages des pages : préchargement (« warm ») et oubli des pages enregistrées à la déconnexion (« forget ») */
 self.addEventListener("message", (event) => {
-  const { type, paths, current, files } = event.data ?? {};
+  const { type, paths, current, files, forget } = event.data ?? {};
   if (type === "warm" && Array.isArray(paths) && !DEV) {
-    event.waitUntil(keepFiles(Array.isArray(files) ? files.slice(0, 150) : []).then(() => warm(paths.slice(0, 40), current)));
+    // Session changée (connexion, déconnexion) : les pages enregistrées avec l'ancienne sont refaites
+    event.waitUntil(
+      (forget ? forgetPages() : Promise.resolve())
+        .then(() => keepFiles(Array.isArray(files) ? files.slice(0, 150) : []))
+        .then(() => warm(paths.slice(0, 40), current))
+    );
   } else if (type === "forget") event.waitUntil(forgetPages());
 });
 
