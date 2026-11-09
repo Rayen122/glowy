@@ -33,7 +33,8 @@ const nextConfig: NextConfig = {
         headers: [
           { key: "Content-Type", value: "application/javascript; charset=utf-8" },
           { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
-          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
+          // Le service worker ne contacte que le site, et les tuiles de la carte (gardées pour le hors-ligne)
+          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'; connect-src 'self' https://tile.openstreetmap.org" },
         ],
       },
     ];

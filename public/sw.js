@@ -4,6 +4,9 @@ const STATIC_CACHE = `bh-static-${VERSION}`;
 const PAGES_CACHE = `bh-pages-${VERSION}`;
 const PRIVATE_CACHE = `bh-private-${VERSION}`;
 const IMAGES_CACHE = `bh-images-${VERSION}`;
+/** Tuiles de la carte (OpenStreetMap) déjà affichées */
+const TILES_CACHE = `bh-tiles-${VERSION}`;
+const TILE_HOST = "tile.openstreetmap.org";
 const OFFLINE_URL = "/offline";
 const DEV = new URL(self.location.href).searchParams.get("dev") === "1";
 
@@ -22,7 +25,7 @@ const PUBLIC_PAGES = [
 ];
 const PRIVATE_PAGES = /^\/(compte|dashboard|admin)(\/|$)/;
 const LOGIN_PAGES = /^\/(connexion|inscription)$/;
-const LIMITS = { [STATIC_CACHE]: 600, [PAGES_CACHE]: 60, [PRIVATE_CACHE]: 40, [IMAGES_CACHE]: 80 };
+const LIMITS = { [STATIC_CACHE]: 600, [PAGES_CACHE]: 60, [PRIVATE_CACHE]: 40, [IMAGES_CACHE]: 160, [TILES_CACHE]: 300 };
 const NETWORK_TIMEOUT_MS = 4000;
 /** Une page publique déjà enregistrée n'est rechargée en arrière-plan qu'au bout de 6 h */
 const WARM_MAX_AGE_MS = 6 * 3_600_000;
@@ -167,7 +170,7 @@ async function afterNavigation(pathname, name, request, response, gen) {
   if (LOGIN_PAGES.test(pathname)) return forgetPages();
   if (!name) return;
   // Scripts chargés avant que le service worker ne contrôle la page, ou plus tard à la demande (carte…)
-  await keepPage(name, request, response, gen).catch(() => {});
+  await keepPage(name, request, response, gen, true).catch(() => {});
 }
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -237,7 +240,7 @@ async function followScripts(urls) {
  * (contenu animé masqué tant que le JavaScript n'a pas tourné, aucune interaction). Interrompu (application
  * fermée, réseau coupé), l'ancienne copie reste : elle n'est jamais remplacée par une copie incomplète.
  */
-async function keepPage(name, key, response, gen = generation) {
+async function keepPage(name, key, response, gen = generation, withImages = false) {
   const html = await response.clone().text();
   const files = assetUrls(html);
   await cacheFiles(files);
@@ -245,6 +248,7 @@ async function keepPage(name, key, response, gen = generation) {
   if (!(await complete(html)) || gen !== generation) return false;
   await store(name, key, response);
   await followScripts(files).catch(() => {}); // la page est déjà utilisable sans eux
+  if (withImages) await cacheImages(imageUrls(html)).catch(() => {});
   return true;
 }
 
@@ -290,15 +294,16 @@ const KEPT_FILE = /^\/(_next\/static\/|_next\/image$|icons\/)|\.(png|jpe?g|webp|
 async function keepFiles(hrefs) {
   for (const href of hrefs) {
     const url = new URL(href, self.location.origin);
-    if (url.origin !== self.location.origin || !KEPT_FILE.test(url.pathname) || (await caches.match(url.href, MATCH))) continue;
+    const isTile = url.hostname === TILE_HOST;
+    if ((url.origin !== self.location.origin && !isTile) || !KEPT_FILE.test(url.pathname) || (await caches.match(url.href, MATCH))) continue;
     try {
-      const response = await fetch(url.href);
-      if (response.ok) await (await caches.open(url.pathname === "/_next/image" ? IMAGES_CACHE : STATIC_CACHE)).put(url.href, response);
+      const response = await (isTile ? fetchTile(url.href) : fetch(url.href));
+      if (response.ok) await (await caches.open(isTile ? TILES_CACHE : url.pathname === "/_next/image" ? IMAGES_CACHE : STATIC_CACHE)).put(url.href, response);
     } catch {
       return;
     }
   }
-  await Promise.all([trimCache(IMAGES_CACHE), trimCache(STATIC_CACHE)]);
+  await Promise.all([trimCache(IMAGES_CACHE), trimCache(STATIC_CACHE), trimCache(TILES_CACHE)]);
 }
 
 async function cacheFirst(request) {
@@ -317,6 +322,48 @@ async function networkFirst(request) {
   } catch {
     return (await caches.match(request, MATCH)) ?? Response.error();
   }
+}
+
+/**
+ * Photos d'une page, une taille par photo (la plus proche de 640 px) : sans elles, les photos jamais affichées en
+ * ligne (bas de page) apparaissent cassées hors connexion. Toute autre taille demandée est servie par sameImage.
+ */
+function imageUrls(html) {
+  const urls = [];
+  for (const [, set] of html.matchAll(/\b(?:image)?srcset="([^"]+)"/gi)) {
+    const sizes = set
+      .replace(/&amp;/g, "&")
+      .split(",")
+      .map((candidate) => candidate.trim().split(/\s+/)[0])
+      .filter((url) => url.startsWith("/_next/image?"))
+      .map((url) => [url, Number(new URL(url, self.location.origin).searchParams.get("w"))]);
+    sizes.sort((a, b) => Math.abs(a[1] - 640) - Math.abs(b[1] - 640));
+    if (sizes.length) urls.push(sizes[0][0]);
+  }
+  return [...new Set(urls)].slice(0, 24);
+}
+
+/** Photos de la page ouverte, une fois ses pages liées préchargées (les pages liées restent légères) */
+async function currentImages(current) {
+  const name = typeof current === "string" ? pageCacheFor(current) : null;
+  if (!name) return;
+  const copy = await (await caches.open(name)).match(new URL(current, self.location.origin).href, { ...MATCH, ignoreSearch: true });
+  if (copy) await cacheImages(imageUrls(await copy.text()));
+}
+
+/** Photos absentes (aucune taille de la même photo enregistrée), téléchargées 4 à la fois */
+async function cacheImages(urls) {
+  const cache = await caches.open(IMAGES_CACHE);
+  const queue = [...urls];
+  const worker = async () => {
+    for (let url = queue.shift(); url; url = queue.shift()) {
+      if (await sameImage(new Request(new URL(url, self.location.origin)))) continue;
+      const response = await fetch(url);
+      if (response.ok) await cache.put(url, response);
+    }
+  };
+  await Promise.all(Array.from({ length: 4 }, worker));
+  await trimCache(IMAGES_CACHE);
 }
 
 /** Hors connexion : la même photo enregistrée à une autre taille (vue en vignette sur une autre page, par exemple) */
@@ -338,12 +385,30 @@ async function staleWhileRevalidate(request) {
   return cached ?? network;
 }
 
+/** Tuile demandée en CORS (OpenStreetMap l'autorise) : une réponse opaque compterait des Mo dans le quota */
+const fetchTile = (href) => fetch(href, { mode: "cors", credentials: "omit" });
+/** Tuile transparente : hors ligne, une zone jamais vue de la carte reste vide au lieu d'images cassées */
+const BLANK_TILE = Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="), (c) => c.charCodeAt(0));
+
+async function tile(request) {
+  const cached = await caches.match(request.url, MATCH);
+  if (cached) return cached;
+  try {
+    const response = await fetchTile(request.url);
+    if (response.ok) store(TILES_CACHE, request.url, response.clone());
+    return response;
+  } catch {
+    return new Response(BLANK_TILE, { headers: { "Content-Type": "image/png" } });
+  }
+}
+
 const ASSETS = new Set(["script", "style", "font", "image", "manifest"]);
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (DEV || request.method !== "GET") return;
   const url = new URL(request.url);
+  if (url.hostname === TILE_HOST) return event.respondWith(tile(request));
   if (url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
 
   if (request.mode === "navigate") {
@@ -370,6 +435,7 @@ self.addEventListener("message", (event) => {
       (forget ? forgetPages() : Promise.resolve())
         .then(() => keepFiles(Array.isArray(files) ? files.slice(0, 150) : []))
         .then(() => warm(paths.slice(0, 40), current))
+        .then(() => currentImages(current))
     );
   } else if (type === "forget") event.waitUntil(forgetPages());
 });

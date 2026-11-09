@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, Sparkles } from "lucide-react";
+import { MapPin, Sparkles, Store } from "lucide-react";
 import { useI18n } from "@/i18n/client";
 import type { Salon } from "@/lib/data";
 import { cn } from "@/lib/utils";
@@ -33,14 +33,19 @@ export function SalonCard({
       )}
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-        <Image
-          src={salon.cover}
-          alt={f(t.common.salonInterior, { name: salon.name })}
-          fill
-          priority={priority}
-          sizes="(min-width: 1280px) 320px, (min-width: 768px) 45vw, 90vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-        />
+        {/* Salon sans photo : fond neutre plutôt qu'une image cassée */}
+        {salon.cover ? (
+          <Image
+            src={salon.cover}
+            alt={f(t.common.salonInterior, { name: salon.name })}
+            fill
+            priority={priority}
+            sizes="(min-width: 1280px) 320px, (min-width: 768px) 45vw, 90vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+          />
+        ) : (
+          <Store className="absolute inset-0 m-auto size-10 text-plum-300" aria-hidden />
+        )}
         <div className="absolute start-3 top-3 flex max-w-[calc(100%-4.5rem)] flex-wrap gap-1.5">
           {salon.verified && <VerifiedBadge />}
           {!salon.visited && <PointsBadge points={30} label={t.common.newSalon} className="bg-white/95" />}

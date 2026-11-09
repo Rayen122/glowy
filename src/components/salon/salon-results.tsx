@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
-import { BadgeCheck, Clock, MapPin, Sparkles, Star, TrendingDown, Zap } from "lucide-react";
+import { BadgeCheck, Clock, MapPin, Sparkles, Star, Store, TrendingDown, Zap } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { useI18n } from "@/i18n/client";
 import type { Salon } from "@/lib/data";
@@ -214,7 +214,11 @@ function SalonRow({
       )}
     >
       <div className="relative aspect-[16/10] bg-muted sm:aspect-auto sm:min-h-full">
-        <Image src={salon.cover} alt={f(t.common.salonInterior, { name: salon.name })} fill sizes="(min-width: 640px) 240px, 100vw" className="object-cover" />
+        {salon.cover ? (
+          <Image src={salon.cover} alt={f(t.common.salonInterior, { name: salon.name })} fill sizes="(min-width: 640px) 240px, 100vw" className="object-cover" />
+        ) : (
+          <Store className="absolute inset-0 m-auto size-10 text-plum-300" aria-hidden />
+        )}
         <div className="absolute start-3 top-3 flex flex-wrap gap-1.5">
           {salon.verified && <VerifiedBadge />}
           {salon.featured && <span className="inline-flex h-6 items-center rounded-full bg-sand/95 px-2 text-xs font-semibold text-plum-800 shadow-sm">{t.results.featured}</span>}
