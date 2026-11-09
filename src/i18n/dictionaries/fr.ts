@@ -124,6 +124,8 @@ export const fr = {
       toastOffline: "Connexion perdue",
       toastOfflineHint: "Les pages déjà consultées restent accessibles.",
       toastOnline: "Connexion rétablie",
+      ready: "Glowy est prêt hors connexion",
+      readyHint: "Les pages consultées s'ouvriront même sans réseau.",
       available: "Disponible sans connexion",
     },
     push: {

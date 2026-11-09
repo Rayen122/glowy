@@ -10,7 +10,7 @@ const DEV = new URL(self.location.href).searchParams.get("dev") === "1";
 const ICONS = ["/icons/icon-192.png", "/icons/icon-512.png", "/icons/badge-96.png"];
 const MANIFEST_URL = "/manifest.webmanifest";
 /** Pages enregistrées dès l'installation, avant même d'être consultées */
-const WARM_ON_INSTALL = ["/", "/salons"];
+const WARM_ON_INSTALL = ["/"];
 const PUBLIC_PAGES = [
   /^\/$/,
   /^\/salons(\/[^/]+)?$/,
@@ -30,8 +30,9 @@ const MATCH = { ignoreVary: true };
 
 /**
  * Installation : page hors ligne avec ses scripts (sans eux, elle afficherait elle-même « This page couldn't load »),
- * puis accueil et liste des salons. Le service worker ne prend la main qu'une fois la page hors ligne utilisable ;
- * si le réseau coupe pendant l'installation, elle est simplement refaite à la visite suivante.
+ * puis l'accueil. Le service worker ne prend la main qu'une fois la page hors ligne utilisable ; si le réseau coupe
+ * pendant l'installation, elle est simplement refaite à la visite suivante. Le reste (salons, pages liées) est
+ * préchargé ensuite, à la demande de la page.
  */
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -55,6 +56,8 @@ self.addEventListener("activate", (event) => {
       // Requête réseau lancée pendant le démarrage du service worker : les pages s'ouvrent plus vite
       if (!DEV && self.registration.navigationPreload) await self.registration.navigationPreload.enable();
       await self.clients.claim();
+      // L'application s'ouvre désormais sans connexion : la page l'annonce (une fois par appareil)
+      if (!DEV) for (const client of await self.clients.matchAll({ type: "window" })) client.postMessage({ type: "offline-ready" });
     })()
   );
 });
@@ -93,14 +96,25 @@ async function cachedPage(request, name) {
 }
 
 /**
+ * Scripts et styles dont la page a besoin, tous enregistrés ? Les scripts `nomodule` (anciens navigateurs) ne
+ * comptent pas : les téléphones actuels ne les chargent jamais, ils ne passent donc pas par le service worker.
+ */
+async function complete(html) {
+  const legacy = new Set(
+    [...html.matchAll(/<script\b[^>]*\bnomodule\b[^>]*>/gi)].flatMap((m) => assetUrls(m[0]))
+  );
+  const files = assetUrls(html).filter((url) => /\.(js|css)$/.test(url) && !legacy.has(url));
+  const found = await Promise.all(files.map((url) => caches.match(url, MATCH)));
+  return found.every(Boolean);
+}
+
+/**
  * Copie utilisable hors connexion : tous ses scripts et styles sont enregistrés. Sinon (fichiers effacés pour faire
  * de la place, préchargement interrompu), Next.js afficherait « This page couldn't load » : mieux vaut la page hors ligne.
  */
 async function usable(response) {
   if (!response) return undefined;
-  const files = assetUrls(await response.clone().text()).filter((url) => /\.(js|css)$/.test(url));
-  const found = await Promise.all(files.map((url) => caches.match(url, MATCH)));
-  return found.every(Boolean) ? response : undefined;
+  return (await complete(await response.clone().text())) ? response : undefined;
 }
 
 /**
@@ -130,10 +144,8 @@ async function afterNavigation(pathname, name, request, response) {
   if (!response.ok) return;
   if (LOGIN_PAGES.test(pathname)) return forgetPages();
   if (!name) return;
-  const html = await response.clone().text();
-  await store(name, request, response);
   // Scripts chargés avant que le service worker ne contrôle la page, ou plus tard à la demande (carte…)
-  await cacheAssetsOf(html).catch(() => {});
+  await keepPage(name, request, response).catch(() => {});
 }
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -168,35 +180,55 @@ const assetUrls = (text) => (text.match(ASSET_RE) ?? []).map((u) => (u.startsWit
 /** Scripts déjà parcourus depuis le démarrage du service worker */
 const scanned = new Set();
 
-/**
- * Scripts et styles d'une page enregistrée en arrière-plan : sans eux elle resterait figée hors connexion
- * (contenu animé masqué tant que le JavaScript n'a pas tourné, aucune interaction). Les scripts chargés à la
- * demande (carte, assistante…) sont cités dans les autres scripts : ils sont suivis et enregistrés aussi.
- */
-async function cacheAssetsOf(html) {
+/** Fichiers absents du cache, téléchargés 6 à la fois (un par un, l'installation prenait 10 s sur un réseau mobile) */
+async function cacheFiles(urls) {
   const cache = await caches.open(STATIC_CACHE);
-  const queue = [...new Set(assetUrls(html))];
-  for (let i = 0; i < queue.length && i < 300; i++) {
-    const url = queue[i];
-    let response = await cache.match(url, MATCH);
-    if (!response) {
-      response = await fetch(url);
-      if (!response.ok) continue;
-      await cache.put(url, response.clone());
+  const queue = [...new Set(urls)];
+  const worker = async () => {
+    for (let url = queue.shift(); url; url = queue.shift()) {
+      if (await cache.match(url, MATCH)) continue;
+      const response = await fetch(url); // réseau coupé : TypeError, l'enregistrement s'arrête
+      if (response.ok) await cache.put(url, response);
     }
-    if (!url.includes(".js") || scanned.has(url)) continue;
+  };
+  await Promise.all(Array.from({ length: 6 }, worker));
+}
+
+/** Scripts chargés à la demande (carte, assistante…) : cités dans les scripts de la page, suivis et enregistrés */
+async function followScripts(urls) {
+  const queue = [...new Set(urls)].filter((url) => url.includes(".js"));
+  for (let i = 0; i < queue.length && scanned.size < 300; i++) {
+    const url = queue[i];
+    if (scanned.has(url)) continue;
+    const response = await caches.match(url, MATCH);
+    if (!response) continue;
+    const found = assetUrls(await response.text());
+    await cacheFiles(found);
     scanned.add(url);
-    for (const next of assetUrls(await response.text())) if (!queue.includes(next)) queue.push(next);
+    for (const next of found) if (next.includes(".js") && !queue.includes(next)) queue.push(next);
   }
 }
 
-/** Télécharge une page et ses scripts ; échoue si le réseau est coupé */
+/**
+ * Enregistre une page une fois ses scripts et styles enregistrés : sans eux elle resterait figée hors connexion
+ * (contenu animé masqué tant que le JavaScript n'a pas tourné, aucune interaction). Interrompu (application
+ * fermée, réseau coupé), l'ancienne copie reste : elle n'est jamais remplacée par une copie incomplète.
+ */
+async function keepPage(name, key, response) {
+  const html = await response.clone().text();
+  const files = assetUrls(html);
+  await cacheFiles(files);
+  if (!(await complete(html))) return false;
+  await store(name, key, response);
+  await followScripts(files).catch(() => {}); // la page est déjà utilisable sans eux
+  return true;
+}
+
+/** Télécharge une page et ses scripts ; échoue si le réseau est coupé ou si la page reste incomplète */
 async function savePage(name, href) {
   const response = await fetch(href, { credentials: "same-origin" });
   if (!response.ok || response.redirected) throw new Error(`${href} : ${response.status}`);
-  const html = await response.clone().text();
-  await (await caches.open(name)).put(href, response);
-  await cacheAssetsOf(html);
+  if (!(await keepPage(name, href, response))) throw new Error(`${href} : fichiers manquants`);
 }
 
 /**
@@ -210,8 +242,9 @@ async function warm(paths, current) {
     if (url.origin !== self.location.origin) continue;
     const name = url.pathname === current ? pageCacheFor(url.pathname) : PUBLIC_PAGES.some((re) => re.test(url.pathname)) ? PAGES_CACHE : null;
     if (!name) continue;
+    // Copie récente et complète : rien à refaire (une copie incomplète, laissée par une ancienne version, est refaite)
     const cached = await (await caches.open(name)).match(url.href, MATCH);
-    if (cached && Date.now() - new Date(cached.headers.get("date") ?? 0).getTime() < WARM_MAX_AGE_MS) continue;
+    if (cached && Date.now() - new Date(cached.headers.get("date") ?? 0).getTime() < WARM_MAX_AGE_MS && (await usable(cached))) continue;
     try {
       await savePage(name, url.href);
     } catch (error) {

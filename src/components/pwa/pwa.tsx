@@ -56,6 +56,9 @@ function iosBrowser(): IosBrowser {
   return version >= 26 ? "safariNew" : "safari";
 }
 
+/** Message « prêt hors connexion » déjà montré sur cet appareil */
+const OFFLINE_READY_KEY = "bh-offline-ready";
+
 /** Pages toujours préchargées pour le hors-ligne, en plus des liens de la page ouverte */
 const ALWAYS_OFFLINE = ["/", "/salons", "/offline"];
 
@@ -111,12 +114,25 @@ export function PwaRegister() {
   }, [pathname]);
 
   useEffect(() => {
+    // Service worker prêt (accueil et page hors ligne enregistrés) : on peut couper le réseau. Annoncé une fois par appareil.
+    const onWorkerMessage = (event: MessageEvent) => {
+      if (event.data?.type !== "offline-ready") return;
+      try {
+        if (window.localStorage.getItem(OFFLINE_READY_KEY)) return;
+        window.localStorage.setItem(OFFLINE_READY_KEY, "1");
+      } catch {
+        return;
+      }
+      toast.success(o.ready, { id: "offline-ready", description: o.readyHint, duration: 5000 });
+    };
     if ("serviceWorker" in navigator) {
       // En développement : pas de cache (React n'y démarre pas hors ligne), seulement les notifications push
       const script = process.env.NODE_ENV === "production" ? "/sw.js" : "/sw.js?dev=1";
       navigator.serviceWorker.register(script, { scope: "/", updateViaCache: "none" }).catch(() => {});
       // Nouveau service worker (première visite, mise à jour) : ce qu'avait reçu l'ancien est effacé avec ses caches
       navigator.serviceWorker.addEventListener("controllerchange", warmOfflinePages);
+      navigator.serviceWorker.addEventListener("message", onWorkerMessage);
+      navigator.serviceWorker.startMessages();
     }
     const onPrompt = (event: Event) => {
       event.preventDefault();
@@ -139,6 +155,7 @@ export function PwaRegister() {
     window.addEventListener("online", onOnline);
     return () => {
       navigator.serviceWorker?.removeEventListener("controllerchange", warmOfflinePages);
+      navigator.serviceWorker?.removeEventListener("message", onWorkerMessage);
       window.removeEventListener("click", fullLoadWhenOffline, true);
       window.removeEventListener("beforeinstallprompt", onPrompt);
       window.removeEventListener("appinstalled", onInstalled);

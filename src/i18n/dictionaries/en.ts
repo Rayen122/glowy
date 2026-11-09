@@ -119,6 +119,8 @@ export const en: Dictionary = {
       toastOffline: "Connection lost",
       toastOfflineHint: "Pages you've already viewed are still available.",
       toastOnline: "Back online",
+      ready: "Glowy is ready offline",
+      readyHint: "Pages you have viewed will open without a connection.",
       available: "Available offline",
     },
     push: {

@@ -118,6 +118,8 @@ export const ar: Dictionary = {
       toastOffline: "انقطع الاتصال",
       toastOfflineHint: "الصفحات التي زرتها تبقى متاحة.",
       toastOnline: "عاد الاتصال",
+      ready: "Glowy جاهز دون اتصال",
+      readyHint: "الصفحات التي تصفحتها ستفتح حتى دون شبكة.",
       available: "متاح دون اتصال",
     },
     push: {
