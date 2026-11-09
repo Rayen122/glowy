@@ -51,6 +51,7 @@ export const fr = {
     categories: "Catégories",
     aiAnalysis: "Analyse beauté IA",
     tryOn: "Essai couleur",
+    invitations: "Invitations",
     pro: "Espace pro",
     signIn: "Se connecter",
     mobileMenu: "Menu mobile",
@@ -146,6 +147,7 @@ export const fr = {
     findSalon: "Trouver un salon",
     analysis: "Analyse beauté par photo",
     tryOn: "Essai virtuel de couleur",
+    invitations: "Invitations de mariage (Farhty)",
     loyalty: "Programme de fidélité",
     signup: "Créer un compte",
     pros: "Professionnels",
@@ -797,6 +799,17 @@ export const fr = {
     titleStart: "Votre future couleur,",
     titleEm: "avant le rendez-vous.",
     lead: "Une photo suffit : l'IA repère vos cheveux et applique la teinte choisie en gardant vos mèches et vos reflets. Comparez avant / après, puis réservez votre coloration.",
+  },
+
+  /** Page /invitations : Farhty (invitations de mariage, site partenaire) affiché dans Glowy */
+  invitationsPage: {
+    metaTitle: "Invitations de mariage avec Farhty",
+    metaDescription: "Créez vos invitations de mariage et d'événements interactives avec Farhty, sans quitter Glowy : modèles, envoi, liste des invités et réponses.",
+    title: "Invitations de mariage · Farhty",
+    lead: "Créez et envoyez votre invitation, suivez vos invités et leurs réponses.",
+    open: "Ouvrir Farhty",
+    openHint: "Ouvrir Farhty dans un nouvel onglet",
+    frameTitle: "Farhty, invitations de mariage interactives",
   },
 
   tryOn: {
