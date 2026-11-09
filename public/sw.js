@@ -8,6 +8,7 @@ const OFFLINE_URL = "/offline";
 const DEV = new URL(self.location.href).searchParams.get("dev") === "1";
 
 const ICONS = ["/icons/icon-192.png", "/icons/icon-512.png", "/icons/badge-96.png"];
+const MANIFEST_URL = "/manifest.webmanifest";
 /** Pages enregistrées dès l'installation, avant même d'être consultées */
 const WARM_ON_INSTALL = ["/", "/salons"];
 const PUBLIC_PAGES = [
@@ -37,7 +38,7 @@ self.addEventListener("install", (event) => {
     (async () => {
       if (!DEV) {
         const cache = await caches.open(STATIC_CACHE);
-        await Promise.allSettled(ICONS.map((url) => cache.add(url)));
+        await Promise.allSettled([...ICONS, MANIFEST_URL].map((url) => cache.add(url)));
         await savePage(STATIC_CACHE, OFFLINE_URL);
         await warm(WARM_ON_INSTALL);
       }
@@ -102,6 +103,18 @@ async function usable(response) {
   return found.every(Boolean) ? response : undefined;
 }
 
+/**
+ * Application ouverte sans connexion (aucune fenêtre du site déjà ouverte) sur une page non enregistrée : sur
+ * iPhone, l'application installée peut démarrer sur la page où elle a été ajoutée à l'écran d'accueil ou sur la
+ * dernière page vue, et non sur start_url. L'accueil enregistré s'ouvre alors à la place de la page hors ligne ;
+ * un lien vers une page non enregistrée, depuis une page ouverte, mène toujours à la page hors ligne.
+ */
+async function launchPage(pathname) {
+  if (pathname === "/" || pathname === OFFLINE_URL || (await self.clients.matchAll({ type: "window" })).length > 0) return undefined;
+  const home = await usable(await (await caches.open(PAGES_CACHE)).match("/", MATCH));
+  return home && Response.redirect("/", 302);
+}
+
 /** Page hors ligne : copie la plus récente, à défaut celle de l'installation */
 async function offlinePage() {
   for (const name of [PAGES_CACHE, STATIC_CACHE]) {
@@ -142,7 +155,7 @@ async function page(event) {
     // Réseau faible : au-delà du délai, la copie enregistrée s'affiche (le réseau la met à jour pour la prochaine fois)
     return await Promise.race([network, delay(NETWORK_TIMEOUT_MS).then(async () => (await cached) ?? network)]);
   } catch {
-    return (await cached) ?? (await offlinePage()) ?? Response.error();
+    return (await cached) ?? (await launchPage(pathname)) ?? (await offlinePage()) ?? Response.error();
   }
 }
 
