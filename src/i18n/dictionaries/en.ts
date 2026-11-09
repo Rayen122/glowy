@@ -48,6 +48,7 @@ export const en: Dictionary = {
     categories: "Categories",
     aiAnalysis: "AI beauty analysis",
     tryOn: "Colour try-on",
+    invitations: "Invitations",
     pro: "For salons",
     signIn: "Sign in",
     mobileMenu: "Mobile menu",
@@ -118,6 +119,8 @@ export const en: Dictionary = {
       toastOffline: "Connection lost",
       toastOfflineHint: "Pages you've already viewed are still available.",
       toastOnline: "Back online",
+      ready: "Glowy is ready offline",
+      readyHint: "Pages you have viewed will open without a connection.",
       available: "Available offline",
     },
     push: {
@@ -141,6 +144,7 @@ export const en: Dictionary = {
     findSalon: "Find a salon",
     analysis: "Photo beauty analysis",
     tryOn: "Virtual colour try-on",
+    invitations: "Wedding invitations (Farhty)",
     loyalty: "Loyalty programme",
     signup: "Create an account",
     pros: "Professionals",
@@ -791,6 +795,16 @@ export const en: Dictionary = {
     titleStart: "Your next colour,",
     titleEm: "before the appointment.",
     lead: "One photo is enough: the AI finds your hair and applies the shade you pick while keeping your strands and highlights. Compare before / after, then book your colour.",
+  },
+
+  invitationsPage: {
+    metaTitle: "Wedding invitations with Farhty",
+    metaDescription: "Create interactive wedding and event invitations with Farhty without leaving Glowy: templates, sending, guest list and replies.",
+    title: "Wedding invitations · Farhty",
+    lead: "Create and send your invitation, follow your guests and their replies. Farhty is in Arabic, Tunisian and French.",
+    open: "Open Farhty",
+    openHint: "Open Farhty in a new tab",
+    frameTitle: "Farhty, interactive wedding invitations",
   },
 
   tryOn: {

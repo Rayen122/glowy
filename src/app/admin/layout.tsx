@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ChartColumn, CreditCard, Gift, Headset, LayoutGrid, Mail, ScrollText, Settings, ShieldAlert, Store, Users } from "lucide-react";
 import { AppShell, type NavGroup } from "@/components/app-shell/app-shell";
+import { SessionMark } from "@/components/pwa/session-mark";
 import { getI18n } from "@/i18n/server";
 import { requirePageUser } from "@/infrastructure/session";
 import { adminCounts } from "@/modules/subscription";
@@ -12,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  await requirePageUser("ADMIN");
+  const user = await requirePageUser("ADMIN");
   const [{ t }, counts, openTickets] = await Promise.all([getI18n(), adminCounts(), openTicketsCount()]);
   const badge = (n: number) => (n > 0 ? String(n) : undefined);
   const a = t.admin;
@@ -64,6 +65,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
       }
     >
+      <SessionMark userId={user.id} />
       {children}
     </AppShell>
   );

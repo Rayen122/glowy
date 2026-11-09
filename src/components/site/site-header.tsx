@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Palette, ScanFace, Store, UserRound } from "lucide-react";
+import { Heart, Palette, ScanFace, Store, UserRound } from "lucide-react";
 import { homeForRole } from "@/auth.config";
 import { NotificationBell } from "@/components/app-shell/notification-bell";
 import { Logo } from "@/components/brand/logo";
@@ -75,6 +75,16 @@ export function SiteHeader({ user }: { user: HeaderUser }) {
               <Palette className="size-4" aria-hidden />
               {t.header.tryOn}
             </Link>
+            {/* Sans icône : avec, la barre déborderait du conteneur de 1280 px (visiteur, en français) */}
+            <Link
+              href="/invitations"
+              className={cn(
+                "rounded-full px-2 py-2 text-[13px] font-medium whitespace-nowrap transition-colors duration-200",
+                pathname === "/invitations" ? "bg-blush text-plum-700" : "text-plum-700 hover:bg-blush"
+              )}
+            >
+              {t.header.invitations}
+            </Link>
           </nav>
 
           <div className="ms-auto flex min-w-0 items-center gap-0.5 sm:gap-1.5">
@@ -132,6 +142,13 @@ export function SiteHeader({ user }: { user: HeaderUser }) {
           >
             <Palette className="size-4" aria-hidden />
             {t.header.tryOn}
+          </Link>
+          <Link
+            href="/invitations"
+            className={cn(chip, pathname === "/invitations" ? "bg-plum-700 text-white" : "bg-blush text-plum-700 hover:bg-plum-100")}
+          >
+            <Heart className="size-4" aria-hidden />
+            {t.header.invitations}
           </Link>
           <Link href="/pro" className={cn(chip, "border border-border bg-card text-foreground hover:bg-muted")}>
             <Store className="size-4" aria-hidden />

@@ -737,7 +737,11 @@ export function BookingFlow({
         <div className="rounded-3xl lg:sticky lg:top-24 border border-border bg-card p-5 shadow-soft">
           <div className="flex gap-3">
             <div className="relative size-16 shrink-0 overflow-hidden rounded-2xl bg-muted">
-              <Image src={salon.cover} alt="" fill sizes="64px" className="object-cover" />
+              {salon.cover ? (
+                <Image src={salon.cover} alt="" fill sizes="64px" className="object-cover" />
+              ) : (
+                <Store className="absolute inset-0 m-auto size-6 text-plum-300" aria-hidden />
+              )}
             </div>
             <div className="min-w-0">
               <p className="truncate font-semibold">{salon.name}</p>

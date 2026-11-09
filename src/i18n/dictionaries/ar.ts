@@ -47,6 +47,7 @@ export const ar: Dictionary = {
     categories: "الفئات",
     aiAnalysis: "تحليل الجمال الذكي",
     tryOn: "تجربة اللون",
+    invitations: "الدعوات",
     pro: "فضاء المهنيين",
     signIn: "تسجيل الدخول",
     mobileMenu: "قائمة الجوال",
@@ -117,6 +118,8 @@ export const ar: Dictionary = {
       toastOffline: "انقطع الاتصال",
       toastOfflineHint: "الصفحات التي زرتها تبقى متاحة.",
       toastOnline: "عاد الاتصال",
+      ready: "Glowy جاهز دون اتصال",
+      readyHint: "الصفحات التي تصفحتها ستفتح حتى دون شبكة.",
       available: "متاح دون اتصال",
     },
     push: {
@@ -140,6 +143,7 @@ export const ar: Dictionary = {
     findSalon: "ابحث عن صالون",
     analysis: "تحليل الجمال بالصورة",
     tryOn: "تجربة اللون الافتراضية",
+    invitations: "دعوات الزفاف (فرحتي)",
     loyalty: "برنامج الولاء",
     signup: "إنشاء حساب",
     pros: "المهنيون",
@@ -790,6 +794,16 @@ export const ar: Dictionary = {
     titleStart: "لونك القادم،",
     titleEm: "قبل الموعد.",
     lead: "صورة واحدة تكفي: يحدّد الذكاء الاصطناعي شعرك ويطبّق اللون المختار مع الحفاظ على الخصلات واللمعان. قارني قبل وبعد، ثم احجزي صبغتك.",
+  },
+
+  invitationsPage: {
+    metaTitle: "دعوات الزفاف مع فرحتي",
+    metaDescription: "اصنعوا دعوات الزفاف والمناسبات التفاعلية مع فرحتي دون مغادرة Glowy: قوالب، إرسال، قائمة الضيوف وردودهم.",
+    title: "دعوات الزفاف · فرحتي",
+    lead: "اصنعوا دعوتكم وأرسلوها، وتابعوا ضيوفكم وردودهم.",
+    open: "فتح فرحتي",
+    openHint: "فتح فرحتي في علامة تبويب جديدة",
+    frameTitle: "فرحتي، دعوات زفاف تفاعلية",
   },
 
   tryOn: {

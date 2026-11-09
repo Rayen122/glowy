@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Boxes, Building2, CalendarDays, ChartColumn, ChevronsUpDown, CreditCard, Headset, Hourglass, LayoutGrid, ListOrdered, MessageSquareText, Percent, Plus, Receipt, Scissors, Settings, UserRound, Users, Wallet } from "lucide-react";
 import { AppShell, type NavGroup } from "@/components/app-shell/app-shell";
+import { SessionMark } from "@/components/pwa/session-mark";
 import { getI18n } from "@/i18n/server";
 import { lowStockCount, staffSalon } from "@/modules/dashboard";
 import { requirePageUser } from "@/infrastructure/session";
@@ -125,6 +126,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           {d.pendingBanner}
         </p>
       )}
+      <SessionMark userId={user.id} />
       {children}
     </AppShell>
   );

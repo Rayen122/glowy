@@ -17,6 +17,7 @@ export async function SiteFooter() {
         { href: "/salons", label: f.findSalon },
         { href: "/analyse-beaute", label: f.analysis },
         { href: "/essai-couleur", label: f.tryOn },
+        { href: "/invitations", label: f.invitations },
         { href: "/compte/fidelite", label: f.loyalty },
         { href: "/inscription", label: f.signup },
       ],
