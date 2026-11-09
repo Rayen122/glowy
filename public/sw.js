@@ -1,5 +1,5 @@
 
-const VERSION = "v4";
+const VERSION = "v5";
 const STATIC_CACHE = `bh-static-${VERSION}`;
 const PAGES_CACHE = `bh-pages-${VERSION}`;
 const PRIVATE_CACHE = `bh-private-${VERSION}`;
@@ -7,10 +7,18 @@ const IMAGES_CACHE = `bh-images-${VERSION}`;
 const OFFLINE_URL = "/offline";
 const DEV = new URL(self.location.href).searchParams.get("dev") === "1";
 
-const PRECACHE = [OFFLINE_URL, "/icons/icon-192.png", "/icons/icon-512.png", "/icons/badge-96.png"];
+const ICONS = ["/icons/icon-192.png", "/icons/icon-512.png", "/icons/badge-96.png"];
 /** Pages enregistrées dès l'installation, avant même d'être consultées */
 const WARM_ON_INSTALL = ["/", "/salons"];
-const PUBLIC_PAGES = [/^\/$/, /^\/salons(\/[^/]+)?$/, /^\/pro$/, /^\/analyse-beaute$/, /^\/essai-couleur$/, /^\/offline$/];
+const PUBLIC_PAGES = [
+  /^\/$/,
+  /^\/salons(\/[^/]+)?$/,
+  /^\/pro$/,
+  /^\/analyse-beaute$/,
+  /^\/essai-couleur$/,
+  /^\/(conditions|confidentialite)$/,
+  /^\/offline$/,
+];
 const PRIVATE_PAGES = /^\/(compte|dashboard|admin)(\/|$)/;
 const LOGIN_PAGES = /^\/(connexion|inscription)$/;
 const LIMITS = { [STATIC_CACHE]: 600, [PAGES_CACHE]: 60, [PRIVATE_CACHE]: 40, [IMAGES_CACHE]: 80 };
@@ -19,9 +27,23 @@ const NETWORK_TIMEOUT_MS = 4000;
 const WARM_MAX_AGE_MS = 6 * 3_600_000;
 const MATCH = { ignoreVary: true };
 
+/**
+ * Installation : page hors ligne avec ses scripts (sans eux, elle afficherait elle-même « This page couldn't load »),
+ * puis accueil et liste des salons. Le service worker ne prend la main qu'une fois la page hors ligne utilisable ;
+ * si le réseau coupe pendant l'installation, elle est simplement refaite à la visite suivante.
+ */
 self.addEventListener("install", (event) => {
-  const precache = DEV ? Promise.resolve() : caches.open(STATIC_CACHE).then((cache) => Promise.allSettled(PRECACHE.map((url) => cache.add(url))));
-  event.waitUntil(precache.then(() => self.skipWaiting()));
+  event.waitUntil(
+    (async () => {
+      if (!DEV) {
+        const cache = await caches.open(STATIC_CACHE);
+        await Promise.allSettled(ICONS.map((url) => cache.add(url)));
+        await savePage(STATIC_CACHE, OFFLINE_URL);
+        await warm(WARM_ON_INSTALL);
+      }
+      await self.skipWaiting();
+    })()
+  );
 });
 
 self.addEventListener("activate", (event) => {
@@ -32,7 +54,6 @@ self.addEventListener("activate", (event) => {
       // Requête réseau lancée pendant le démarrage du service worker : les pages s'ouvrent plus vite
       if (!DEV && self.registration.navigationPreload) await self.registration.navigationPreload.enable();
       await self.clients.claim();
-      if (!DEV) warm(WARM_ON_INSTALL);
     })()
   );
 });
@@ -42,10 +63,20 @@ const pageCacheFor = (pathname) =>
 
 const forgetPages = () => Promise.all([caches.delete(PAGES_CACHE), caches.delete(PRIVATE_CACHE)]);
 
+/** Page hors ligne, ses fichiers et les icônes : jamais effacés pour faire de la place, ils s'affichent quand le reste manque */
+async function shellFiles() {
+  const copy = await (await caches.open(STATIC_CACHE)).match(OFFLINE_URL, MATCH);
+  return new Set([OFFLINE_URL, ...ICONS, ...(copy ? assetUrls(await copy.text()) : [])]);
+}
+
 async function trimCache(name) {
   const cache = await caches.open(name);
   const keys = await cache.keys();
-  await Promise.all(keys.slice(0, Math.max(0, keys.length - LIMITS[name])).map((k) => cache.delete(k)));
+  const excess = keys.length - LIMITS[name];
+  if (excess <= 0) return;
+  const keep = name === STATIC_CACHE ? await shellFiles() : new Set();
+  const removable = keys.filter((k) => !keep.has(new URL(k.url).pathname));
+  await Promise.all(removable.slice(0, excess).map((k) => cache.delete(k)));
 }
 
 async function store(name, request, response) {
@@ -60,12 +91,36 @@ async function cachedPage(request, name) {
   return (await cache.match(request, MATCH)) ?? (await cache.match(request, { ...MATCH, ignoreSearch: true }));
 }
 
+/**
+ * Copie utilisable hors connexion : tous ses scripts et styles sont enregistrés. Sinon (fichiers effacés pour faire
+ * de la place, préchargement interrompu), Next.js afficherait « This page couldn't load » : mieux vaut la page hors ligne.
+ */
+async function usable(response) {
+  if (!response) return undefined;
+  const files = assetUrls(await response.clone().text()).filter((url) => /\.(js|css)$/.test(url));
+  const found = await Promise.all(files.map((url) => caches.match(url, MATCH)));
+  return found.every(Boolean) ? response : undefined;
+}
+
+/** Page hors ligne : copie la plus récente, à défaut celle de l'installation */
+async function offlinePage() {
+  for (const name of [PAGES_CACHE, STATIC_CACHE]) {
+    const copy = await usable(await (await caches.open(name)).match(OFFLINE_URL, MATCH));
+    if (copy) return copy;
+  }
+  return caches.match(OFFLINE_URL, MATCH);
+}
+
 async function afterNavigation(pathname, name, request, response) {
   // Espace personnel redirigé vers la connexion : la session a expiré, ses pages enregistrées aussi
   if (response.type === "opaqueredirect") return name === PRIVATE_CACHE ? caches.delete(PRIVATE_CACHE) : undefined;
   if (!response.ok) return;
   if (LOGIN_PAGES.test(pathname)) return forgetPages();
-  if (name) return store(name, request, response);
+  if (!name) return;
+  const html = await response.clone().text();
+  await store(name, request, response);
+  // Scripts chargés avant que le service worker ne contrôle la page, ou plus tard à la demande (carte…)
+  await cacheAssetsOf(html).catch(() => {});
 }
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -74,7 +129,7 @@ async function page(event) {
   const { request } = event;
   const { pathname } = new URL(request.url);
   const name = pageCacheFor(pathname);
-  const cached = cachedPage(request, name);
+  const cached = cachedPage(request, name).then(usable);
   let copy;
   const network = (async () => {
     const response = (await event.preloadResponse) ?? (await fetch(request));
@@ -87,7 +142,7 @@ async function page(event) {
     // Réseau faible : au-delà du délai, la copie enregistrée s'affiche (le réseau la met à jour pour la prochaine fois)
     return await Promise.race([network, delay(NETWORK_TIMEOUT_MS).then(async () => (await cached) ?? network)]);
   } catch {
-    return (await cached) ?? (await caches.match(OFFLINE_URL, MATCH)) ?? Response.error();
+    return (await cached) ?? (await offlinePage()) ?? Response.error();
   }
 }
 
@@ -122,25 +177,56 @@ async function cacheAssetsOf(html) {
   }
 }
 
-/** Enregistre en arrière-plan les pages publiques liées depuis la page ouverte (hors connexion ensuite) */
-async function warm(paths) {
-  const cache = await caches.open(PAGES_CACHE);
+/** Télécharge une page et ses scripts ; échoue si le réseau est coupé */
+async function savePage(name, href) {
+  const response = await fetch(href, { credentials: "same-origin" });
+  if (!response.ok || response.redirected) throw new Error(`${href} : ${response.status}`);
+  const html = await response.clone().text();
+  await (await caches.open(name)).put(href, response);
+  await cacheAssetsOf(html);
+}
+
+/**
+ * Enregistre en arrière-plan les pages publiques liées depuis la page ouverte (hors connexion ensuite), et la page
+ * ouverte elle-même, même personnelle : ouverte par un lien (sans rechargement), elle n'est pas passée par le
+ * service worker
+ */
+async function warm(paths, current) {
   for (const path of paths) {
     const url = new URL(path, self.location.origin);
-    if (url.origin !== self.location.origin || !PUBLIC_PAGES.some((re) => re.test(url.pathname))) continue;
-    const cached = await cache.match(url.href, MATCH);
+    if (url.origin !== self.location.origin) continue;
+    const name = url.pathname === current ? pageCacheFor(url.pathname) : PUBLIC_PAGES.some((re) => re.test(url.pathname)) ? PAGES_CACHE : null;
+    if (!name) continue;
+    const cached = await (await caches.open(name)).match(url.href, MATCH);
     if (cached && Date.now() - new Date(cached.headers.get("date") ?? 0).getTime() < WARM_MAX_AGE_MS) continue;
     try {
-      const response = await fetch(url.href, { credentials: "same-origin" });
-      if (!response.ok || response.redirected) continue;
-      const html = await response.clone().text();
-      await cache.put(url.href, response);
-      await cacheAssetsOf(html);
-    } catch {
-      return; // hors connexion : inutile d'insister
+      await savePage(name, url.href);
+    } catch (error) {
+      if (error instanceof TypeError) return; // hors connexion : inutile d'insister
     }
   }
-  await trimCache(PAGES_CACHE);
+  await Promise.all([trimCache(PAGES_CACHE), trimCache(PRIVATE_CACHE)]);
+}
+
+/** Fichiers gardés pour l'affichage hors connexion : scripts, styles, images, icônes et polices */
+const KEPT_FILE = /^\/(_next\/static\/|_next\/image$|icons\/)|\.(png|jpe?g|webp|avif|gif|svg|ico|woff2?)$/;
+
+/**
+ * Fichiers déjà affichés par la page (relus dans le cache HTTP du navigateur) : images, et scripts chargés avant
+ * que le service worker ne contrôle la page (première visite)
+ */
+async function keepFiles(hrefs) {
+  for (const href of hrefs) {
+    const url = new URL(href, self.location.origin);
+    if (url.origin !== self.location.origin || !KEPT_FILE.test(url.pathname) || (await caches.match(url.href, MATCH))) continue;
+    try {
+      const response = await fetch(url.href);
+      if (response.ok) await (await caches.open(url.pathname === "/_next/image" ? IMAGES_CACHE : STATIC_CACHE)).put(url.href, response);
+    } catch {
+      return;
+    }
+  }
+  await Promise.all([trimCache(IMAGES_CACHE), trimCache(STATIC_CACHE)]);
 }
 
 async function cacheFirst(request) {
@@ -161,6 +247,14 @@ async function networkFirst(request) {
   }
 }
 
+/** Hors connexion : la même photo enregistrée à une autre taille (vue en vignette sur une autre page, par exemple) */
+async function sameImage(request) {
+  const source = new URL(request.url).searchParams.get("url");
+  const cache = await caches.open(IMAGES_CACHE);
+  const key = (await cache.keys()).find((k) => new URL(k.url).searchParams.get("url") === source);
+  return key ? cache.match(key) : undefined;
+}
+
 async function staleWhileRevalidate(request) {
   const cached = await caches.match(request, MATCH);
   const network = fetch(request)
@@ -168,7 +262,7 @@ async function staleWhileRevalidate(request) {
       if (response.ok) store(IMAGES_CACHE, request, response.clone());
       return response;
     })
-    .catch(() => cached ?? Response.error());
+    .catch(async () => cached ?? (await sameImage(request)) ?? Response.error());
   return cached ?? network;
 }
 
@@ -197,9 +291,10 @@ self.addEventListener("fetch", (event) => {
 
 /* Messages des pages : préchargement (« warm ») et oubli des pages enregistrées à la déconnexion (« forget ») */
 self.addEventListener("message", (event) => {
-  const { type, paths } = event.data ?? {};
-  if (type === "warm" && Array.isArray(paths) && !DEV) event.waitUntil(warm(paths.slice(0, 40)));
-  else if (type === "forget") event.waitUntil(forgetPages());
+  const { type, paths, current, files } = event.data ?? {};
+  if (type === "warm" && Array.isArray(paths) && !DEV) {
+    event.waitUntil(keepFiles(Array.isArray(files) ? files.slice(0, 150) : []).then(() => warm(paths.slice(0, 40), current)));
+  } else if (type === "forget") event.waitUntil(forgetPages());
 });
 
 /* ── Notifications push (rappels de rendez-vous, points) ── */

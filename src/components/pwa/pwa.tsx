@@ -59,13 +59,21 @@ function iosBrowser(): IosBrowser {
 /** Pages toujours préchargées pour le hors-ligne, en plus des liens de la page ouverte */
 const ALWAYS_OFFLINE = ["/", "/salons", "/offline"];
 
-/** Demande au service worker d'enregistrer les pages liées depuis la page ouverte (il ne garde que les pages publiques) */
+/**
+ * Demande au service worker d'enregistrer la page ouverte, les fichiers qu'elle a déjà chargés (images comprises)
+ * et les pages liées (il ne garde que les pages publiques). Économiseur de données : la page ouverte seulement.
+ */
 function warmOfflinePages() {
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-  if (process.env.NODE_ENV !== "production" || !navigator.onLine || connection?.saveData) return;
+  if (process.env.NODE_ENV !== "production" || !navigator.onLine) return;
+  const current = window.location.pathname;
   const links = Array.from(document.querySelectorAll<HTMLAnchorElement>("a[href^='/']"), (a) => new URL(a.href).pathname);
-  const paths = [...new Set([...ALWAYS_OFFLINE, ...links])];
-  void navigator.serviceWorker.ready.then((registration) => registration.active?.postMessage({ type: "warm", paths }));
+  const paths = connection?.saveData ? [current] : [...new Set([current, ...ALWAYS_OFFLINE, ...links])];
+  const files = performance
+    .getEntriesByType("resource")
+    .map((entry) => entry.name)
+    .filter((url) => url.startsWith(`${window.location.origin}/`));
+  void navigator.serviceWorker.ready.then((registration) => registration.active?.postMessage({ type: "warm", paths, current, files }));
 }
 
 /**
@@ -107,6 +115,8 @@ export function PwaRegister() {
       // En développement : pas de cache (React n'y démarre pas hors ligne), seulement les notifications push
       const script = process.env.NODE_ENV === "production" ? "/sw.js" : "/sw.js?dev=1";
       navigator.serviceWorker.register(script, { scope: "/", updateViaCache: "none" }).catch(() => {});
+      // Nouveau service worker (première visite, mise à jour) : ce qu'avait reçu l'ancien est effacé avec ses caches
+      navigator.serviceWorker.addEventListener("controllerchange", warmOfflinePages);
     }
     const onPrompt = (event: Event) => {
       event.preventDefault();
@@ -128,6 +138,7 @@ export function PwaRegister() {
     window.addEventListener("offline", onOffline);
     window.addEventListener("online", onOnline);
     return () => {
+      navigator.serviceWorker?.removeEventListener("controllerchange", warmOfflinePages);
       window.removeEventListener("click", fullLoadWhenOffline, true);
       window.removeEventListener("beforeinstallprompt", onPrompt);
       window.removeEventListener("appinstalled", onInstalled);
